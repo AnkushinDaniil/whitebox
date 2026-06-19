@@ -22,7 +22,7 @@ Legend: ✅ shipped · 🔨 in progress · ⬜ planned
 - ✅ **The mempool & the fee market** — propagation, EIP-1559 base-fee simulator
 
 ## The EVM
-- ⬜ **The EVM** — stack / memory / storage, a live opcode stepper
+- ✅ **The EVM** — stack / memory / storage, a live opcode stepper
 - ⬜ **Gas & metering** — per-opcode costs, refunds, gas limit (EIP-3529, 1559 base fee)
 - ⬜ **Calls** — CALL / DELEGATECALL / STATICCALL, the call stack, context
 - ⬜ **Contract creation** — init code, CREATE / CREATE2

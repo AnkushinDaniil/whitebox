@@ -1,0 +1,155 @@
+---
+title: The EVM
+dek: A 256-bit stack machine that every node on Earth runs in lockstep, charging for each instruction. Step through real bytecode and watch it compute.
+summary: An interactive EVM — a stack/memory/storage machine executing real bytecode instruction by instruction, with live gas metering. Step through programs, watch the stack push and pop, and see why storage costs 6000× more than memory.
+topic: The EVM
+order: 4
+spine: true
+prerequisites: ["how transactions work", "stacks & bytecode"]
+updated: 2026-06-19
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import EvmStepper from "@/components/evm/EvmStepper.tsx";
+
+When a transaction calls a contract, *something* has to run its code — deterministically, identically, on thousands of machines that don't trust each other, while charging for every step so nobody can run an infinite loop on the network's dime. That something is the **Ethereum Virtual Machine**.
+
+It's deliberately simple: a stack machine with 256-bit words, a flat byte-addressed memory, a key-value storage, and a few dozen opcodes. No floating point, no syscalls, no clock. That simplicity is the point — it's what makes "run this code" mean *exactly* the same thing everywhere.
+
+<DepthLayer tier="intuition">
+
+## A pocket calculator with a meter
+
+Picture an old RPN calculator — the kind where you type `2 3 +` and it pushes 2,
+pushes 3, then pops both and pushes 5. That's the EVM's <KeyTerm term="stack" def="A last-in-first-out list of 256-bit words, max depth 1024. Almost every opcode works by popping its inputs off the top and pushing its result back." />:
+nearly every instruction pops its operands off the top and pushes the result.
+There are no variables, no registers — just the stack, plus three other places
+to put data:
+
+- **Memory** — a scratchpad, wiped after the call. Cheap. Used for temporary
+  work and for passing data around.
+- **Storage** — the contract's permanent key-value store, part of the world
+  state from the [state trie](/how-ethereum-stores-state). Persists forever.
+  *Wildly* expensive (writing a slot can cost 6000× a memory write) because
+  every node must keep it forever.
+- **Calldata** — the read-only input the transaction handed in.
+
+And bolted onto all of it: **gas**. Every opcode has a price. The transaction
+prepays a gas budget; each instruction deducts from it; if it hits zero, the EVM
+halts and reverts — the meter is the only thing standing between the network and
+an infinite loop.
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="Step through real bytecode">
+
+## Run the machine, one instruction at a time
+
+Below is a real EVM. Pick a program (or type raw bytecode), then **step** through
+it and watch the stack push and pop, memory and storage fill in, and the gas
+meter tick down per instruction. Try the *countdown loop* and watch `JUMPI`
+branch back to a `JUMPDEST`; try *store → slot 0* and watch one `SSTORE` cost
+20,000 gas.
+
+<WidgetFrame
+  title="EVM stepper"
+  caption="Step or play through the bytecode. The highlighted instruction is the program counter; the stack shows top-first; gas ticks down per op. Storage persists; memory is scratch."
+  source="A faithful EVM subset (arithmetic, stack, memory, storage, jumps, gas), executed in your browser — 16 unit tests covering the opcodes and gas."
+>
+  <EvmStepper client:visible />
+</WidgetFrame>
+
+<Callout type="insight" title="Storage is the expensive resource">
+Watch the gas column. `ADD`, `PUSH`, `MLOAD` cost 3. `SSTORE` of a fresh slot
+costs **20,000**. That ratio is not arbitrary — memory vanishes when the call
+ends, but every storage slot you write must be replicated and retained by every
+node, forever. Gas costs are a mirror of real, lasting resource use. "Gas
+golfing" a contract is mostly a fight to touch storage less.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec">
+
+## Grounded in the spec
+
+The EVM is defined formally as a state machine: a tuple of (gas, program counter,
+memory, stack, storage) that an opcode transforms. Execution is a loop —
+fetch the opcode at the PC, check the stack and gas, apply it, advance.
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="§9, Execution Model"
+>
+The machine state is `(g, pc, m, i, s)` — gas, program counter, memory, active
+memory words, and stack. The execution function processes one operation per
+cycle: it charges gas, mutates the stack/memory/storage per the opcode's
+definition, and updates the program counter (sequentially, except for `JUMP`
+/`JUMPI`, which may only target a `JUMPDEST`).
+</SpecExcerpt>
+
+<Callout type="note" title="Why JUMPs need JUMPDEST">
+You can't jump just anywhere. A jump target must be a `JUMPDEST` (0x5b) opcode,
+and — crucially — not a byte that happens to sit *inside* a `PUSH`'s immediate
+data. This `JUMPDEST` analysis is what makes control flow analyzable and stops an
+attacker from jumping into the middle of an instruction. The stepper validates
+every jump against the real jumpdest set.
+</Callout>
+
+## Words, not bytes
+
+Everything on the stack is a **256-bit** (32-byte) word — chosen to hold a
+keccak256 hash or an address comfortably, and to make the elliptic-curve and
+hashing math the chain relies on cheap to express. Arithmetic wraps modulo
+2²⁵⁶ (try `0 - 1` in the stepper — you'll get the max uint256). It's a peculiar
+word size for a CPU, and a very natural one for a cryptographic state machine.
+
+</DepthLayer>
+
+<DepthLayer tier="spec" title="From opcodes to Solidity">
+
+## What the compiler is hiding
+
+Nobody writes raw bytecode (well — almost nobody). Solidity and Vyper compile
+down to these opcodes, and the abstractions you write map to surprisingly
+concrete machine behavior:
+
+- A `uint256 x` is a stack item or a storage slot; `mapping`s are
+  `keccak256(key . slot)` storage addresses.
+- A function call dispatches on the first 4 bytes of calldata (the
+  <KeyTerm term="function selector" def="The first 4 bytes of keccak256 of the function signature, e.g. transfer(address,uint256). The contract's dispatcher compares calldata's first 4 bytes against these to pick which function runs." />),
+  a giant `if/else` in disguise.
+- `require`/`revert` are `REVERT` opcodes that undo state changes and refund the
+  remaining gas; a failed `assert` historically burned all gas.
+
+Reading a contract's bytecode — or stepping it like above — is the ground truth
+when the source is unavailable or the behavior is surprising. The machine doesn't
+lie; the comments might.
+
+The next pieces: exactly **how gas is priced** across all opcodes, and how a full
+block of these executions becomes a new [state root](/how-ethereum-stores-state).
+
+</DepthLayer>
+
+<DepthLayer tier="deeper">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "spec", label: "Ethereum Yellow Paper — §9", note: "The formal EVM execution model", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
+    { kind: "tool", label: "evm.codes — opcode reference", note: "Every opcode, gas cost, and a playground", href: "https://www.evm.codes/" },
+    { kind: "spec", label: "execution-specs: vm", note: "The EVM in readable Python", href: "https://github.com/ethereum/execution-specs/tree/master/src/ethereum" },
+    { kind: "eip", label: "EIP-2929: cold/warm gas", note: "The access-list gas nuance simplified here", href: "https://eips.ethereum.org/EIPS/eip-2929" },
+    { kind: "post", label: "How Ethereum stores state", note: "← where SSTORE actually writes", href: "/how-ethereum-stores-state" },
+  ]}
+/>
+
+</DepthLayer>

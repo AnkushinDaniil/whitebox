@@ -1,0 +1,235 @@
+---
+title: How Ethereum stores state
+dek: Every account, every balance, every storage slot — folded into one 32-byte number. Here's the machine that does the folding.
+summary: An interactive walkthrough of Ethereum's Merkle-Patricia Trie — insert an account and watch the leaf rewrite, the hashes propagate, and a brand-new state root land in the block header. Plus why the roadmap is leaving it behind.
+topic: State
+order: 1
+spine: true
+prerequisites: ["hashing", "binary trees", "a little Ethereum"]
+updated: 2026-06-18
+readingMinutes: 16
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import Bleed from "@/components/explorable/Bleed.astro";
+import TrieVisualizer from "@/components/trie/TrieVisualizer.tsx";
+import StructureCompare from "@/components/trie/StructureCompare.tsx";
+import HashMachine from "@/components/trie/HashMachine.tsx";
+import ScrollyTrie from "@/components/trie/ScrollyTrie.tsx";
+
+Ethereum's world state is a map: address → account. Hundreds of millions of
+entries, mutated thousands of times per block. Yet a block header commits to all
+of it with a single 32-byte field, `stateRoot`. Change one account's balance and
+that number must change — and every node on Earth must compute the *same* new
+number, independently, with no coordination.
+
+That's the real job: not "store the data" (any database does that) but **commit
+to the data** so the commitment is canonical, cheaply updatable, and cheaply
+*provable*. The structure Ethereum uses is the Merkle-Patricia Trie. Let's open
+it up — and since the whole thing is built out of hashing, let's start the
+machine there.
+
+<DepthLayer tier="intuition">
+
+## The machine that folds data into a fingerprint
+
+Every node in the trie is identified by the hash of its contents. So before
+anything else, get a physical feel for what a hash *is*: a machine that eats any
+amount of data and always spits out the same fixed-size fingerprint — where
+changing the input by a hair changes the output completely.
+
+Type into the hopper. Then hit **nudge** and watch the avalanche.
+
+<WidgetFrame
+  title="keccak256 — the folding machine"
+  caption="Any input, however long, becomes exactly 32 bytes. Change one character and almost every output byte flips. That sensitivity is the entire reason a Merkle structure can detect change."
+  source="Real keccak256 (the same hash Ethereum uses), computed in your browser."
+>
+  <HashMachine client:visible />
+</WidgetFrame>
+
+Now picture a filing cabinet where every drawer's label is the fingerprint of its
+contents. Change one sheet of paper and that drawer's label changes — which
+changes the label on the cabinet holding it — all the way up to one master label
+on the front of the building. Read that one master label and you've fingerprinted
+the entire archive.
+
+A <KeyTerm term="Merkle tree" def="A tree where each node's identity is the hash of its children. The single root hash commits to every leaf — and you can prove any one leaf with just the hashes along its path." /> gives
+you exactly that. But Ethereum's keys are 32-byte hashes, effectively random, so
+the structure must *also* be a **trie**: a tree indexed by the digits of the key,
+so a lookup is "follow the key, nibble by nibble." Put those together — a trie
+addressed by hashing — and you get a lookup index that is *also* a cryptographic
+commitment. Everything below is the engineering to make that efficient.
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="Follow one edit, all the way up">
+
+## One balance changes. Watch it ripple to the root.
+
+Here's the heartbeat of the whole structure, step by step. Scroll — the tree on
+the left stays put while the story moves: read Alice's key as a path, change her
+balance, and watch the wave of re-hashing travel up to a brand-new state root.
+
+<Bleed>
+  <ScrollyTrie client:visible />
+</Bleed>
+
+That locality is the payoff. An edit touches only the nodes **on the path from
+the leaf to the root**; every other branch keeps its old hash. That's what makes
+state updates cheap — and it's exactly what a Merkle proof ships to prove one
+account without the whole tree.
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="Now take it apart yourself">
+
+## Your turn: insert, edit, inspect
+
+This is a **real** Merkle-Patricia Trie — the same RLP, the same hex-prefix node
+tags, the same keccak256 as a live client. The `stateRoot` it shows is
+byte-for-byte what go-ethereum or reth would compute. Add an account and watch
+the tree physically restructure; the rewritten path lights up and pulses to the
+root. Click any node to read its encoding.
+
+<WidgetFrame
+  title="Merkle-Patricia Trie visualizer"
+  caption="Insert or edit an account. Nodes glide to their new positions, the changed path pulses up to a new state root, and it drops into the block header. Click a node to inspect its RLP and hash."
+  source="Engine validated byte-for-byte against @ethereumjs/mpt across 100 randomized cases."
+>
+  <TrieVisualizer client:visible />
+</WidgetFrame>
+
+Three node types do all the work: a **branch** is a 16-way fork (one slot per
+nibble `0–f`); an **extension** is a shortcut that swallows a run of shared
+nibbles; a **leaf** is the end of the road, holding the value. Add two keys that
+share a long prefix and watch an extension appear; add a third that diverges and
+watch it split into a branch.
+
+</DepthLayer>
+
+<DepthLayer tier="spec">
+
+## Grounded in the spec
+
+Two encodings make the trie deterministic across every client. **RLP** (Recursive
+Length Prefix) serializes each node before it's hashed; **hex-prefix encoding**
+packs a node's nibble path plus a flag — leaf vs. extension, odd vs. even length —
+into bytes.
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="Appendix D, Modified Merkle-Patricia Tree"
+>
+The trie's node-cap function hashes a node's RLP only when it is at least 32
+bytes; shorter nodes are **inlined** directly into their parent. That one rule —
+embed if `len(rlp) < 32`, else reference by `keccak256(rlp)` — is the single most
+common reason a hand-rolled trie's root fails to match a client's. (Insert a tiny
+value in the widget and watch a node flip to `· inline`.)
+</SpecExcerpt>
+
+The empty trie is the hash of an empty string's RLP — a constant every client
+hardcodes:
+
+```text
+keccak256( rlp("") ) = keccak256(0x80)
+= 0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
+```
+
+## What's actually in a leaf
+
+For the **state** trie, the key is `keccak256(address)` and the value is the RLP
+of the account's four fields:
+
+<SpecExcerpt
+  kind="code"
+  source="execution-specs"
+  href="https://github.com/ethereum/execution-specs"
+  ref="state account"
+>
+```python
+class Account:
+    nonce: Uint           # transactions sent from this account
+    balance: U256         # wei
+    storage_root: Root    # root of THIS account's storage trie (tries nest!)
+    code_hash: Hash32     # keccak256 of contract code (empty-code hash for EOAs)
+```
+</SpecExcerpt>
+
+Note `storage_root`: each contract account holds *another* MPT for its storage,
+and that sub-trie's root is a field inside the account leaf. A write to one
+storage slot propagates a new storage root into the account leaf, which
+propagates a new state root into the header — the same ripple you just scrolled
+through, nested one level deeper.
+
+<Callout type="note" title="Secure trie">
+Real keys are `keccak256(address)`, not the raw address. Flip **Secure trie** in
+the visualizer: the structure flattens out, because hashed keys are uniformly
+distributed and almost never share prefixes. Great for balance — and terrible for
+witnesses, which is the whole next section.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec" title="Why the structure is changing">
+
+## The witness problem (and the road past the MPT)
+
+Here's the bill the hexary MPT runs up. To **prove** one account without holding
+the whole state — what a <KeyTerm term="stateless client" def="A node that verifies blocks using witnesses (proofs) supplied with the block, instead of storing the full state itself." /> needs
+— you must reveal, at every level, the *sibling* hashes the prover didn't take. A
+16-way branch means up to 15 siblings per level. Multiply by depth and witnesses
+balloon into megabytes per block. That's the roadblock to statelessness.
+
+The fix is to change the commitment scheme, which changes the optimal tree shape.
+Switch between the three designs:
+
+<WidgetFrame
+  title="Hexary MPT → Verkle → Binary"
+  caption="The same account, proven three ways. Watch how node arity and witness size trade off — and why the roadmap moved."
+>
+  <StructureCompare client:visible />
+</WidgetFrame>
+
+For years the answer was **Verkle trees**: replace Merkle hashing with vector
+commitments, so a node commits to all 256 children in one short proof and
+siblings stop mattering. Witnesses collapse from megabytes to tens of kilobytes.
+
+Then, through 2024–2025, the roadmap pivoted. The leading direction is now a
+**binary Merkle tree** (EIP-7864): arity 2, one sibling per level, ordinary
+hashing — no novel cryptography, no trusted setup, and crucially it's friendly to
+the <KeyTerm term="SNARK provers" def="Systems that produce succinct proofs that a computation (here, block validation) was done correctly. Simple hash-based trees are far cheaper to prove inside a SNARK than vector-commitment schemes." /> that
+will eventually verify Ethereum's state transitions. Binary trees give up some of
+Verkle's witness compression for radical simplicity and provability.
+
+<Callout type="warning" title="Moving target">
+This is live protocol design, not settled history. Verkle was the plan; binary
+trees (EIP-7864) are the current front-runner; specifics are still moving. The
+durable lesson is the relationship: **commitment scheme → tree shape → witness
+size.** Hold that, whatever wins.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "spec", label: "Ethereum Yellow Paper — Appendix D", note: "The formal trie definition", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
+    { kind: "spec", label: "execution-specs: trie & state", note: "Readable Python spec of the MPT", href: "https://github.com/ethereum/execution-specs/blob/master/src/ethereum/" },
+    { kind: "code", label: "go-ethereum: trie package", note: "Production hexary MPT, hashing & proofs", href: "https://github.com/ethereum/go-ethereum/tree/master/trie" },
+    { kind: "eip", label: "EIP-7864: unified binary state tree", note: "The current statelessness direction", href: "https://eips.ethereum.org/EIPS/eip-7864" },
+    { kind: "post", label: "Vitalik — Verkle trees", note: "The vector-commitment idea, in depth", href: "https://vitalik.eth.limo/general/2021/06/18/verkle.html" },
+    { kind: "code", label: "@ethereumjs/mpt", note: "The reference impl this widget is tested against", href: "https://github.com/ethereumjs/ethereumjs-monorepo" },
+  ]}
+/>
+
+</DepthLayer>

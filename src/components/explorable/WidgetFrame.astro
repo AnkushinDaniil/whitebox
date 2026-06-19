@@ -1,0 +1,82 @@
+---
+interface Props {
+  title: string;
+  /** short "what am I looking at" caption shown under the title */
+  caption?: string;
+  /** optional source/credit line, e.g. a spec or client reference */
+  source?: string;
+}
+
+const { title, caption, source } = Astro.props;
+---
+
+<figure class="widget-frame">
+  <figcaption class="widget-head">
+    <div class="titles">
+      <span class="mono-label">Interactive</span>
+      <h4 class="widget-title">{title}</h4>
+      {caption && <p class="widget-caption">{caption}</p>}
+    </div>
+  </figcaption>
+
+  <div class="widget-stage">
+    <slot />
+  </div>
+
+  {
+    source && (
+      <p class="widget-source">
+        <span class="dot" aria-hidden="true" />
+        {source}
+      </p>
+    )
+  }
+</figure>
+
+<style>
+  .widget-frame {
+    margin: 2rem 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(120% 100% at 50% -20%, var(--color-surface-2), var(--color-surface));
+    overflow: hidden;
+    box-shadow: 0 24px 60px -36px rgba(0, 0, 0, 0.8);
+  }
+  .widget-head {
+    padding: 1rem 1.25rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .widget-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0.25rem 0 0;
+    letter-spacing: -0.01em;
+  }
+  .widget-caption {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-ink-muted);
+    max-width: 60ch;
+  }
+  .widget-stage {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+  .widget-source {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--color-ink-faint);
+    background: var(--color-surface);
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-node-leaf);
+  }
+</style>

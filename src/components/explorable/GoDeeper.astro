@@ -1,0 +1,91 @@
+---
+interface Link {
+  label: string;
+  href: string;
+  note?: string;
+  kind?: "spec" | "code" | "eip" | "post" | "tool";
+}
+interface Props {
+  links: Link[];
+}
+const { links } = Astro.props;
+
+const KIND_LABEL: Record<string, string> = {
+  spec: "SPEC",
+  code: "CODE",
+  eip: "EIP",
+  post: "READ",
+  tool: "TOOL",
+};
+---
+
+<ul class="go-deeper">
+  {
+    links.map((l) => (
+      <li>
+        <a href={l.href} target="_blank" rel="noopener noreferrer">
+          <span class="kind">{KIND_LABEL[l.kind ?? "post"]}</span>
+          <span class="meta">
+            <span class="label">{l.label}</span>
+            {l.note && <span class="note">{l.note}</span>}
+          </span>
+          <span class="arrow" aria-hidden="true">↗</span>
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .go-deeper {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  a {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  a:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+  }
+  .kind {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent-dim);
+    border-radius: 4px;
+    padding: 0.15rem 0.35rem;
+  }
+  .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .label {
+    color: var(--color-ink);
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+  .note {
+    color: var(--color-ink-faint);
+    font-size: 0.78rem;
+  }
+  .arrow {
+    color: var(--color-ink-faint);
+    font-size: 0.8rem;
+  }
+</style>

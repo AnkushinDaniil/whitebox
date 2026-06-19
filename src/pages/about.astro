@@ -1,0 +1,87 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+---
+
+<BaseLayout
+  title="About"
+  description="Why Whitebox exists: turning Ethereum's execution layer from a black box into a white box, one explorable at a time."
+>
+  <div class="wrap prose">
+    <p class="mono-label">About</p>
+    <h1>Turning the black box into a white box.</h1>
+
+    <p>
+      Ethereum's execution layer is one of the most consequential pieces of
+      software running in the world, and almost nobody outside a few client teams
+      can say they truly understand it. Not because engineers can't — because the
+      material forces a bad choice. On one side: the Yellow Paper and raw client
+      source, precise but unforgiving. On the other: app-layer courses that stop
+      at <code>solidity</code> and never reach the protocol. The bridge between
+      intuition and spec is just… missing.
+    </p>
+
+    <p>
+      <strong>Whitebox is that bridge.</strong> The unit here isn't a wiki page —
+      it's an <em>explorable</em>: one mechanism paired with a live widget you can
+      take apart, layered so you choose your depth. Intuition when you want the
+      shape of the thing. Mechanism when you want to see it move. Real spec and
+      client code when you want the ground truth. And pointers onward when you're
+      ready to go deeper than I can take you in one page.
+    </p>
+
+    <p>
+      I write in the first person on purpose. This is how I, as an execution-layer
+      engineer, actually hold these systems in my head — the analogies I reach
+      for, the details that turned out to matter, the places where the spec
+      surprised me. It's a point of view, not an anonymous reference.
+    </p>
+
+    <h2>How it's built</h2>
+    <p>
+      The widgets aren't illustrations bolted onto prose — they run the real
+      thing. The trie in
+      <a href="/how-ethereum-stores-state">How Ethereum stores state</a> is a
+      genuine Merkle-Patricia Trie: real RLP, real hex-prefix encoding, real
+      keccak256, producing the same <code>stateRoot</code> a live client would,
+      verified byte-for-byte against a reference implementation. If a widget shows
+      you a hash, you can trust the hash.
+    </p>
+
+    <h2>The two layers</h2>
+    <p>
+      There's an evergreen spine —
+      <a href="/the-execution-layer">The Execution Layer, explained</a> — written
+      once and meant to last. And a thin, low-frequency
+      <a href="/notes">notes</a> layer: short, plain-English reads on what changed
+      in the protocol when a hardfork ships. If you want to be told when either
+      grows, leave your email below. That's the only thing I'll use it for.
+    </p>
+
+    <div class="about-capture not-prose">
+      <EmailCapture client:visible source="about" heading="Follow along" />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 0;
+  }
+  .wrap h1 {
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0.5rem 0 1.2rem;
+    color: var(--color-ink);
+    max-width: none;
+  }
+  .wrap h2 {
+    margin-top: 2.2rem;
+  }
+  .about-capture {
+    margin-top: 2rem;
+  }
+</style>

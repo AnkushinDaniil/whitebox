@@ -1,0 +1,204 @@
+.cmp {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cmp-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.cmp-tab {
+  flex: 1;
+  min-width: 9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  align-items: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cmp-tab span {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+.cmp-tab em {
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--color-ink-faint);
+  font-family: var(--font-mono);
+}
+.cmp-tab:hover {
+  border-color: var(--color-border-strong);
+}
+.cmp-tab.active {
+  border-color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface));
+}
+.cmp-tab.active span {
+  color: var(--color-accent-strong);
+}
+
+.cmp-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+@media (max-width: 640px) {
+  .cmp-body {
+    grid-template-columns: 1fr;
+  }
+}
+.cmp-diagram {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 120% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+}
+.schematic {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+}
+.sc-node {
+  fill: var(--color-surface-3);
+  stroke: var(--color-border-strong);
+  stroke-width: 1.2;
+}
+.sc-node.root {
+  fill: var(--color-node-branch);
+  stroke: none;
+}
+.sc-node.sibling {
+  fill: var(--color-surface-3);
+}
+.sc-node.faint {
+  fill: var(--color-node-empty);
+  opacity: 0.4;
+  stroke: none;
+}
+.sc-node.path {
+  fill: var(--color-accent);
+  stroke: none;
+}
+.sc-edge {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.2;
+}
+.sc-edge.path {
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+.sc-cap {
+  fill: var(--color-ink-muted);
+  font-size: 8.5px;
+  text-anchor: middle;
+  font-family: var(--font-mono);
+}
+.sc-cap.dim {
+  fill: var(--color-ink-faint);
+}
+
+.cmp-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.cmp-stats {
+  display: flex;
+  gap: 0.6rem;
+}
+.stat {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  background: var(--color-surface);
+}
+.stat .k {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-ink-faint);
+  font-family: var(--font-mono);
+}
+.stat .v {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-top: 0.1rem;
+}
+.witness-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+.fill.m-mpt {
+  background: linear-gradient(90deg, var(--color-hash), #ff8a8a);
+}
+.fill.m-verkle {
+  background: linear-gradient(90deg, var(--color-node-leaf), var(--color-accent));
+}
+.fill.m-binary {
+  background: linear-gradient(90deg, var(--color-node-extension), var(--color-accent));
+}
+.wb-caption {
+  font-size: 0.68rem;
+  color: var(--color-ink-faint);
+  font-family: var(--font-mono);
+}
+.cmp-blurb {
+  font-size: 0.88rem;
+  color: var(--color-ink-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+.cmp-why {
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+  margin: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.why-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  flex-shrink: 0;
+}
+.cmp-foot {
+  font-size: 0.76rem;
+  color: var(--color-ink-faint);
+  margin: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.7rem;
+  line-height: 1.5;
+}

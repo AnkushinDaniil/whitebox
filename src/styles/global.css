@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/*
+  Whitebox design tokens — dark-mode-first, developer-tool aesthetic.
+  Restrained palette: near-black canvas, off-white ink, one cool accent.
+  Everything is a token so explorables stay visually consistent and themeable.
+*/
+@theme {
+  /* Surfaces — layered near-blacks (a "white box" rendered dark) */
+  --color-canvas: #0a0c10;
+  --color-surface: #11141b;
+  --color-surface-2: #171b24;
+  --color-surface-3: #1f2430;
+  --color-border: #272e3b;
+  --color-border-strong: #38414f;
+
+  /* Ink */
+  --color-ink: #e7ecf3;
+  --color-ink-muted: #aab4c5;
+  --color-ink-faint: #6b7689;
+
+  /* Accent — a precise cyan, the "light" being shone into the box */
+  --color-accent: #4cc9e6;
+  --color-accent-strong: #7bdcf0;
+  --color-accent-dim: #1c4d5a;
+
+  /* Semantic node colors for trie/tree visualizers */
+  --color-node-branch: #c792ea;
+  --color-node-extension: #82aaff;
+  --color-node-leaf: #6ad29a;
+  --color-node-empty: #4a5365;
+  --color-hash: #f0a85c;
+  --color-changed: #ffcb6b;
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Reading measure */
+  --measure: 68ch;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+/* Base ---------------------------------------------------------------- */
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05", "ss01";
+  line-height: 1.65;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-accent-strong);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+
+/* Prose — used inside explorable body copy ---------------------------- */
+.prose {
+  max-width: var(--measure);
+  font-size: 1.05rem;
+}
+.prose h2 {
+  font-size: 1.55rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-top: 2.6rem;
+  margin-bottom: 0.9rem;
+  color: var(--color-ink);
+}
+.prose h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
+}
+.prose p {
+  margin-bottom: 1.1rem;
+  color: var(--color-ink-muted);
+}
+.prose strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.prose a {
+  color: var(--color-accent-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-dim);
+  text-underline-offset: 3px;
+}
+.prose a:hover {
+  text-decoration-color: var(--color-accent);
+}
+.prose ul,
+.prose ol {
+  margin: 0 0 1.1rem 1.2rem;
+  color: var(--color-ink-muted);
+}
+.prose li {
+  margin-bottom: 0.4rem;
+}
+.prose li::marker {
+  color: var(--color-ink-faint);
+}
+.prose code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.4em;
+  color: var(--color-accent-strong);
+}
+.prose pre {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1.4rem;
+}
+.prose blockquote {
+  border-left: 2px solid var(--color-accent-dim);
+  padding-left: 1rem;
+  color: var(--color-ink-muted);
+  font-style: italic;
+  margin-bottom: 1.1rem;
+}
+
+/* Utility: technical mono label */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}

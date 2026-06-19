@@ -1,0 +1,166 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+
+interface Props {
+  title: string;
+  dek: string;
+  summary: string;
+  topic: string;
+  updated: Date;
+  readingMinutes?: number;
+  prerequisites?: string[];
+  slug: string;
+}
+
+const {
+  title,
+  dek,
+  summary,
+  topic,
+  updated,
+  readingMinutes,
+  prerequisites = [],
+  slug,
+} = Astro.props;
+
+const updatedLabel = updated.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+---
+
+<BaseLayout title={title} description={summary} type="article" published={updated}>
+  <article class="explorable">
+    <header class="exp-header">
+      <a href="/the-execution-layer" class="exp-topic">{topic}</a>
+      <h1 class="exp-title">{title}</h1>
+      <p class="exp-dek">{dek}</p>
+
+      <div class="exp-meta">
+        <span>Updated {updatedLabel}</span>
+        {readingMinutes && <span>· {readingMinutes} min</span>}
+        <span class="byline">· An authored explorable</span>
+      </div>
+
+      {
+        prerequisites.length > 0 && (
+          <div class="exp-prereqs">
+            <span class="mono-label">Assumed</span>
+            <ul>
+              {prerequisites.map((p) => (
+                <li>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </header>
+
+    <div class="exp-body">
+      <slot />
+    </div>
+
+    <div class="exp-capture">
+      <EmailCapture client:visible source={`explorable:${slug}`} />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .explorable {
+    max-width: 74rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 0;
+  }
+  .exp-header {
+    max-width: 46rem;
+    margin: 0 auto 1.5rem;
+  }
+  /* Reading column centered; figures & .bleed break out to the wide canvas. */
+  .exp-body {
+    display: grid;
+    grid-template-columns: 1fr min(46rem, calc(100% - 2.5rem)) 1fr;
+  }
+  .exp-body > :global(*) {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .exp-body > :global(.depth-layer),
+  .exp-body > :global(figure.widget-frame),
+  .exp-body > :global(.bleed) {
+    grid-column: 1 / -1;
+  }
+  .exp-capture {
+    max-width: 46rem;
+    margin: 0 auto;
+  }
+  .exp-topic {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    text-decoration: none;
+    margin-bottom: 0.8rem;
+  }
+  .exp-topic:hover {
+    color: var(--color-accent-strong);
+  }
+  .exp-title {
+    font-size: clamp(1.9rem, 4vw, 2.7rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 0 0 0.7rem;
+  }
+  .exp-dek {
+    font-size: 1.2rem;
+    color: var(--color-ink-muted);
+    line-height: 1.5;
+    margin: 0 0 1rem;
+    max-width: 38ch;
+  }
+  .exp-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--color-ink-faint);
+  }
+  .byline {
+    color: var(--color-accent);
+  }
+  .exp-prereqs {
+    margin-top: 1.1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .exp-prereqs ul {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .exp-prereqs li {
+    font-size: 0.8rem;
+    color: var(--color-ink-muted);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+  }
+  .exp-body {
+    margin-top: 1rem;
+  }
+</style>

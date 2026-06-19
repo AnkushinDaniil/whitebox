@@ -1,0 +1,101 @@
+---
+import { DEPTH_META, type DepthTier } from "@/consts";
+
+interface Props {
+  tier: DepthTier;
+  /** override the default heading for this layer */
+  title?: string;
+}
+
+const { tier, title } = Astro.props;
+const meta = DEPTH_META[tier];
+---
+
+<section class:list={["depth-layer", `tier-${tier}`]} data-tier={tier} aria-label={meta.label}>
+  <header class="dl-head">
+    <span class="num">{meta.n}</span>
+    <span class="tier-badge">{meta.label}</span>
+    <span class="tier-blurb">{title ?? meta.blurb}</span>
+  </header>
+  <div class="dl-content prose">
+    <slot />
+  </div>
+</section>
+
+<style>
+  /*
+    The depth layer is full-width. Prose sits in a centered reading column;
+    figures and anything marked .bleed break out to a much wider canvas, so the
+    page reads as visuals-with-text rather than a single column.
+  */
+  .depth-layer {
+    width: 100%;
+    margin: 3.5rem 0;
+    scroll-margin-top: 1.5rem;
+  }
+  .dl-head {
+    max-width: 46rem;
+    margin: 0 auto 1rem;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    border-left: 2px solid var(--tier-color, var(--color-accent));
+    padding-left: 1rem;
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--tier-color, var(--color-accent));
+    font-weight: 600;
+  }
+  .tier-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tier-color, var(--color-accent));
+    font-weight: 600;
+  }
+  .tier-blurb {
+    font-size: 0.8rem;
+    color: var(--color-ink-faint);
+  }
+
+  .dl-content {
+    display: grid;
+    grid-template-columns: 1fr min(46rem, calc(100% - 2.5rem)) 1fr;
+    max-width: none;
+  }
+  .dl-content > :global(*) {
+    grid-column: 2;
+    min-width: 0;
+  }
+  /* Visualizations and explicit break-outs span the wide canvas. */
+  .dl-content > :global(figure.widget-frame),
+  .dl-content > :global(.bleed) {
+    grid-column: 1 / -1;
+    width: min(74rem, 100%);
+    margin-inline: auto;
+  }
+
+  /* Each tier gets its own hue, escalating from warm intuition to cool spec. */
+  .tier-intuition {
+    --tier-color: #f0a85c;
+  }
+  .tier-mechanism {
+    --tier-color: var(--color-accent);
+  }
+  .tier-spec {
+    --tier-color: #82aaff;
+  }
+  .tier-deeper {
+    --tier-color: #c792ea;
+  }
+
+  @media (max-width: 640px) {
+    .dl-content {
+      grid-template-columns: 1fr min(46rem, calc(100% - 1.5rem)) 1fr;
+    }
+  }
+</style>

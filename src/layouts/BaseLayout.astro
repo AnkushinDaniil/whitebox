@@ -1,0 +1,50 @@
+---
+import "@/styles/global.css";
+import BaseHead from "@/components/seo/BaseHead.astro";
+import SiteHeader from "@/components/SiteHeader.astro";
+import SiteFooter from "@/components/SiteFooter.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  type?: "website" | "article";
+  published?: Date;
+}
+
+const { title, description, type, published } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title={title}
+      description={description}
+      type={type}
+      published={published}
+    />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <SiteHeader />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+    <style>
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        background: var(--color-accent);
+        color: #04161b;
+        padding: 0.5rem 1rem;
+        z-index: 100;
+        border-radius: 0 0 var(--radius-sm) 0;
+      }
+      .skip-link:focus {
+        left: 0;
+      }
+    </style>
+  </body>
+</html>

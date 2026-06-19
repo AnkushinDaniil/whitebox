@@ -1,0 +1,473 @@
+.trie-viz {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Controls --------------------------------------------------------------- */
+.trie-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.tc-form {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.tc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.tc-field.grow {
+  flex: 1;
+  min-width: 12rem;
+}
+.tc-field label {
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.tc-field input {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.tc-field#tc-key,
+#tc-key {
+  width: 9rem;
+}
+.tc-primary {
+  background: var(--color-accent);
+  color: #04161b;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.95rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.tc-primary:hover {
+  background: var(--color-accent-strong);
+}
+.tc-error {
+  color: #ff9a9a;
+  font-size: 0.78rem;
+}
+.tc-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tc-ghost {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-muted);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.tc-ghost:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.tc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+  margin-left: auto;
+  cursor: pointer;
+}
+.tc-toggle em {
+  color: var(--color-ink-faint);
+  font-style: normal;
+}
+.tc-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tc-entries li {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.tc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  border: none;
+  color: var(--color-ink-muted);
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+.tc-chip code {
+  color: var(--color-accent-strong);
+  font-size: 0.76rem;
+}
+.tc-chip:hover {
+  background: var(--color-surface-2);
+}
+.tc-remove {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-ink-faint);
+  padding: 0 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.tc-remove:hover {
+  color: #ff9a9a;
+  background: var(--color-surface-2);
+}
+
+/* Stage / SVG ------------------------------------------------------------ */
+.tv-stage {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 140% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+  background-image:
+    radial-gradient(120% 140% at 50% 0%, var(--color-surface-2), var(--color-canvas)),
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: auto, 22px 22px, 22px 22px;
+  background-blend-mode: normal, soft-light, soft-light;
+  overflow: hidden;
+}
+.trie-svg-scroll {
+  padding: 0.5rem;
+}
+.trie-svg {
+  display: block;
+  margin: 0 auto;
+  width: 100%; /* fill the frame; capped at natural width by inline max-width */
+  height: auto; /* viewBox keeps the aspect ratio, so the whole tree stays visible */
+}
+
+.link {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+  transition: stroke 0.3s;
+}
+.link.changed {
+  stroke: var(--color-changed);
+  stroke-width: 2;
+  opacity: 0.55;
+}
+/* A bright dash that runs up the changed path, child -> parent, per level. */
+.link-flow {
+  stroke: var(--color-changed);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 10 120;
+  stroke-dashoffset: 130;
+  filter: drop-shadow(0 0 4px var(--color-changed));
+  animation: linkFlow 0.7s ease-in var(--pd, 0ms) both;
+}
+@keyframes linkFlow {
+  0% {
+    stroke-dashoffset: 130;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.nibble-bg {
+  fill: var(--color-surface-3);
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+.nibble-label {
+  fill: var(--color-ink-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-anchor: middle;
+  font-weight: 600;
+}
+
+.node {
+  cursor: pointer;
+  /* Nodes physically glide to their new positions when the trie restructures. */
+  transition: transform 0.52s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.node-rect {
+  fill: var(--color-surface);
+  stroke-width: 1.5;
+  transition: filter 0.3s;
+}
+.node:hover .node-rect {
+  fill: var(--color-surface-2);
+}
+.node-selected .node-rect {
+  fill: var(--color-surface-2);
+  filter: drop-shadow(0 0 6px var(--color-accent-dim));
+  stroke-width: 2;
+}
+.node-changed .node-rect {
+  animation: nodePulse 0.95s ease-out var(--pd, 0ms) both;
+}
+@keyframes nodePulse {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  35% {
+    filter: drop-shadow(0 0 11px var(--color-changed));
+    stroke: var(--color-changed);
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+.node-type {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.node-sub {
+  fill: var(--color-ink);
+  font-size: 10px;
+}
+.node-hash {
+  fill: var(--color-ink-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+/* Legend ----------------------------------------------------------------- */
+.tv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.76rem;
+  color: var(--color-ink-muted);
+}
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.lg::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--c);
+}
+.lg.branch {
+  --c: var(--color-node-branch);
+}
+.lg.extension {
+  --c: var(--color-node-extension);
+}
+.lg.leaf {
+  --c: var(--color-node-leaf);
+}
+.lg.changed {
+  --c: var(--color-changed);
+}
+
+/* Readouts (block header + inspector) ------------------------------------ */
+.tv-readouts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 0.85rem;
+}
+@media (max-width: 680px) {
+  .tv-readouts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.block-header,
+.inspector {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.85rem 0.95rem;
+}
+.bh-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.bh-sub {
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+}
+.bh-fields {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.bh-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  padding: 0.22rem 0.4rem;
+  border-radius: 4px;
+}
+.bh-field.state {
+  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  border: 1px solid var(--color-accent-dim);
+}
+.bh-key {
+  color: var(--color-ink-muted);
+}
+.bh-val {
+  color: var(--color-ink-faint);
+}
+.bh-val.root {
+  color: var(--color-accent-strong);
+}
+.bh-val.root.changed {
+  animation: rootFlash 1.2s ease-out;
+}
+@keyframes rootFlash {
+  0%,
+  100% {
+    color: var(--color-accent-strong);
+  }
+  30% {
+    color: var(--color-changed);
+  }
+}
+.bh-delta {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  flex-wrap: wrap;
+}
+.bh-delta .old {
+  color: var(--color-ink-faint);
+  text-decoration: line-through;
+}
+.bh-delta .new {
+  color: var(--color-changed);
+}
+.bh-delta .note {
+  color: var(--color-ink-faint);
+  font-family: var(--font-sans);
+}
+
+/* Inspector */
+.inspector.empty .hint {
+  color: var(--color-ink-faint);
+  font-size: 0.82rem;
+  margin-top: 0.4rem;
+}
+.insp-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.insp-type {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+.insp-type.t-branch {
+  color: var(--color-node-branch);
+  background: color-mix(in oklab, var(--color-node-branch) 14%, transparent);
+}
+.insp-type.t-extension {
+  color: var(--color-node-extension);
+  background: color-mix(in oklab, var(--color-node-extension) 14%, transparent);
+}
+.insp-type.t-leaf {
+  color: var(--color-node-leaf);
+  background: color-mix(in oklab, var(--color-node-leaf) 14%, transparent);
+}
+.insp-type.t-empty {
+  color: var(--color-node-empty);
+  background: var(--color-surface-2);
+}
+.insp-flag {
+  font-size: 0.68rem;
+  color: var(--color-hash);
+  font-family: var(--font-mono);
+}
+.insp-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.insp-row {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: baseline;
+}
+.insp-row dt {
+  font-size: 0.74rem;
+  color: var(--color-ink-faint);
+}
+.insp-row dd {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-ink);
+  min-width: 0;
+}
+.insp-row dd.mono {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+.insp-row dd.wrap {
+  word-break: break-all;
+}
+.insp-row dd.hl {
+  color: var(--color-accent-strong);
+}
+
+.tv-secure-note {
+  font-size: 0.83rem;
+  color: var(--color-ink-muted);
+  border-left: 2px solid var(--color-accent-dim);
+  padding-left: 0.8rem;
+}
+.tv-secure-note code {
+  font-family: var(--font-mono);
+  color: var(--color-accent-strong);
+  font-size: 0.85em;
+}

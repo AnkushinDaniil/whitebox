@@ -1,0 +1,386 @@
+.scrolly {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .scrolly {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sticky visual ------------------------------------------------------- */
+.scrolly-stage {
+  position: sticky;
+  top: 1.5rem;
+  height: min(78vh, 640px);
+}
+@media (max-width: 820px) {
+  .scrolly-stage {
+    top: 0;
+    height: 56vh;
+    z-index: 5;
+    background: var(--color-canvas);
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+.stage-inner {
+  height: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, var(--color-surface-2), var(--color-canvas)),
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: auto, 22px 22px, 22px 22px;
+  background-blend-mode: normal, soft-light, soft-light;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow: hidden;
+  position: relative;
+}
+
+/* key reader */
+.key-reader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+.kr-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-faint);
+}
+.kr-key {
+  color: var(--color-accent-strong);
+}
+.kr-arrow {
+  color: var(--color-ink-faint);
+}
+.kr-nibbles {
+  display: flex;
+  gap: 4px;
+}
+.kr-nib {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-muted);
+}
+.key-reader.reading .kr-nib {
+  animation: nibLight 0.5s ease both;
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+}
+@keyframes nibLight {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.12);
+  }
+}
+
+.stage-svg {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+/* nodes & links */
+.s-node {
+  transition:
+    transform 0.5s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.4s ease;
+}
+.s-rect {
+  fill: var(--color-surface);
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+  transition: stroke 0.3s, filter 0.3s;
+}
+.s-bar {
+  fill: var(--color-border-strong);
+  transition: fill 0.3s;
+}
+.s-type {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--color-ink-faint);
+}
+.s-val {
+  font-size: 11px;
+  fill: var(--color-ink);
+}
+.s-hash {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  fill: var(--color-ink-faint);
+}
+/* the hash flashes "changed" amber as it is rewritten during the rehash wave */
+.s-hash.rehash {
+  animation: hashFlash 0.85s ease-out var(--d, 0ms) both;
+}
+@keyframes hashFlash {
+  0%,
+  18% {
+    fill: var(--color-ink-faint);
+  }
+  35% {
+    fill: var(--color-changed);
+    font-weight: 600;
+  }
+  100% {
+    fill: var(--color-ink-faint);
+  }
+}
+
+.t-branch .s-bar { fill: var(--color-node-branch); }
+.t-extension .s-bar { fill: var(--color-node-extension); }
+.t-leaf .s-bar { fill: var(--color-node-leaf); }
+
+.s-node.dim {
+  opacity: 0.22;
+}
+.s-node.on .s-rect {
+  stroke: var(--color-accent);
+}
+.s-node.on .s-type {
+  fill: var(--color-accent-strong);
+}
+
+.s-link {
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+  transition: stroke 0.3s, opacity 0.3s;
+}
+.s-link.on {
+  stroke: var(--color-accent);
+  opacity: 0.6;
+}
+.s-link.dim {
+  opacity: 0.18;
+}
+
+/* edit: leaf bytes change */
+.s-node.edited .s-rect {
+  stroke: var(--color-changed);
+  filter: drop-shadow(0 0 9px var(--color-changed));
+  animation: editFlash 0.8s ease;
+}
+.s-node.edited .s-val {
+  fill: var(--color-changed);
+  font-weight: 600;
+}
+@keyframes editFlash {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  40% { filter: drop-shadow(0 0 12px var(--color-changed)); }
+}
+
+/* propagate: travelling wave */
+.s-node.pulse .s-rect {
+  animation: sPulse 0.9s ease-out var(--d, 0ms) both;
+}
+@keyframes sPulse {
+  0% { stroke: var(--color-border-strong); filter: none; }
+  45% { stroke: var(--color-changed); filter: drop-shadow(0 0 11px var(--color-changed)); }
+  100% { stroke: var(--color-accent); filter: none; }
+}
+.s-flow {
+  stroke: var(--color-changed);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 8 200;
+  stroke-dashoffset: 210;
+  filter: drop-shadow(0 0 4px var(--color-changed));
+  animation: sFlow 0.8s ease-in both;
+}
+@keyframes sFlow {
+  0% { stroke-dashoffset: 210; opacity: 0; }
+  20% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* A glowing charge that physically rides Alice's path up to the root. */
+.charge,
+.charge-core {
+  offset-distance: 0%;
+  offset-rotate: 0deg;
+  animation: chargeUp 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.charge {
+  fill: var(--color-changed);
+  opacity: 0.6;
+  filter: blur(2px) drop-shadow(0 0 9px var(--color-changed));
+}
+.charge-core {
+  fill: #fff7e0;
+  filter: drop-shadow(0 0 5px var(--color-changed));
+}
+@keyframes chargeUp {
+  0% { offset-distance: 0%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* root focus */
+.s-node.root-focus .s-rect {
+  stroke: var(--color-accent-strong);
+  filter: drop-shadow(0 0 14px var(--color-accent-dim));
+  stroke-width: 2;
+}
+
+/* three-node-types legend (shown in the "types" step, color-matched to bars) */
+.types-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.2rem 0.5rem;
+  animation: tagIn 0.4s ease both;
+}
+.tl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--color-ink-muted);
+}
+.tl::before {
+  content: "";
+  width: 11px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c);
+}
+.tl.branch { --c: var(--color-node-branch); }
+.tl.extension { --c: var(--color-node-extension); }
+.tl.leaf { --c: var(--color-node-leaf); }
+@keyframes tagIn {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* block header */
+.stage-header {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.6rem 0.8rem;
+  opacity: 0.35;
+  transform: translateY(4px);
+  transition: opacity 0.4s, transform 0.4s, border-color 0.4s;
+}
+.stage-header.show {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: var(--color-accent-dim);
+}
+.sh-label {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-faint);
+}
+.sh-fields {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+.sh-field {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-ink-faint);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 0.2rem 0.45rem;
+}
+.sh-field em {
+  color: var(--color-ink-muted);
+  font-style: normal;
+}
+.sh-field.state {
+  border-color: var(--color-accent-dim);
+  background: color-mix(in oklab, var(--color-accent) 9%, transparent);
+}
+.sh-field.state em {
+  color: var(--color-accent-strong);
+}
+.sh-field.state em.land {
+  animation: land 0.7s ease both;
+}
+@keyframes land {
+  0% { color: var(--color-changed); transform: translateY(-8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.sh-delta {
+  display: block;
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-ink-faint);
+}
+.sh-delta s { color: var(--color-ink-faint); }
+.sh-delta b { color: var(--color-changed); font-weight: 600; }
+
+/* Steps --------------------------------------------------------------- */
+.scrolly-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.step {
+  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem 0;
+  opacity: 0.4;
+  transition: opacity 0.35s ease;
+}
+.step:first-child { padding-top: 0.5rem; min-height: 60vh; }
+.step:last-child { min-height: 60vh; }
+.step.active {
+  opacity: 1;
+}
+.step-counter {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+.step-counter .of {
+  color: var(--color-ink-faint);
+}
+.step h3 {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin: 0.5rem 0 0.6rem;
+  color: var(--color-ink);
+  line-height: 1.15;
+}
+.step p {
+  color: var(--color-ink-muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 38ch;
+}

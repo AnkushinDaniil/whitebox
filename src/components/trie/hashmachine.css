@@ -1,0 +1,272 @@
+/*
+  Registered custom property so the conic-gradient angle can actually be
+  animated/interpolated (plain `--vars` can't transition). Drives the rotor's
+  "engine running" sheen ring — pure CSS, no JS.
+*/
+@property --hm-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.hashm {
+  display: grid;
+  grid-template-columns: 1fr auto 1.3fr;
+  gap: 0.85rem;
+  align-items: stretch;
+}
+@media (max-width: 720px) {
+  .hashm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hm-stage {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+.hm-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+.hm-sub {
+  font-size: 0.74rem;
+  color: var(--color-ink-faint);
+  margin-top: auto;
+}
+
+/* Input ---------------------------------------------------------------- */
+.hm-text {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+.hm-bytes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.hm-byte {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--color-node-extension);
+  background: color-mix(in oklab, var(--color-node-extension) 12%, transparent);
+  border-radius: 3px;
+  padding: 0.05rem 0.22rem;
+  animation: dropIn 0.4s ease both;
+}
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+.hm-more {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--color-ink-faint);
+  padding: 0.05rem 0.22rem;
+}
+
+/* Rotor ---------------------------------------------------------------- */
+.hm-rotor {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 9rem;
+  background:
+    radial-gradient(80% 80% at 50% 35%, var(--color-surface-2), var(--color-surface));
+}
+/* A sheen that sweeps around the rotor's border while the machine runs. */
+.hm-rotor::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--hm-angle),
+    transparent 0 62%,
+    var(--color-accent-dim) 74%,
+    var(--color-accent) 84%,
+    transparent 96% 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: hm-sweep 4.5s linear infinite;
+  pointer-events: none;
+}
+.hm-rotor.churning::before,
+.hm-stage.hm-rotor:has(.hm-gears.churn)::before {
+  animation-duration: 1.2s;
+}
+@keyframes hm-sweep {
+  to {
+    --hm-angle: 360deg;
+  }
+}
+.hm-gears {
+  width: 130px;
+  height: 84px;
+}
+.gear-body {
+  fill: url(#hmMetal);
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+}
+.gear-hub {
+  fill: url(#hmHub);
+  stroke: var(--color-accent-dim);
+  stroke-width: 1.5;
+}
+.gear-tooth {
+  stroke: var(--color-border-strong);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.gear {
+  animation: spin 9s linear infinite;
+}
+.hm-gears .g2 {
+  animation-direction: reverse;
+  animation-duration: 7s;
+}
+.hm-gears .g3 {
+  animation-duration: 6s;
+}
+.hm-gears.churn .gear {
+  animation-duration: 0.9s;
+}
+.hm-gears.churn .g1 .gear-body,
+.hm-gears.churn .gear-body {
+  stroke: var(--color-accent);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.hm-rotor-label {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-accent-strong);
+  font-weight: 600;
+}
+
+/* Output --------------------------------------------------------------- */
+.hm-output-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.hm-avalanche {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-changed);
+  border: 1px solid color-mix(in oklab, var(--color-changed) 40%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  animation: badgePop 0.4s ease both;
+}
+@keyframes badgePop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+.hm-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+}
+@media (max-width: 520px) {
+  .hm-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+.hm-cell {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-align: center;
+  padding: 0.18rem 0;
+  border-radius: 3px;
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-border);
+}
+.hm-cell.flip {
+  animation: cellFlip 0.55s ease both;
+  color: var(--color-canvas);
+  background: var(--color-changed);
+  border-color: var(--color-changed);
+}
+@keyframes cellFlip {
+  0% {
+    transform: rotateX(-90deg);
+  }
+  60% {
+    transform: rotateX(0);
+    background: var(--color-changed);
+    color: var(--color-canvas);
+  }
+  100% {
+    transform: rotateX(0);
+    background: var(--color-surface-2);
+    color: var(--color-ink-muted);
+    border-color: var(--color-border);
+  }
+}
+.hm-hex {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--color-ink-faint);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+/* Controls ------------------------------------------------------------- */
+.hm-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding-top: 0.3rem;
+}
+.hm-btn {
+  background: var(--color-accent);
+  color: #04161b;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hm-btn:hover {
+  background: var(--color-accent-strong);
+}
+.hm-hint {
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+  flex: 1;
+  min-width: 16rem;
+}

@@ -1,0 +1,27 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# environment
+.env
+.env.production
+.env.*.local
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
+
+# browser-tooling artifacts
+.playwright-mcp/
+
+# oh-my-claudecode local state
+.omc/

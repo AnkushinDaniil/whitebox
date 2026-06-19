@@ -1,0 +1,22 @@
+---
+import { getCollection, render } from "astro:content";
+import ExplorableLayout from "@/layouts/ExplorableLayout.astro";
+
+export async function getStaticPaths() {
+  const explorables = await getCollection(
+    "explorables",
+    ({ data }) => import.meta.env.PROD === false || !data.draft,
+  );
+  return explorables.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<ExplorableLayout {...entry.data} slug={entry.id}>
+  <Content />
+</ExplorableLayout>

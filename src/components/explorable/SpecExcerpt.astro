@@ -1,0 +1,87 @@
+---
+/**
+ * Renders a real quote from the spec or client source, with mandatory
+ * attribution + link. This component enforces the brand promise: every claim
+ * is grounded in the actual thing, never hand-waved.
+ */
+interface Props {
+  /** where it's from, e.g. "Yellow Paper, Appendix D" or "go-ethereum" */
+  source: string;
+  /** canonical URL to the source */
+  href: string;
+  /** optional file path / section for code excerpts */
+  ref?: string;
+  /** "spec" | "code" — tunes the label */
+  kind?: "spec" | "code";
+}
+
+const { source, href, ref, kind = "spec" } = Astro.props;
+---
+
+<aside class="spec-excerpt" data-kind={kind}>
+  <header class="excerpt-head">
+    <span class="kind">{kind === "code" ? "Client code" : "From the spec"}</span>
+    <a href={href} target="_blank" rel="noopener noreferrer" class="src">
+      {source}{ref && <span class="ref">· {ref}</span>}
+      <span class="ext" aria-hidden="true">↗</span>
+    </a>
+  </header>
+  <div class="excerpt-body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .spec-excerpt {
+    margin: 1.5rem 0;
+    border: 1px solid var(--color-border);
+    border-left: 2px solid #82aaff;
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  .excerpt-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+  }
+  .kind {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #82aaff;
+  }
+  .src {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .src:hover {
+    color: var(--color-accent-strong);
+  }
+  .ref {
+    color: var(--color-ink-faint);
+  }
+  .ext {
+    font-size: 0.7rem;
+  }
+  .excerpt-body {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.9rem;
+  }
+  .excerpt-body :global(pre) {
+    margin: 0.7rem 0;
+  }
+  .excerpt-body :global(p) {
+    color: var(--color-ink-muted);
+  }
+</style>

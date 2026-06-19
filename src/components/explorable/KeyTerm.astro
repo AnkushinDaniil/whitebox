@@ -1,0 +1,50 @@
+---
+/** Inline glossary term with a hover/focus definition tooltip. */
+interface Props {
+  term: string;
+  def: string;
+}
+const { term, def } = Astro.props;
+---
+
+<span class="key-term" tabindex="0">
+  <span class="t">{term}</span>
+  <span class="def" role="tooltip">{def}</span>
+</span>
+
+<style>
+  .key-term {
+    position: relative;
+    border-bottom: 1px dashed var(--color-accent-dim);
+    cursor: help;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+  .def {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: max-content;
+    max-width: 18rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--color-ink-muted);
+    box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s, transform 0.15s;
+    z-index: 20;
+  }
+  .key-term:hover .def,
+  .key-term:focus .def,
+  .key-term:focus-within .def {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>

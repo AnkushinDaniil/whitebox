@@ -1,0 +1,86 @@
+---
+import { SITE } from "@/consts";
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? path === "/" : path.startsWith(href);
+
+const links = [
+  { href: "/the-execution-layer", label: "The Execution Layer" },
+  { href: "/notes", label: "Notes" },
+  { href: "/about", label: "About" },
+];
+---
+
+<header class="site-header">
+  <a href="/" class="brand" aria-label={`${SITE.name} home`}>
+    <span class="mark" aria-hidden="true"></span>
+    <span class="wordmark">{SITE.name}</span>
+  </a>
+  <nav aria-label="Primary">
+    {
+      links.map((l) => (
+        <a href={l.href} class:list={["nav-link", { active: isActive(l.href) }]}>
+          {l.label}
+        </a>
+      ))
+    }
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.1rem 1.5rem;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: var(--color-ink);
+  }
+  .mark {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--color-accent);
+    background:
+      linear-gradient(135deg, transparent 0 50%, var(--color-accent-dim) 50% 100%);
+    box-shadow: 0 0 14px -2px var(--color-accent-dim);
+  }
+  .wordmark {
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-size: 1.02rem;
+  }
+  nav {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .nav-link {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-link:hover {
+    color: var(--color-ink);
+    background: var(--color-surface-2);
+  }
+  .nav-link.active {
+    color: var(--color-accent-strong);
+  }
+  @media (max-width: 560px) {
+    .nav-link:not(.active) {
+      display: none;
+    }
+  }
+</style>

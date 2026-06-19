@@ -1,0 +1,25 @@
+---
+title: "What changed: state, after Pectra"
+dek: A two-minute read on where Ethereum's state tree stands today, and why the Verkle plan became a binary-tree plan.
+summary: A short, plain-English protocol note — the state-tree roadmap shifted from Verkle trees to a binary Merkle tree (EIP-7864). Here's the why, for engineers.
+hardfork: Pectra → Fusaka
+date: 2026-06-15
+---
+
+If you learned that "Ethereum is moving to Verkle trees," that's now out of date —
+and the reason is worth ninety seconds of your time.
+
+**The short version.** The goal hasn't changed: make the chain *stateless*, so a
+node can validate a block from a small witness instead of holding hundreds of
+gigabytes of state. What changed is the structure used to get there. Verkle trees
+hit witnesses hardest, but they lean on vector-commitment cryptography that's
+awkward to prove inside a SNARK — and the long arc of the roadmap is "everything
+gets SNARK-verified." So the leading direction is now a **binary Merkle tree**
+(EIP-7864): simpler hashing, no trusted setup, prover-friendly.
+
+It's a classic engineering trade: give up some witness compression to get
+radical simplicity and provability.
+
+If you want the mechanism — how state commits to a single root, and how the tree
+shape drives witness size — the full explorable is here:
+[How Ethereum stores state](/how-ethereum-stores-state).

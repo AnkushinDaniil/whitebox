@@ -19,7 +19,7 @@ Legend: ✅ shipped · 🔨 in progress · ⬜ planned
 - ✅ **How Ethereum stores state** — the Merkle-Patricia Trie (+ Verkle/binary)
 - ✅ **How transactions work** — EIP-1559, signing, sender recovery
 - ⬜ **Accounts** — EOAs vs contracts, nonces, balance; account abstraction (4337, 7702)
-- ⬜ **The mempool & the fee market** — propagation, EIP-1559 base-fee simulator
+- ✅ **The mempool & the fee market** — propagation, EIP-1559 base-fee simulator
 
 ## The EVM
 - ⬜ **The EVM** — stack / memory / storage, a live opcode stepper

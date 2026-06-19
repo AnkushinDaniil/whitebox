@@ -1,0 +1,149 @@
+.fm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.fm-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.fm-preset {
+  font-size: 0.8rem;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+.fm-preset:hover {
+  color: var(--color-ink);
+  border-color: var(--color-border-strong);
+}
+.fm-hint {
+  font-size: 0.78rem;
+  color: var(--color-ink-faint);
+}
+
+.fm-svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 100% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+}
+
+.fm-axis {
+  fill: var(--color-ink-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.fm-axis.vert {
+  writing-mode: vertical-rl;
+  text-anchor: middle;
+}
+
+.fm-area {
+  fill: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  stroke: none;
+}
+.fm-line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: all 0.35s ease;
+}
+.fm-dot {
+  fill: var(--color-accent-strong);
+  transition: cy 0.35s ease;
+}
+
+.fm-target {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.fm-bar {
+  cursor: pointer;
+}
+.fm-bar-track {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+.fm-bar-fill {
+  transition: y 0.25s ease, height 0.25s ease, fill 0.25s ease;
+}
+.fm-bar.over .fm-bar-fill {
+  fill: var(--color-hash);
+}
+.fm-bar.under .fm-bar-fill {
+  fill: var(--color-node-leaf);
+}
+.fm-bar.at .fm-bar-fill {
+  fill: var(--color-node-extension);
+}
+.fm-bar:hover .fm-bar-track {
+  stroke: var(--color-border-strong);
+}
+
+.fm-readouts {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.fm-stat {
+  flex: 1;
+  min-width: 9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: 0.55rem 0.7rem;
+}
+.fm-stat .k {
+  display: block;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--color-ink-faint);
+}
+.fm-stat .v {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-top: 0.15rem;
+}
+.fm-stat .v em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+  font-weight: 400;
+}
+.fm-stat .v.burn {
+  color: var(--color-hash);
+}
+.fm-stat .v.tip {
+  color: var(--color-node-leaf);
+}
+
+.fm-foot {
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.7rem;
+  margin: 0;
+  line-height: 1.6;
+}
+.fm-foot strong {
+  color: var(--color-ink);
+}
+.fm-foot em {
+  color: var(--color-accent-strong);
+  font-style: normal;
+}

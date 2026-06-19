@@ -2,9 +2,9 @@ export const SITE = {
   name: "Whitebox",
   domain: "whitebox.dev",
   url: "https://whitebox.dev",
-  tagline: "Ethereum's execution layer, made transparent.",
+  tagline: "How Ethereum actually works, made transparent.",
   description:
-    "Interactive, explorable explanations of Ethereum's execution layer — for engineers who want to actually understand how it works under the hood.",
+    "Interactive, explorable explanations of how Ethereum really works — cryptography, state, the EVM, consensus, and networking — for engineers who want real depth, not hand-waving.",
   author: "Whitebox",
   email: "hello@whitebox.dev",
   twitter: "@whitebox",

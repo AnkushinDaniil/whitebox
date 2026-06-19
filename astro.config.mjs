@@ -17,7 +17,7 @@ export default defineConfig({
     // mid-session, re-optimize, and serve a stale chunk (the "504 Outdated
     // Optimize Dep" that made islands fail to load in dev).
     optimizeDeps: {
-      include: ["d3-hierarchy", "@noble/hashes/sha3"],
+      include: ["d3-hierarchy", "@noble/hashes/sha3", "@noble/curves/secp256k1"],
     },
     server: {
       watch: {

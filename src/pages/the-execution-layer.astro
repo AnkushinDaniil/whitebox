@@ -58,11 +58,13 @@ const byTopic = explorables.reduce<Record<string, typeof explorables>>((acc, e) 
         queue:
       </p>
       <ul class="rm-list">
-        <li>Transactions: from signature to inclusion</li>
-        <li>Gas & the EVM: metering computation</li>
-        <li>The mempool: how transactions propagate</li>
-        <li>Block building & the engine API</li>
-        <li>Logs, receipts & the bloom filter</li>
+        <li>The mempool & the EIP-1559 fee market</li>
+        <li>The EVM: stack, memory, storage & a live opcode stepper</li>
+        <li>Gas & metering: what every instruction costs</li>
+        <li>Blocks, validation & the state transition</li>
+        <li>Consensus: Proof of Stake, finality & fork choice</li>
+        <li>Blobs (EIP-4844), statelessness & rollups</li>
+        <li>Node sync: full, snap, light & checkpoint</li>
       </ul>
     </section>
   </div>

@@ -1,0 +1,168 @@
+---
+title: Double-spending, and how Ethereum stops it
+dek: Digital money's original sin is that bytes copy for free. Play the attacker — try to spend the same ETH twice — and watch three independent defenses shut you down.
+summary: An interactive look at double-spending and the defenses that defeat it — account nonces, LMD-GHOST fork choice, and Casper-FFG finality with slashing. Crank an attacker's validator share and watch the honest chain win, finality lock, and the economic cost explode.
+topic: Security
+order: 9
+spine: true
+prerequisites: ["how transactions work", "a little game theory"]
+updated: 2026-06-20
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import ReorgSim from "@/components/security/ReorgSim.tsx";
+
+A physical coin can only be in one pocket. A digital coin is just a number — and numbers copy for free. So the founding problem of digital money is **double-spending**: what stops you from paying Alice, then "un-paying" her and spending the same coins on Bob? Solve that without a trusted bank in the middle and you've basically invented a blockchain.
+
+Ethereum stops double-spends with not one defense but **three**, each catching a different version of the attack. Let's name them, then let you try to beat them.
+
+<DepthLayer tier="intuition">
+
+## Two ways to cheat, three ways you're caught
+
+There are two distinct double-spend attacks:
+
+1. **Spend twice from one account.** Sign two transactions that both spend the
+   same balance and shove both into the network. The defense is the
+   <KeyTerm term="nonce" def="A per-account counter included in every transaction. The protocol only accepts the next expected nonce, so two transactions with the same nonce can never both be valid — the second is rejected." />:
+   each transaction carries a sequence number, and the protocol only accepts the
+   next one. Two transactions with nonce 7 can't both land — whichever is mined
+   first wins, the other becomes permanently invalid. This one's airtight and
+   cheap.
+
+2. **Rewrite history.** Pay a merchant, take the goods, then secretly build an
+   alternative chain where that payment never happened and convince the network
+   it's the "real" one. This is the deep one — it's an attack on *consensus
+   itself* — and it's defended by two more layers:
+   - **Fork choice** decides which chain is canonical by *weight of votes*, so a
+     minority can't simply declare a different history.
+   - **Finality** makes blocks past a certain age economically irreversible:
+     undoing them would require destroying a third of all the money staked to
+     secure the chain.
+
+The merchant's defense against #2 is patience: **wait for finality** and the
+payment can't be reversed without someone setting fire to tens of billions of
+dollars. Let's make that concrete.
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="You're the attacker">
+
+## Try to erase a payment
+
+You control some share of the network's validators. You've just paid a merchant,
+received the goods, and now you secretly fork the chain *just before* your
+payment, hoping your version — where the payment never happened — becomes
+canonical. Drag your validator share up and reveal the attack.
+
+<WidgetFrame
+  title="Reorg / double-spend simulator"
+  caption="Set how much stake the attacker controls, then reveal the secret fork. Fork choice picks the heavier chain; finality locks blocks; the verdict shows whether the double-spend works — and what it would cost."
+  source="LMD-GHOST head selection + a Casper-FFG finality model, unit-tested. Stake/cost figures are real-order-of-magnitude."
+>
+  <ReorgSim client:visible />
+</WidgetFrame>
+
+<Callout type="insight" title="The defense is a price, not a wall">
+Notice there's no point where the chain says "attack forbidden." Instead, every
+threshold has a *cost*. Below ⅓ you achieve nothing. Between ⅓ and ½ you can only
+stall — the chain halts rather than tells a lie. Above ½ you can reorg
+*unfinalized* blocks, but reversing a *finalized* one still burns ≥⅓ of all
+staked ETH (tens of billions of dollars), and acquiring that much stake means
+buying it on the open market while knowing it'll be slashed. Ethereum doesn't
+make attacks impossible; it makes them irrational.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec">
+
+## Grounded in the spec
+
+The consensus layer combines two algorithms (together called **Gasper**):
+**LMD-GHOST** for choosing the head, and **Casper-FFG** for finality.
+
+<SpecExcerpt
+  source="consensus-specs"
+  href="https://github.com/ethereum/consensus-specs"
+  ref="fork choice — get_head"
+>
+LMD-GHOST (Latest Message Driven, Greediest Heaviest-Observed Sub-Tree): starting
+from the last justified checkpoint, repeatedly descend to the child block whose
+subtree holds the greatest weight of validators' *latest* attestations, until a
+leaf. That leaf is the head. A minority's fork simply never accumulates enough
+attestation weight to win.
+</SpecExcerpt>
+
+<SpecExcerpt
+  source="Casper-FFG + slashing"
+  href="https://eips.ethereum.org/EIPS/eip-7251"
+  ref="finality & accountable safety"
+>
+A checkpoint with attestations from ≥⅔ of staked ETH becomes <em>justified</em>;
+two justified checkpoints in a row <em>finalize</em> the earlier one. To finalize
+two conflicting checkpoints — the only way to revert a finalized block — at least
+⅓ of all validators must sign both, which is a provable, <em>slashable</em>
+offense. Their entire stake is destroyed. This is "accountable safety": you can't
+break finality without identifiable validators losing everything.
+</SpecExcerpt>
+
+<Callout type="note" title="And replay attacks">
+A subtler cousin: take a transaction signed for one chain and re-broadcast it on
+another (or after a fork). Defended by `chainId` being part of the *signed* data
+(EIP-155) — and the nonce again. A transaction signed for mainnet recovers to
+nobody on an L2 or testnet, because the signing hash differs. One signature, one
+chain, one nonce, once.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec" title="The wider threat model">
+
+## The other attacks, briefly
+
+Double-spending is the headline, but it sits in a family of attacks the protocol
+prices out:
+
+- **51% / majority** — what you just simulated. Possible in principle, defended
+  by stake cost + slashing, not by a wall.
+- **Long-range attack** — rewrite ancient history from old keys. Defended by
+  <KeyTerm term="weak subjectivity" def="A new or long-offline node trusts a recent finalized checkpoint (from a friend, the client, or a block explorer) as its starting point, rather than trusting the longest chain from genesis. This neutralizes attacks that rewrite distant history." />:
+  nodes sync from a recent trusted checkpoint, so deep rewrites are simply
+  ignored.
+- **Sybil attack** — spin up millions of fake identities to gain influence.
+  Defended by Proof of Stake itself: influence is proportional to *staked ETH*,
+  not identity count, so fake nodes are free to make and worthless to have.
+- **Eclipse attack** — surround a victim node with attacker-controlled peers to
+  feed it a false view. Defended at the networking layer (diverse peer selection,
+  discv5).
+- **Censorship** — refuse to include certain transactions. Mitigated by
+  proposer-builder separation and inclusion-list proposals.
+
+The pattern is always the same: identify what the attacker must spend (money,
+identities, network position), then make it cost more than the attack can ever
+earn.
+
+</DepthLayer>
+
+<DepthLayer tier="deeper">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "spec", label: "consensus-specs: fork choice", note: "LMD-GHOST, exactly", href: "https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/fork-choice.md" },
+    { kind: "post", label: "Gasper — Combining GHOST and Casper", note: "The paper behind Ethereum PoS", href: "https://arxiv.org/abs/2003.03052" },
+    { kind: "post", label: "Vitalik — Weak subjectivity", note: "Why long-range attacks don't work", href: "https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity" },
+    { kind: "eip", label: "EIP-155: Replay protection", note: "chainId in the signed data", href: "https://eips.ethereum.org/EIPS/eip-155" },
+    { kind: "post", label: "How transactions work", note: "← nonces & signatures", href: "/how-transactions-work" },
+  ]}
+/>
+
+</DepthLayer>

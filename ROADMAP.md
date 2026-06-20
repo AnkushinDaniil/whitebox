@@ -40,6 +40,14 @@ Legend: ✅ shipped · 🔨 in progress · ⬜ planned
 - ⬜ **Slots, epochs & attestations**
 - ⬜ **Gasper** — Casper-FFG finality + LMD-GHOST fork choice; reorgs & double-spend resolution
 
+## Security & attacks (how the system defeats them)
+- ✅ **Double-spending** — nonces, LMD-GHOST fork choice, finality + slashing; reorg simulator
+- ⬜ **51% / majority attacks** — cost, slashing, what they can and can't do
+- ⬜ **Long-range & weak subjectivity** — checkpoint sync defense
+- ⬜ **Sybil & eclipse attacks** — stake-weighting and peer diversity
+- ⬜ **Smart-contract attacks** — reentrancy (the DAO), overflow, and their fixes
+- ⬜ **Censorship resistance** — PBS, inclusion lists
+
 ## Scaling & data availability
 - ⬜ **Blobs & EIP-4844** — proto-danksharding, the blob fee market
 - ⬜ **Statelessness & the binary state tree** (EIP-7864) — witnesses, weak statelessness

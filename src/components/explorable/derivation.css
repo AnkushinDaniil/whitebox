@@ -1,0 +1,187 @@
+.drv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* progress rail */
+.drv-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.drv-rail li {
+  flex: 1;
+  min-width: 5rem;
+  position: relative;
+}
+.drv-rail li::before {
+  content: "";
+  position: absolute;
+  top: 0.7rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-border);
+  z-index: 0;
+}
+.drv-rail li:first-child::before { left: 50%; }
+.drv-rail li:last-child::before { right: 50%; }
+.drv-rail li.done::before, .drv-rail li.active::before { background: var(--color-accent-dim); }
+.drv-rail button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+}
+.drv-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background: var(--color-surface-2);
+  border: 1.5px solid var(--color-border-strong);
+  color: var(--color-ink-faint);
+  transition: all 0.2s;
+}
+.drv-rail li.done .drv-dot { border-color: var(--color-accent-dim); color: var(--color-accent); }
+.drv-rail li.active .drv-dot {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface-2));
+}
+.drv-rlabel {
+  font-size: 0.68rem;
+  color: var(--color-ink-faint);
+  text-align: center;
+  line-height: 1.2;
+}
+.drv-rail li.active .drv-rlabel { color: var(--color-ink); }
+
+/* stage */
+.drv-stage {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 100% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+  padding: 1rem;
+  min-height: 200px;
+  display: grid;
+  place-items: center;
+  animation: drvIn 0.4s ease both;
+}
+@keyframes drvIn {
+  from { opacity: 0; transform: translateY(8px); }
+}
+.drv-stage svg { width: 100%; max-width: 460px; height: auto; }
+
+/* caption */
+.drv-title {
+  font-size: 1.1rem;
+  margin: 0 0 0.3rem;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.drv-idea {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.drv-flaw {
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--color-changed) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-changed) 35%, transparent);
+  color: var(--color-ink-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: flawIn 0.4s ease both;
+}
+@keyframes flawIn {
+  from { opacity: 0; transform: translateX(-4px); }
+}
+.drv-x {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-changed);
+  margin-right: 0.5rem;
+}
+.drv-done {
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--color-node-leaf) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-node-leaf) 35%, transparent);
+  color: var(--color-node-leaf);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* nav */
+.drv-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.drv-btn {
+  background: var(--color-accent);
+  color: #04161b;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.drv-btn:hover:not(:disabled) { background: var(--color-accent-strong); }
+.drv-btn.ghost {
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-border);
+}
+.drv-btn.ghost:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-border-strong); }
+.drv-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.drv-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-ink-faint);
+}
+
+/* shared diagram primitives for derivation visuals */
+.dv-box {
+  fill: var(--color-surface);
+  stroke: var(--color-border-strong);
+  stroke-width: 1.2;
+}
+.dv-label { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
+.dv-edge { stroke: var(--color-border-strong); stroke-width: 1.4; fill: none; }
+.dv-accent { fill: var(--color-accent); }
+.dv-hash { fill: color-mix(in oklab, var(--color-hash) 18%, var(--color-surface)); stroke: var(--color-hash); }
+.dv-leaf { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+.dv-branch { fill: color-mix(in oklab, var(--color-node-branch) 16%, var(--color-surface)); stroke: var(--color-node-branch); }
+.dv-ext { fill: color-mix(in oklab, var(--color-node-extension) 16%, var(--color-surface)); stroke: var(--color-node-extension); }
+.dv-hot { stroke: var(--color-changed); stroke-width: 2; }
+.dv-hot-edge { stroke: var(--color-changed); stroke-width: 2; }
+.dv-txt { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; }
+.dv-mut { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; }
+@keyframes dvPulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+.dv-pulse { animation: dvPulse 1.4s ease-in-out infinite; }

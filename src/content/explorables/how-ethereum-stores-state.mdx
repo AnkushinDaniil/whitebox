@@ -19,6 +19,7 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import Bleed from "@/components/explorable/Bleed.astro";
 import TrieVisualizer from "@/components/trie/TrieVisualizer.tsx";
 import StructureCompare from "@/components/trie/StructureCompare.tsx";
+import MptDerivation from "@/components/trie/MptDerivation.tsx";
 import HashMachine from "@/components/trie/HashMachine.tsx";
 import ScrollyTrie from "@/components/trie/ScrollyTrie.tsx";
 
@@ -65,6 +66,25 @@ the structure must *also* be a **trie**: a tree indexed by the digits of the key
 so a lookup is "follow the key, nibble by nibble." Put those together — a trie
 addressed by hashing — and you get a lookup index that is *also* a cryptographic
 commitment. Everything below is the engineering to make that efficient.
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="Invent it yourself, one fix at a time">
+
+## You could have designed this
+
+Nobody handed Ethereum the Merkle-Patricia Trie fully formed. It's the end of a
+short chain of "obvious next fixes" — start with the dumbest thing that stores
+accounts, and each time it falls short, apply the smallest repair. Step through
+it: at every stage you'll see exactly why the previous design wasn't enough.
+
+<Bleed>
+  <MptDerivation client:visible />
+</Bleed>
+
+By the last step the Merkle-Patricia Trie isn't a structure you have to
+memorize — it's the only thing left standing after you've eliminated every
+simpler option.
 
 </DepthLayer>
 

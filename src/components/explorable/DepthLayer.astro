@@ -5,16 +5,22 @@ interface Props {
   tier: DepthTier;
   /** override the default heading for this layer */
   title?: string;
+  /** optional anchor id (used by the journey nav) */
+  id?: string;
+  /** optional override for the rail number, e.g. a step number */
+  num?: string;
+  /** optional override for the badge label (e.g. "Step" in a journey) */
+  badge?: string;
 }
 
-const { tier, title } = Astro.props;
+const { tier, title, id, num, badge } = Astro.props;
 const meta = DEPTH_META[tier];
 ---
 
-<section class:list={["depth-layer", `tier-${tier}`]} data-tier={tier} aria-label={meta.label}>
+<section id={id} class:list={["depth-layer", `tier-${tier}`]} data-tier={tier} aria-label={meta.label}>
   <header class="dl-head">
-    <span class="num">{meta.n}</span>
-    <span class="tier-badge">{meta.label}</span>
+    <span class="num">{num ?? meta.n}</span>
+    <span class="tier-badge">{badge ?? meta.label}</span>
     <span class="tier-blurb">{title ?? meta.blurb}</span>
   </header>
   <div class="dl-content prose">

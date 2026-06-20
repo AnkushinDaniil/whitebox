@@ -1,0 +1,273 @@
+---
+/**
+ * One animated figure per lesson step. Each `name` renders a self-contained,
+ * continuously-looping SVG animation illustrating that idea — the visual half of
+ * a 3b1b-style step-by-step lesson. All figures + keyframes live here so the
+ * scoped styles stay consistent.
+ */
+interface Props {
+  name:
+    | "state"
+    | "sign"
+    | "recover"
+    | "network"
+    | "consensus"
+    | "evm"
+    | "gas"
+    | "root";
+  caption?: string;
+}
+const { name, caption } = Astro.props;
+---
+
+<figure class="scene">
+  <div class="scene-stage" data-scene={name}>
+    {/* ── the shared state: a spreadsheet an edit mutates ── */}
+    {name === "state" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="A shared world-state spreadsheet being edited">
+        <rect class="sheet" x="120" y="24" width="240" height="150" rx="10" />
+        <text class="t-mid" x="240" y="48">WORLD STATE</text>
+        <line class="hair" x1="136" y1="58" x2="344" y2="58" />
+        <g class="row"><text class="t-l" x="140" y="86">0xAlice</text><text class="t-r" x="330" y="86">14 Ξ</text></g>
+        <g class="row hot"><rect class="rowhl" x="130" y="98" width="220" height="24" rx="5" /><text class="t-l" x="140" y="115">0xBob</text><text class="t-r bal" x="330" y="115">9 Ξ</text></g>
+        <g class="row"><text class="t-l" x="140" y="144">0xCarol</text><text class="t-r" x="330" y="144">2 Ξ</text></g>
+        <g class="edit">
+          <rect class="pkt" x="20" y="100" width="74" height="22" rx="6" />
+          <text class="t-s" x="57" y="115">+5 Ξ →</text>
+        </g>
+        <text class="t-cap" x="240" y="198">edits move numbers in one shared sheet</text>
+      </svg>
+    )}
+
+    {/* ── signatures: a seal stamps, verifies, then a tamper breaks it ── */}
+    {name === "sign" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="Signing and verifying">
+        <rect class="msg" x="40" y="74" width="150" height="60" rx="8" />
+        <text class="t-s" x="115" y="100">"send 5 Ξ</text>
+        <text class="t-s" x="115" y="118">to Bob"</text>
+        <text class="t-cap" x="115" y="158">message (public)</text>
+        <g class="seal">
+          <circle class="seal-c" cx="300" cy="104" r="30" />
+          <text class="seal-m" x="300" y="110">✓</text>
+        </g>
+        <g class="crack"><text class="t-x" x="300" y="160">✗ tampered</text></g>
+        <path class="arrow" d="M196 104 L262 104" />
+        <text class="t-cap" x="300" y="62">signature</text>
+        <text class="t-cap" x="430" y="110">verify</text>
+        <path class="arrow2" d="M332 104 L398 104" />
+      </svg>
+    )}
+
+    {/* ── recovery: the signer's address materializes from the signature ── */}
+    {name === "recover" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Recovering the signer from a signature">
+        <circle class="seal-c2" cx="110" cy="100" r="34" />
+        <text class="seal-m2" x="110" y="106">✦</text>
+        <text class="t-cap" x="110" y="156">signature only</text>
+        <path class="arrow3" d="M152 100 L250 100" />
+        <text class="t-mid recover-q" x="201" y="88">who signed?</text>
+        <g class="addr-reveal">
+          <rect class="addr-box" x="270" y="78" width="180" height="44" rx="8" />
+          <text class="t-addr" x="360" y="106">0xBob…a3f1</text>
+        </g>
+        <text class="t-cap" x="360" y="146">no "from" field needed</text>
+      </svg>
+    )}
+
+    {/* ── decentralize: one sheet copies out to many nodes ── */}
+    {name === "network" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="Everyone keeps a copy">
+        <g class="origin">
+          <rect class="node" x="208" y="84" width="64" height="48" rx="8" />
+          <line class="hair2" x1="216" y1="100" x2="264" y2="100" /><line class="hair2" x1="216" y1="110" x2="264" y2="110" /><line class="hair2" x1="216" y1="120" x2="256" y2="120" />
+        </g>
+        {[
+          [60, 30], [380, 30], [40, 150], [400, 150],
+        ].map(([x, y], i) => (
+          <g class={`copy c${i}`}>
+            <rect class="node" x={x} y={y} width="64" height="48" rx="8" />
+            <line class="hair2" x1={x + 8} y1={y + 16} x2={x + 56} y2={y + 16} /><line class="hair2" x1={x + 8} y1={y + 26} x2={x + 56} y2={y + 26} /><line class="hair2" x1={x + 8} y1={y + 36} x2={x + 48} y2={y + 36} />
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="200">no master copy — every node holds the whole state</text>
+      </svg>
+    )}
+
+    {/* ── consensus: votes pile on the heavier fork; finalized locks ── */}
+    {name === "consensus" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="Consensus picks the heaviest chain">
+        <rect class="blk" x="24" y="92" width="44" height="28" rx="5" /><rect class="blk" x="96" y="92" width="44" height="28" rx="5" />
+        <path class="link" d="M68 106 H96" />
+        {/* honest fork */}
+        <rect class="blk win" x="190" y="58" width="44" height="28" rx="5" /><rect class="blk win" x="262" y="58" width="44" height="28" rx="5" />
+        <path class="link" d="M140 100 L190 72" /><path class="link" d="M234 72 H262" />
+        <text class="lock" x="318" y="76">🔒</text>
+        {[0, 1, 2, 3, 4].map((i) => (<circle class={`vote v${i}`} cx={205 + i * 22} cy="40" r="4" />))}
+        {/* attacker fork */}
+        <rect class="blk lose" x="190" y="134" width="44" height="28" rx="5" />
+        <path class="link dashed" d="M140 112 L190 148" />
+        <text class="t-x" x="300" y="152">✗ outvoted</text>
+        <text class="t-cap" x="240" y="198">most-backed history wins; finalized blocks lock</text>
+      </svg>
+    )}
+
+    {/* ── the EVM: an instruction pointer steps; the stack moves ── */}
+    {name === "evm" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="The EVM stepping through code">
+        <g class="prog">
+          {["PUSH 2", "PUSH 3", "ADD", "MUL"].map((op, i) => (
+            <g><rect class="op" x="40" y={30 + i * 38} width="120" height="28" rx="5" /><text class="t-op" x="54" y={49 + i * 38}>{op}</text></g>
+          ))}
+          <rect class="pc" x="34" y="30" width="132" height="28" rx="6" />
+        </g>
+        <text class="t-cap" x="100" y="196">code runs the same everywhere</text>
+        <g class="stack">
+          <text class="t-cap" x="330" y="30">stack</text>
+          <rect class="si s0" x="280" y="120" width="100" height="24" rx="4" /><text class="t-op si-t s0t" x="330" y="137">2</text>
+          <rect class="si s1" x="280" y="92" width="100" height="24" rx="4" /><text class="t-op si-t s1t" x="330" y="109">3</text>
+          <rect class="si s2" x="280" y="92" width="100" height="24" rx="4" /><text class="t-op si-t s2t" x="330" y="109">5</text>
+        </g>
+      </svg>
+    )}
+
+    {/* ── gas: a meter drains as instructions run, then halts ── */}
+    {name === "gas" && (
+      <svg viewBox="0 0 480 180" role="img" aria-label="Gas metering">
+        <text class="t-cap" x="60" y="56">gas</text>
+        <rect class="gauge" x="60" y="64" width="360" height="22" rx="11" />
+        <rect class="gauge-fill" x="62" y="66" width="356" height="18" rx="9" />
+        <g class="ops">
+          {["PUSH −3", "ADD −3", "SSTORE −20000", "out of gas ✋"].map((op, i) => (<text class={`t-op opx o${i}`} x="240" y="118">{op}</text>))}
+        </g>
+        <text class="t-cap" x="240" y="156">every step costs — no program runs forever</text>
+      </svg>
+    )}
+
+    {/* ── state root: the whole sheet folds into one hash in a header ── */}
+    {name === "root" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="All state folds into one root">
+        {[40, 78, 116].map((y, i) => (<rect class={`cell cl${i}`} x="24" y={y} width="70" height="24" rx="4" />))}
+        <path class="conv c0" d="M94 52 C150 52 150 96 196 96" /><path class="conv c1" d="M94 90 H196" /><path class="conv c2" d="M94 128 C150 128 150 100 196 100" />
+        <rect class="trie" x="196" y="80" width="56" height="34" rx="6" /><text class="t-cap" x="224" y="101">trie</text>
+        <path class="conv c3" d="M252 97 H300" />
+        <rect class="hdr" x="300" y="56" width="156" height="84" rx="8" />
+        <text class="t-cap" x="378" y="76">BLOCK HEADER</text>
+        <rect class="root-badge" x="312" y="88" width="132" height="28" rx="5" />
+        <text class="t-root" x="378" y="106">stateRoot 0x…</text>
+        <text class="t-cap" x="240" y="194">32 bytes that fingerprint the entire world</text>
+      </svg>
+    )}
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .scene {
+    margin: 1.6rem auto;
+    max-width: 580px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: radial-gradient(120% 100% at 50% 0%, var(--color-surface-2), var(--color-canvas));
+    padding: 1.1rem 1.2rem 0.9rem;
+  }
+  .scene-stage svg { width: 100%; height: auto; display: block; }
+  figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-ink-faint);
+    text-align: center;
+  }
+
+  /* shared primitives */
+  .sheet, .node, .msg, .op, .blk, .cell, .trie, .hdr, .gauge, .si, .pkt, .addr-box {
+    fill: var(--color-surface);
+    stroke: var(--color-border-strong);
+    stroke-width: 1.2;
+  }
+  .hair, .hair2 { stroke: var(--color-border); stroke-width: 1; }
+  .t-mid { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .t-l { fill: var(--color-ink); font-family: var(--font-mono); font-size: 12px; }
+  .t-r { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 12px; text-anchor: end; }
+  .t-s { fill: var(--color-ink); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .t-op { fill: var(--color-ink); font-family: var(--font-mono); font-size: 12px; }
+  .t-cap { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .t-x { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .arrow, .arrow2, .arrow3, .link, .conv { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .link.dashed { stroke-dasharray: 4 4; }
+
+  /* state: an edit pulses a row and floats a +5 up */
+  .rowhl { fill: color-mix(in oklab, var(--color-accent) 12%, transparent); stroke: none; opacity: 0; animation: hl 4s ease-in-out infinite; }
+  .bal { animation: balbump 4s ease-in-out infinite; }
+  .edit { animation: editfly 4s ease-in-out infinite; }
+  @keyframes hl { 0%,40% { opacity: 0 } 55%,80% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes balbump { 0%,55% { fill: var(--color-ink-muted) } 65% { fill: var(--color-node-leaf) } 100% { fill: var(--color-ink-muted) } }
+  @keyframes editfly { 0% { transform: translateX(0); opacity: 0 } 15% { opacity: 1 } 45% { transform: translateX(120px); opacity: 1 } 55% { transform: translateX(120px); opacity: 0 } 100% { opacity: 0 } }
+  .pkt { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+
+  /* sign: stamp in, hold ✓, then crack to ✗ */
+  .seal-c { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: stamp 5s ease-in-out infinite; }
+  .seal-m { fill: var(--color-node-leaf); font-size: 24px; text-anchor: middle; animation: stamp 5s ease-in-out infinite; }
+  .crack { opacity: 0; animation: crack 5s ease-in-out infinite; }
+  .arrow, .arrow2 { stroke-dasharray: 70; stroke-dashoffset: 70; animation: draw 5s ease-in-out infinite; }
+  @keyframes stamp { 0% { transform: scale(0.2); opacity: 0 } 15% { transform: scale(1.15); opacity: 1 } 22%,55% { transform: scale(1); opacity: 1 } 70% { opacity: 0.15 } 100% { opacity: 0 } }
+  @keyframes crack { 0%,60% { opacity: 0 } 72%,92% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes draw { 0% { stroke-dashoffset: 70 } 20%,100% { stroke-dashoffset: 0 } }
+
+  /* recover: address materializes */
+  .seal-c2 { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); }
+  .seal-m2 { fill: var(--color-hash); font-size: 22px; text-anchor: middle; }
+  .recover-q { animation: blink 4s ease-in-out infinite; }
+  .arrow3 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw3 4s ease-in-out infinite; }
+  .addr-box { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .t-addr { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; }
+  .addr-reveal { opacity: 0; animation: reveal 4s ease-in-out infinite; }
+  @keyframes blink { 0%,40% { opacity: 1 } 55%,100% { opacity: 0 } }
+  @keyframes draw3 { 0%,15% { stroke-dashoffset: 100 } 45%,100% { stroke-dashoffset: 0 } }
+  @keyframes reveal { 0%,45% { opacity: 0; transform: translateX(-8px) } 60%,100% { opacity: 1; transform: translateX(0) } }
+
+  /* network: copies fan out */
+  .copy { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .copy .node { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); }
+  .c0 { animation: fan 5s ease-out infinite; }
+  .c1 { animation: fan 5s ease-out 0.3s infinite; }
+  .c2 { animation: fan 5s ease-out 0.6s infinite; }
+  .c3 { animation: fan 5s ease-out 0.9s infinite; }
+  @keyframes fan { 0% { opacity: 0; transform: translate(140px, 50px) scale(0.4) } 35% { opacity: 1; transform: translate(0,0) scale(1) } 85% { opacity: 1 } 100% { opacity: 0.15 } }
+
+  /* consensus */
+  .blk.win { stroke: var(--color-node-leaf); }
+  .blk.lose { stroke: var(--color-changed); opacity: 0.4; }
+  .vote { fill: var(--color-node-leaf); opacity: 0; }
+  .v0 { animation: pop 5s ease-out infinite; } .v1 { animation: pop 5s ease-out 0.4s infinite; } .v2 { animation: pop 5s ease-out 0.8s infinite; } .v3 { animation: pop 5s ease-out 1.2s infinite; } .v4 { animation: pop 5s ease-out 1.6s infinite; }
+  .lock { font-size: 16px; opacity: 0; animation: lockin 5s ease-out infinite; }
+  @keyframes pop { 0%,5% { opacity: 0; transform: translateY(-6px) } 25%,80% { opacity: 1; transform: translateY(0) } 100% { opacity: 0 } }
+  @keyframes lockin { 0%,70% { opacity: 0; transform: scale(0.4) } 82%,95% { opacity: 1; transform: scale(1) } 100% { opacity: 0 } }
+
+  /* evm: pointer steps, stack changes */
+  .op { fill: color-mix(in oklab, var(--color-node-branch) 8%, var(--color-surface)); }
+  .pc { fill: none; stroke: var(--color-accent); stroke-width: 2; animation: pcstep 4s steps(1) infinite; }
+  @keyframes pcstep { 0% { transform: translateY(0) } 25% { transform: translateY(38px) } 50% { transform: translateY(76px) } 75% { transform: translateY(114px) } 100% { transform: translateY(0) } }
+  .si { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); }
+  .si-t { text-anchor: middle; fill: var(--color-node-extension); }
+  .s1, .s1t { opacity: 0; animation: show 4s steps(1) infinite; }
+  .s2, .s2t { opacity: 0; animation: show2 4s steps(1) infinite; }
+  @keyframes show { 0%,25% { opacity: 0 } 26%,50% { opacity: 1 } 51%,100% { opacity: 0 } }
+  @keyframes show2 { 0%,50% { opacity: 0 } 51%,100% { opacity: 1 } }
+
+  /* gas: gauge drains, ops tick, halt */
+  .gauge-fill { fill: var(--color-node-leaf); transform-box: fill-box; transform-origin: left; animation: drain 5s ease-in-out infinite; }
+  .opx { text-anchor: middle; opacity: 0; }
+  .o0 { animation: tick 5s steps(1) infinite; } .o1 { animation: tick 5s steps(1) 1.25s infinite; } .o2 { animation: tick 5s steps(1) 2.5s infinite; } .o3 { fill: var(--color-changed); animation: tick 5s steps(1) 3.75s infinite; }
+  @keyframes drain { 0% { transform: scaleX(1); fill: var(--color-node-leaf) } 80% { transform: scaleX(0.04); fill: var(--color-hash) } 90% { transform: scaleX(0.04); fill: var(--color-changed) } 100% { transform: scaleX(1); fill: var(--color-node-leaf) } }
+  @keyframes tick { 0%,24% { opacity: 0 } 25%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+
+  /* root: cells converge into a hash in the header */
+  .cell { fill: color-mix(in oklab, var(--color-ink-faint) 10%, var(--color-surface)); }
+  .conv { stroke-dasharray: 120; stroke-dashoffset: 120; animation: flow 5s ease-in-out infinite; }
+  .c1 { animation-delay: 0.1s; } .c2 { animation-delay: 0.2s; } .c3 { animation-delay: 0.6s; }
+  .trie { fill: color-mix(in oklab, var(--color-node-branch) 14%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .root-badge { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); animation: rootpulse 5s ease-in-out infinite; }
+  .t-root { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  @keyframes flow { 0% { stroke-dashoffset: 120 } 60%,100% { stroke-dashoffset: 0 } }
+  @keyframes rootpulse { 0%,55% { filter: none } 70% { filter: drop-shadow(0 0 8px var(--color-accent-dim)) } 100% { filter: none } }
+</style>

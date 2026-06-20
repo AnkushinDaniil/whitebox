@@ -1,0 +1,85 @@
+---
+title: You could have invented Ethereum
+dek: Start with friends who want money without a bank, and fix one flaw at a time. By the end you'll have re-derived the entire protocol — accounts, the EVM, gas, state, and proof of stake — and it'll feel inevitable.
+summary: A from-scratch derivation of Ethereum, in the spirit of "inventing your own cryptocurrency." Step through eight design fixes — ledger, signatures, accounts, decentralization, consensus, the EVM, gas, and the state root — each motivated by the last one's flaw, each linking into a deep interactive explorable.
+topic: Start here
+order: -1
+spine: true
+prerequisites: ["curiosity"]
+updated: 2026-06-20
+readingMinutes: 12
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Bleed from "@/components/explorable/Bleed.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import InventEthereum from "@/components/explorable/InventEthereum.tsx";
+
+The fastest way to understand Ethereum is to *re-invent* it. Not memorize its parts — derive them. Start with the simplest idea that almost works, find the one thing wrong with it, fix exactly that, and repeat. Do this eight times and you don't just *know* how Ethereum works; you understand why it *couldn't* work any other way.
+
+This is the whole site in one arc. Each step here is a doorway into a deep, interactive explorable — but first, watch the design build itself.
+
+<DepthLayer tier="intuition" title="Eight fixes from a shared ledger to a world computer">
+
+## Build it up, one flaw at a time
+
+You and a few friends are tired of settling cash. So you keep a shared ledger of
+who paid whom. That's step one — and it's broken. Step through the fixes; at each
+stage you'll see exactly what's wrong, and the smallest repair that fixes it.
+
+<Bleed>
+  <InventEthereum client:visible />
+</Bleed>
+
+<Callout type="insight" title="Nothing here was arbitrary">
+Re-read the chain of fixes: signatures because anyone could forge a line;
+balances because signatures alone don't stop overspending; decentralization
+because one host is just a bank; consensus because decentralization invites
+double-spends; the EVM because payments aren't programmable; gas because code can
+loop forever; the state root because nodes must cheaply agree on the whole world.
+Every famous piece of Ethereum is just the answer to "what broke in the last
+step?"
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" title="Now go deep">
+
+## Take any step apart
+
+Each stage above has a full explorable with a real, tinker-able engine — sign a
+real transaction, step real EVM bytecode, run the fee-market controller, attack
+the chain and watch it defend itself:
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "Keys, signatures & addresses", note: "Step 2 — the cryptography you sign with", href: "/keys-signatures-and-addresses" },
+    { kind: "post", label: "How transactions work", note: "Step 3 — accounts, nonces, sender recovery", href: "/how-transactions-work" },
+    { kind: "post", label: "Double-spending & the defenses", note: "Steps 4–5 — consensus, finality, attacks", href: "/double-spending" },
+    { kind: "post", label: "The EVM", note: "Step 6 — the computer inside the ledger", href: "/the-evm" },
+    { kind: "post", label: "The mempool & the fee market", note: "Step 7 — gas, EIP-1559, ordering", href: "/the-mempool-and-fees" },
+    { kind: "post", label: "How Ethereum stores state", note: "Step 8 — the Merkle-Patricia trie", href: "/how-ethereum-stores-state" },
+  ]}
+/>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper">
+
+## Where this is going
+
+This derivation is the spine; the explorables are the depth. Still being built
+out from here: the EVM's full opcode and gas model, blocks and the state
+transition, the consensus layer in detail (validators, attestations, fork
+choice), data availability and blobs, and how nodes sync. Every one will arrive
+the same way — derived, not declared.
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "The full path", note: "The ordered spine of explorables", href: "/the-execution-layer" },
+    { kind: "post", label: "3Blue1Brown — inventing bitcoin", note: "The inspiration: deriving a cryptocurrency", href: "https://www.3blue1brown.com/lessons/bitcoin" },
+  ]}
+/>
+
+</DepthLayer>

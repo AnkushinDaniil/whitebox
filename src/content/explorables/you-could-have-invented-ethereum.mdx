@@ -32,7 +32,7 @@ Most explanations of Ethereum hand you the finished machine and name its parts. 
 
 Here is the analogy we'll hold the whole way down. Forget coins and miners for a moment. Picture **one spreadsheet that the entire world shares** — a single sheet of who-owns-what that anyone can read and anyone can propose changes to. By the end, that spreadsheet will be able to *run programs*, no one will own it, and lying to it will cost you a fortune. That spreadsheet is Ethereum.
 
-After the nine steps comes the other half: [the real engines](#engines) — a secp256k1 signer, a real Merkle-Patricia trie, a working EVM, the exact EIP-1559 controller, a reorg simulator — each one you can drive yourself, with the spec-level detail behind it.
+And it isn't only animation. The moment a step invents a piece, you'll **drive the real one** right there — the actual secp256k1 signer, a working EVM, a byte-exact Merkle-Patricia trie, the live EIP-1559 controller, a reorg simulator you can attack — and pick up the spec detail the real protocol had to pin down. Same incremental thread, intuition straight through to the running machine.
 
 <JourneyNav client:load steps={[
   { id: "step-1", label: "The shared sheet" },
@@ -74,6 +74,37 @@ Give every account a secret. Not a password you show to log in — a <KeyTerm te
 
 Tamper with so much as a single digit of a signed edit and the seal stops matching the contents. The signature isn't glued *near* the message; it's computed *from* it. Your identity on the sheet isn't a name anyone can type — it's simply the ability to produce this stamp.
 
+### The real seal: secp256k1
+
+That stamp is not a metaphor — it's an **ECDSA signature over the secp256k1 curve**, the exact scheme Ethereum uses. Roll a real key below and watch the one-way pipeline `private key → public key → address`, then sign a message. (You'll notice the signer can be *recovered* from the signature — park that; it's the whole trick of step 3.)
+
+<WidgetFrame
+  title="Keypair & signature lab"
+  caption="The private key derives the public key derives the address — one way only. Sign a message, then recover who signed it from the signature. Tamper with the message to break it."
+  source="Real secp256k1 ECDSA + EIP-191; address, signature, and recovery validated byte-for-byte against viem."
+>
+  <KeyLab client:visible />
+</WidgetFrame>
+
+One clarification, because it follows straight from "the message is public" and almost everyone gets it backwards: signing is **not** encryption. The same keypair *could* encrypt, but with the roles flipped — and Ethereum L1 doesn't hide your edits at all.
+
+|  | Signing (what we just built) | Encryption (what it isn't) |
+|---|---|---|
+| Goal | authenticity + integrity | confidentiality |
+| Private key | **signs** | decrypts |
+| Public key | **verifies / recovers** | encrypts |
+| The message is | **public** | hidden |
+
+Your edit is plaintext on the sheet forever; the seal proves *who, and unchanged* — never *hidden*.
+
+And one subtle hole the real protocol had to plug. A raw signature is just over bytes, so a dapp could hand you an innocent-looking "message" that is secretly a valid transaction — and your seal would authorize it. The fix is to never stamp raw bytes, but bytes inside a *labelled* context:
+
+<Callout type="note" title="Why the \x19 prefix?">
+Ethereum prefixes a personal message with `\x19Ethereum Signed Message:\n` (EIP-191)
+before hashing, so a signed *message* can never be mistaken for a signed
+*transaction*. Domain separation: always sign into a clearly-labelled context.
+</Callout>
+
 <Callout type="warning" title="What breaks">
 There's a subtlety. The edit still needs a "from" field naming whose row to debit — and a liar could stamp a valid seal of *their own* while pointing the debit at *your* row. The seal must do more than prove authenticity. It has to reveal *who* made it.
 </Callout>
@@ -105,6 +136,54 @@ The fix is one counter folded into the signed message: a **nonce**, "this is my 
 One subtler copy remains. The same software runs on testnets and other EVM chains that hold the very same addresses. A signed nonce-7 transfer on a test network would verify just as well *replayed onto the real one*. So the signed message also commits to a **chainId** — making the edit valid on exactly one chain and inert on every other.
 
 A bare transfer is finally watertight, and look at *why* each field is there: a recipient and amount to say what to do, a **nonce** so it can't be replayed here, a **chainId** so it can't be replayed elsewhere, and a signature that *is* the sender. Pull any one out and a specific door swings open.
+
+### Build the real transaction
+
+That list — sender-by-recovery, nonce, chainId, recipient, amount — *is* an Ethereum transaction. Build and sign one for real: edit the fields, sign, and watch the sender get recovered from the signature, appearing nowhere in the bytes. Tamper with a field after signing and recovery collapses to a stranger.
+
+<WidgetFrame
+  title="Transaction signer"
+  caption="Edit, sign, recover. The signing hash updates live; signing produces (r, s, yParity); the sender is recovered from that signature. Tamper with a field after signing to break it."
+  source="Real secp256k1 ECDSA + EIP-1559 RLP; signing hash, tx hash, and recovery validated byte-for-byte against viem."
+>
+  <TxSigner client:visible />
+</WidgetFrame>
+
+Recovery — the move that lets us drop the "from" field — is just the signing math run backward:
+
+<SpecExcerpt
+  kind="code"
+  source="execution-specs"
+  href="https://github.com/ethereum/execution-specs"
+  ref="recover_sender"
+>
+```python
+# the sender is not stored — it is recovered
+public_key = secp256k1_recover(r, s, y_parity, signing_hash)
+sender     = keccak256(public_key)[-20:]   # last 20 bytes of the hash of the pubkey
+```
+</SpecExcerpt>
+
+And the bytes are laid out as a **typed envelope** — a type byte, then an RLP payload — so the protocol can add new transaction shapes without ambiguity:
+
+<SpecExcerpt
+  source="EIP-2718: Typed Transaction Envelope"
+  href="https://eips.ethereum.org/EIPS/eip-2718"
+  ref="TransactionType ‖ TransactionPayload"
+>
+A transaction is `TransactionType || TransactionPayload`. Type `0x02` is the
+EIP-1559 transaction, whose payload is the RLP of
+`[chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, yParity, r, s]`.
+The thing you sign is `keccak256(0x02 || rlp(everything except yParity, r, s))`.
+</SpecExcerpt>
+
+That one byte turned "the transaction format" into a versioned family — same core (signed, nonce-ordered, gas-metered), new fields bolted on as needs appeared:
+
+- **`0x00` Legacy** — the original, pre-typed format.
+- **`0x01` EIP-2930** — adds an access list (pre-declared storage, for gas).
+- **`0x02` EIP-1559** — today's default: base fee + priority tip (the gas fields we reach in step 8).
+- **`0x03` EIP-4844** — blob-carrying transactions, the heart of L2 data availability.
+- **`0x04` EIP-7702** — lets an EOA temporarily *act as* a smart-contract account.
 
 <Callout type="warning" title="What breaks">
 We've been saying "everyone applies the same edit." But *who holds the sheet?* If one server stores it, that server can drop your edits, reorder them, or quietly rewrite a row — and we've reinvented the bank we just fired.
@@ -142,6 +221,16 @@ Stop treating edits as loose slips of paper. Gather them into a numbered **block
 
 Now watch what one tampered balance does. Change `Alice 14 → 9` deep in block #1's state and the effect doesn't stay local. Her account's **leaf** changes, which re-hashes up the trie to a new **stateRoot**; the stateRoot sits in block #1's **header**, so the header changes; the header's **hash** changes; and now block #2's **parentHash** points at a hash that no longer exists — so block #2 is invalid, which invalidates block #3, and so on down the line. One edited number, and the *entire* chain after it falls apart. To rewrite a single past balance you'd have to silently rebuild every block since. The past is frozen not by a guard but by the sheer weight of everything stacked on top. That linked, batched, state-committed history is the **blockchain**.
 
+We've now leaned on the word **hash** twice over — the block hash, and the stateRoot — and every guarantee here rests on it, so meet the machine itself. Feed it anything, however long, and it returns a fixed 32 bytes; change one character and almost every output byte flips. *That* avalanche is why a tampered balance can't quietly produce the same fingerprint:
+
+<WidgetFrame
+  title="keccak256 — the folding machine"
+  caption="Any input, however long, becomes exactly 32 bytes. Change one character and almost every output byte flips. That sensitivity is the entire reason a Merkle structure can detect change."
+  source="Real keccak256 (the same hash Ethereum uses), computed in your browser."
+>
+  <HashMachine client:visible />
+</WidgetFrame>
+
 <Callout type="warning" title="What breaks">
 Hash-linking makes *rewriting* a chain obvious — but it doesn't say which chain is the real one. Anyone can build a perfectly valid chain. I can secretly grow an alternate one where I never paid the merchant and reveal it later. Both are valid blockchains. Whose is canonical? This is the **double-spend**, the hardest problem in the design.
 </Callout>
@@ -166,334 +255,9 @@ On that base, two mechanisms settle the chain. **Fork choice** keeps the network
 
 So the attacker's own deposit is the deterrent. The double-spend isn't stopped by a guard at the door — it's stopped because pulling it off at scale sets fire to a fortune you posted in advance, while honest validators simply keep the heaviest, finalized chain.
 
-<Callout type="warning" title="What breaks">
-This is a beautiful way to agree on *balances*. But all we can express is "move money from row A to row B." I want escrows, tokens, auctions, votes, loans — *rules*, not just transfers. A column of numbers can't hold a rule.
-</Callout>
+### Play the attacker
 
-**→ Step 7: let the cells hold programs.**
-
-</DepthLayer>
-
-<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Cells that compute">
-
-## Cells that run programs
-
-Upgrade the sheet one more time: let a row hold not just a balance but **code**. Now an edit can *call* that code, which runs against the shared state — reading rows, writing rows, refusing if its rules aren't met. Because every node runs the identical program over the identical state, they all reach the identical result. The spreadsheet has quietly become a **world computer**, and the little programs living in its cells are smart contracts.
-
-<Scene name="evm" caption="A cell holds a tiny program. A virtual machine steps through its instructions over a stack — the same steps, same result, on every node on Earth." />
-
-This is the leap that makes Ethereum *Ethereum* rather than a faster bank. A contract is just an account whose behavior is fixed in code that anyone can read and no one can secretly override — an escrow that releases when conditions are met, a token whose supply rules are public, a vote no clerk can miscount.
-
-And it forces one more field onto the transaction. To *call* a contract, an edit has to say which function and with what arguments — that payload is the **data** field. A plain transfer leaves it empty; calling code fills it with the encoded call. (If a transaction has no recipient at all, the data field is read as the code for a *brand-new* contract — which is exactly how contracts get deployed.)
-
-<Callout type="warning" title="What breaks">
-Programs can loop forever. One malicious cell saying `while (true) {}` would freeze every node on the planet trying to run it — the halting problem, turned into a weapon. You cannot run untrusted code for free.
-</Callout>
-
-**→ Step 8: put a meter on every instruction.**
-
-</DepthLayer>
-
-<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="Metering work">
-
-## A meter so nothing runs forever
-
-Charge for computation, one instruction at a time. Every operation has a price in **gas**; each transaction prepays a gas budget; the meter ticks down as the program runs, and the instant it hits zero, execution halts and the changes revert. An infinite loop no longer freezes the world — it simply runs out of fuel and dies, with the attacker having paid for every step. Pricing *is* the halting solution.
-
-<Scene name="gas" caption="Each instruction spends gas from a prepaid budget. Run out and execution halts — so no program can run forever." />
-
-That prepaid budget is itself a transaction field — the **gasLimit** — and it quietly does a second job: since execution can never burn more gas than the limit, it caps your worst-case loss when you call a contract whose behavior you don't fully trust. The price you pay needs fields too. Block-to-block the base fee swings, so you don't name an exact price; you name a ceiling, **maxFeePerGas** (the most you'll tolerate), and a **maxPriorityFeePerGas** — a tip on top of the burned base fee to give the proposer a reason to include you. The base fee itself isn't a blind auction; it's a controller that drifts up when blocks are full and down when they're empty, targeting half-full blocks, and it's **burned** rather than pocketed.
-
-That completes the transaction. Lay it out and not one field is decoration — each is the answer to a specific *"what breaks without it?"*
-
-<Scene name="txfields" caption="The whole transaction, field by field. Each row is forced by the attack or failure it prevents — nothing is arbitrary." />
-
-<Callout type="warning" title="What breaks">
-One last gap. Every node is supposed to hold the *exact same* world — every row, every contract, every storage slot. How does a node prove, cheaply and instantly, that its copy matches everyone else's, without shipping the entire spreadsheet to compare?
-</Callout>
-
-**→ Step 9: fold the whole world into one number.**
-
-</DepthLayer>
-
-<DepthLayer tier="mechanism" id="step-9" num="9" badge="step" title="One fingerprint">
-
-## One fingerprint for the entire world
-
-Back to the catch: every node must check, cheaply, that it holds the identical world. The naive fix is to hash the entire sheet into one number and compare. It half-works and breaks in two ways: changing a *single* balance forces you to re-hash the whole sheet, and to prove your balance to someone you'd have to hand them the *entire* sheet so they could re-hash it.
-
-Fix both with a **tree of hashes**. Hash accounts in groups, then hash those hashes, level by level, up to a single root. Now editing one account only re-hashes the short path from its leaf to the root — not the whole sheet — and you can prove one account to someone holding only the root by sending just the sibling hashes along that path. That's a Merkle tree.
-
-But state isn't a tidy fixed array; it's a sparse, ever-changing map keyed by 20-byte addresses. A plain tree doesn't encode *where* an account lives. So make the key *be* the path: read the address as a string of hex digits — **nibbles** — and walk them down the tree to find the account.
-
-<Scene name="triepath" caption="An address is a path of nibbles. Walk it down the tree to the account; three node types make that walk efficient." />
-
-Walking that path efficiently forces exactly three kinds of node, and each earns its place. A **branch** node is a 16-way fork — one slot per possible next nibble — used wherever paths diverge. A **leaf** holds the final stretch of path and the account's value. And an **extension** node compresses a long run of nibbles that everything below happens to share, so the tree doesn't waste a whole 16-way branch on a stretch where nothing forks. Hash every node from its children — keccak of its encoding — up to one root, and you have Ethereum's **Merkle-Patricia trie**: the Patricia part makes keyed updates cheap, the Merkle part makes the whole thing one verifiable fingerprint.
-
-<Scene name="root" caption="Edit an account, re-hash up its path, and a brand-new 32-byte state root lands in the block header — the number every node compares." />
-
-<Callout type="insight" title="And that is Ethereum">
-A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; the **hash-linked blockchain** because a copied ledger needs an ordered, tamper-evident past; **proof-of-stake consensus** because forks need a costly, punishable vote to converge on one chain; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **Merkle-Patricia trie** and its **state root** because nodes must agree on the whole world at a glance — and prove any part of it cheaply. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
-</Callout>
-
-</DepthLayer>
-
-<DepthLayer tier="deeper" id="engines">
-
-## The real engines, and the spec
-
-Everything above is the intuition, drawn as animation. This is the other half — the actual differentially-tested engines you can drive yourself, plus the spec-level detail behind each step. Nothing below is hand-waved: real secp256k1, a real Merkle-Patricia trie, a real EVM, the exact EIP-1559 controller, all validated against production clients. Drive them, then read why they are the way they are.
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-signatures" title="Signatures, for real (step 2–3)">
-
-## Roll a key. Sign. Recover.
-
-The seal from step 2 is **secp256k1 ECDSA**. Watch the one-way pipeline — private key → public key → address — then sign a message and recover the signer from the signature *alone*. Edit the message after signing and the recovered signer turns into a stranger.
-
-<WidgetFrame
-  title="Keypair & signature lab"
-  caption="The private key derives the public key derives the address — one way only. Sign a message, then recover who signed it from the signature. Tamper with the message to break it."
-  source="Real secp256k1 ECDSA + EIP-191; address, signature, and recovery validated byte-for-byte against viem."
->
-  <KeyLab client:visible />
-</WidgetFrame>
-
-### Signing is not encryption
-
-The single most common misconception. The same keypair *could* encrypt — but with the roles reversed, and Ethereum L1 doesn't encrypt your transactions at all:
-
-|  | Signing (what Ethereum uses) | Encryption (what it doesn't) |
-|---|---|---|
-| Goal | authenticity + integrity | confidentiality |
-| Private key | **signs** | decrypts |
-| Public key | **verifies / recovers** | encrypts |
-| The message is | **public** | hidden |
-
-Your transaction is plaintext in the mempool and on-chain forever. Privacy is a separate, harder problem (zk-proofs, mixers) — *not* a property of the base signing scheme.
-
-<SpecExcerpt
-  kind="code"
-  source="execution-specs"
-  href="https://github.com/ethereum/execution-specs"
-  ref="address derivation & recovery"
->
-```python
-public_key = secp256k1_point(private_key)        # 64 bytes: (x, y) on the curve
-address    = keccak256(public_key)[-20:]          # last 20 bytes of the hash
-# signing a message (EIP-191 / personal_sign):
-digest = keccak256(b"\x19Ethereum Signed Message:\n" + str(len(msg)) + msg)
-r, s, y_parity = ecdsa_sign(digest, private_key)
-signer  = keccak256(secp256k1_recover(r, s, y_parity, digest))[-20:]
-```
-</SpecExcerpt>
-
-<Callout type="note" title="Why the \x19 prefix?">
-The `\x19Ethereum Signed Message:` prefix (EIP-191) exists so a signed *message*
-can never be mistaken for a signed *transaction* — otherwise a dapp could trick
-you into signing bytes that happen to be a valid transaction draining your
-account. Always sign into a clearly-labelled context.
-</Callout>
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-tx" title="The transaction, in full (step 3)">
-
-## Build one. Sign it. Recover the sender.
-
-A real EIP-1559 transaction and signer — the same encoding and curve a live wallet uses. Edit the fields, sign, and watch the sender get *recovered* from the signature (it never appears in the transaction). Tamper after signing and recovery falls apart.
-
-<WidgetFrame
-  title="Transaction signer"
-  caption="Edit, sign, recover. The signing hash updates live; signing produces (r, s, yParity); the sender is recovered from that signature. Tamper with a field after signing to break it."
-  source="Real secp256k1 ECDSA + EIP-1559 RLP; signing hash, tx hash, and recovery validated byte-for-byte against viem."
->
-  <TxSigner client:visible />
-</WidgetFrame>
-
-Modern transactions are **typed** — a type byte followed by an RLP payload, so new formats slot in without ambiguity:
-
-<SpecExcerpt
-  source="EIP-2718: Typed Transaction Envelope"
-  href="https://eips.ethereum.org/EIPS/eip-2718"
-  ref="TransactionType ‖ TransactionPayload"
->
-A transaction is `TransactionType || TransactionPayload`. Type `0x02` is the
-EIP-1559 transaction, whose payload is the RLP of
-`[chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, yParity, r, s]`.
-The thing you sign is `keccak256(0x02 || rlp(everything except yParity, r, s))`.
-</SpecExcerpt>
-
-That envelope turned "the transaction format" into a versioned family — same core (signed, nonce-ordered, gas-metered), extra fields:
-
-- **`0x00` Legacy** — the original, pre-typed format.
-- **`0x01` EIP-2930** — adds an access list (pre-declared storage, for gas).
-- **`0x02` EIP-1559** — the default: base fee + priority tip.
-- **`0x03` EIP-4844** — blob-carrying transactions, the heart of L2 data availability.
-- **`0x04` EIP-7702** — lets an EOA temporarily *act as* a smart-contract account.
-
-<Callout type="note" title="chainId & replay protection">
-`chainId` lives *inside* the signed data (EIP-155), so a transaction signed for
-mainnet recovers to nobody on a testnet or L2 — the signing hash differs. One
-signature, one chain, one nonce, once.
-</Callout>
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-state" title="State: the real Merkle-Patricia trie (steps 5 & 9)">
-
-## The folding machine, then the whole trie
-
-Every trie node is named by the hash of its contents, so first get a feel for what a hash *is*: feed the hopper anything and watch one character flip nearly every output byte.
-
-<WidgetFrame
-  title="keccak256 — the folding machine"
-  caption="Any input, however long, becomes exactly 32 bytes. Change one character and almost every output byte flips. That sensitivity is the entire reason a Merkle structure can detect change."
-  source="Real keccak256 (the same hash Ethereum uses), computed in your browser."
->
-  <HashMachine client:visible />
-</WidgetFrame>
-
-Now the real thing — the same RLP, hex-prefix node tags, and keccak256 as a live client. The `stateRoot` it shows is byte-for-byte what go-ethereum or reth would compute. Add an account and watch the tree restructure; click any node to read its encoding.
-
-<WidgetFrame
-  title="Merkle-Patricia Trie visualizer"
-  caption="Insert or edit an account. Nodes glide to new positions, the changed path pulses up to a new state root, and it drops into the block header. Click a node to inspect its RLP and hash."
-  source="A real MPT engine, validated byte-for-byte against @ethereumjs/mpt across 100 randomized cases."
->
-  <TrieVisualizer client:visible />
-</WidgetFrame>
-
-<SpecExcerpt
-  source="Ethereum Yellow Paper"
-  href="https://ethereum.github.io/yellowpaper/paper.pdf"
-  ref="Appendix D, Modified Merkle-Patricia Tree"
->
-The trie's node-cap function hashes a node's RLP only when it is at least 32
-bytes; shorter nodes are **inlined** directly into their parent. That one rule —
-embed if `len(rlp) < 32`, else reference by `keccak256(rlp)` — is the single most
-common reason a hand-rolled trie's root fails to match a client's.
-</SpecExcerpt>
-
-For the **state** trie the key is `keccak256(address)` and the leaf value is the RLP of the account's four fields:
-
-<SpecExcerpt
-  kind="code"
-  source="execution-specs"
-  href="https://github.com/ethereum/execution-specs"
-  ref="state account"
->
-```python
-class Account:
-    nonce: Uint           # transactions sent from this account
-    balance: U256         # wei
-    storage_root: Root    # root of THIS account's storage trie (tries nest!)
-    code_hash: Hash32     # keccak256 of contract code (empty-code hash for EOAs)
-```
-</SpecExcerpt>
-
-Note `storage_root`: each contract holds *another* MPT for its storage, whose root is a field inside the account leaf — so a single storage write ripples up a storage root into the account leaf, then a state root into the header. The same ripple from step 9, nested one level deeper.
-
-### The witness problem, and the road past the MPT
-
-To **prove** one account without holding all of state — what a <KeyTerm term="stateless client" def="A node that verifies blocks using witnesses (proofs) supplied with the block, instead of storing the full state itself." /> needs — you must reveal, at every level, the *sibling* hashes you didn't descend into. A 16-way branch means up to 15 siblings per level; multiplied by depth, witnesses balloon into megabytes. That's the roadblock to statelessness.
-
-<WidgetFrame
-  title="Hexary MPT → Verkle → Binary"
-  caption="The same account, proven three ways. Watch how node arity and witness size trade off — and why the roadmap moved."
->
-  <StructureCompare client:visible />
-</WidgetFrame>
-
-For years the fix was **Verkle trees** (vector commitments: one short proof for all 256 children, siblings stop mattering). Through 2024–2025 the roadmap pivoted toward a **binary Merkle tree** (EIP-7864): arity 2, ordinary hashing, no trusted setup, and friendly to the <KeyTerm term="SNARK provers" def="Systems that produce succinct proofs that a computation was done correctly. Simple hash-based trees are far cheaper to prove inside a SNARK than vector-commitment schemes." /> that will eventually verify Ethereum's state transitions.
-
-<Callout type="warning" title="Moving target">
-Live protocol design, not settled history. Verkle was the plan; binary trees
-(EIP-7864) are the current front-runner. The durable lesson is the chain of
-cause: **commitment scheme → tree shape → witness size.**
-</Callout>
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-evm" title="The EVM, instruction by instruction (step 7)">
-
-## Run the machine, one op at a time
-
-A real EVM subset. Pick a program (or type raw bytecode), **step** through it, and watch the <KeyTerm term="stack" def="A last-in-first-out list of 256-bit words, max depth 1024. Almost every opcode pops its inputs off the top and pushes its result back." /> push and pop, memory and storage fill, and the gas meter tick down per instruction.
-
-<WidgetFrame
-  title="EVM stepper"
-  caption="Step or play through the bytecode. The highlighted instruction is the program counter; the stack shows top-first; gas ticks down per op. Storage persists; memory is scratch."
-  source="A faithful EVM subset (arithmetic, stack, memory, storage, jumps, gas), executed in your browser — 16 unit tests covering the opcodes and gas."
->
-  <EvmStepper client:visible />
-</WidgetFrame>
-
-<Callout type="insight" title="Storage is the expensive resource">
-Watch the gas column. `ADD`, `PUSH`, `MLOAD` cost 3; `SSTORE` of a fresh slot
-costs **20,000**. Memory vanishes when the call ends, but every storage slot must
-be replicated and retained by every node forever — gas is a mirror of real,
-lasting resource use. "Gas golfing" is mostly a fight to touch storage less.
-</Callout>
-
-<Callout type="note" title="Why JUMPs need JUMPDEST">
-A jump target must be a `JUMPDEST` (0x5b) opcode — and not a byte that happens to
-sit *inside* a `PUSH`'s immediate data. That jumpdest analysis keeps control flow
-analyzable and stops an attacker from jumping into the middle of an instruction.
-</Callout>
-
-Everything on the stack is a **256-bit** word — sized to hold a keccak256 hash or an address, with arithmetic wrapping modulo 2²⁵⁶ (try `0 - 1` for the max uint256). And the abstractions you write compile straight to this: a `mapping` is a `keccak256(key . slot)` storage address; a function call dispatches on the first 4 bytes of calldata (the <KeyTerm term="function selector" def="The first 4 bytes of keccak256 of the function signature. The contract's dispatcher compares calldata's first 4 bytes against these to pick which function runs." />); `revert` undoes state and refunds remaining gas.
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-fees" title="The fee market & the mempool (step 8)">
-
-## Drive the thermostat
-
-A signed transaction first enters the **mempool** — a loosely-shared, per-node waiting room, gossiped peer to peer until a proposer includes it. There it's priced by the EIP-1559 controller. Set how full each block is and watch the base fee respond: full blocks push it up (≤12.5%/block), empty blocks pull it down, targeting half-full blocks.
-
-<WidgetFrame
-  title="EIP-1559 base-fee simulator"
-  caption="Click a block to change how full it is (or pick a demand pattern). The base fee runs forward block by block — up over target, down under, ±12.5% max. The base fee is burned; the tip goes to the proposer."
-  source="The exact EIP-1559 base-fee formula, in integer arithmetic — unit-tested against the spec."
->
-  <FeeMarket client:visible />
-</WidgetFrame>
-
-<SpecExcerpt
-  source="EIP-1559: Fee market change"
-  href="https://eips.ethereum.org/EIPS/eip-1559"
-  ref="base fee calculation"
->
-```python
-# parent over target → base fee rises (capped at +1/8); under → falls
-if parent_gas_used == parent_gas_target:
-    base_fee = parent_base_fee
-elif parent_gas_used > parent_gas_target:
-    delta   = parent_base_fee * (parent_gas_used - parent_gas_target) \
-              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR   # = 8
-    base_fee = parent_base_fee + max(delta, 1)
-else:
-    delta   = parent_base_fee * (parent_gas_target - parent_gas_used) \
-              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR
-    base_fee = parent_base_fee - delta
-```
-</SpecExcerpt>
-
-What a transaction pays per gas is `min(maxFeePerGas, baseFee + maxPriorityFeePerGas)`. If the base fee climbs above your `maxFeePerGas`, the transaction simply waits in the mempool rather than overpaying.
-
-### The tip is for ordering — and that opens a market
-
-The base fee gets you *includable*; the tip competes for *position*, and position has value (a liquidation to capture, an arbitrage to front-run). That value is <KeyTerm term="MEV" def="Maximal Extractable Value — the profit a builder can extract by choosing which transactions to include and in what order. It turned block-building into a competitive market." />. Under **proposer-builder separation (PBS)**, specialized builders assemble the most valuable block they can and bid for the proposer to publish it; the proposer just picks the highest bid.
-
-</DepthLayer>
-
-<DepthLayer tier="spec" id="lab-consensus" title="Consensus & the threat model (step 6)">
-
-## Play the attacker
-
-You control a share of the validators. You've paid a merchant, taken the goods, and now secretly fork the chain just before your payment, hoping your version wins. Drag your stake up and reveal the attack.
+Don't take that on faith — try to break it. You control a slice of the validators: pay a merchant, take the goods, then reveal a secret fork where the payment never happened, and watch fork choice and finality decide your fate (and the bill).
 
 <WidgetFrame
   title="Reorg / double-spend simulator"
@@ -503,7 +267,7 @@ You control a share of the validators. You've paid a merchant, taken the goods, 
   <ReorgSim client:visible />
 </WidgetFrame>
 
-The consensus layer is two algorithms together called **Gasper**:
+The two mechanisms we just invented have real names; together they're called **Gasper**:
 
 <SpecExcerpt
   source="consensus-specs"
@@ -535,7 +299,203 @@ above ½ you can reorg *unfinalized* blocks, but reversing a *finalized* one bur
 ≥⅓ of all staked ETH. Ethereum doesn't make attacks impossible — it makes them irrational.
 </Callout>
 
-Double-spending sits in a family the protocol prices out: **51%** (stake cost + slashing), **long-range** rewrites of ancient history (defended by <KeyTerm term="weak subjectivity" def="A new or long-offline node trusts a recent finalized checkpoint as its starting point, rather than the longest chain from genesis — neutralizing rewrites of distant history." />), **Sybil** (influence ∝ staked ETH, not identity count), **eclipse** (diverse peer selection at the networking layer), and **censorship** (mitigated by PBS and inclusion lists). The pattern never changes: find what the attacker must spend, and make it cost more than the attack can earn.
+And that same accounting prices out the whole family the double-spend belongs to: **51%** (stake cost + slashing), **long-range** rewrites of ancient history (defended by <KeyTerm term="weak subjectivity" def="A new or long-offline node trusts a recent finalized checkpoint as its starting point, rather than the longest chain from genesis — neutralizing rewrites of distant history." />), **Sybil** itself (influence is proportional to staked ETH, not identity count), **eclipse** (diverse peer selection at the networking layer), and **censorship** (mitigated by proposer-builder separation and inclusion lists). The pattern never changes: find what the attacker must spend, and make it cost more than the attack can earn.
+
+<Callout type="warning" title="What breaks">
+This is a beautiful way to agree on *balances*. But all we can express is "move money from row A to row B." I want escrows, tokens, auctions, votes, loans — *rules*, not just transfers. A column of numbers can't hold a rule.
+</Callout>
+
+**→ Step 7: let the cells hold programs.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Cells that compute">
+
+## Cells that run programs
+
+Upgrade the sheet one more time: let a row hold not just a balance but **code**. Now an edit can *call* that code, which runs against the shared state — reading rows, writing rows, refusing if its rules aren't met. Because every node runs the identical program over the identical state, they all reach the identical result. The spreadsheet has quietly become a **world computer**, and the little programs living in its cells are smart contracts.
+
+<Scene name="evm" caption="A cell holds a tiny program. A virtual machine steps through its instructions over a stack — the same steps, same result, on every node on Earth." />
+
+This is the leap that makes Ethereum *Ethereum* rather than a faster bank. A contract is just an account whose behavior is fixed in code that anyone can read and no one can secretly override — an escrow that releases when conditions are met, a token whose supply rules are public, a vote no clerk can miscount.
+
+And it forces one more field onto the transaction. To *call* a contract, an edit has to say which function and with what arguments — that payload is the **data** field. A plain transfer leaves it empty; calling code fills it with the encoded call. (If a transaction has no recipient at all, the data field is read as the code for a *brand-new* contract — which is exactly how contracts get deployed.)
+
+### Step the real machine
+
+Here is that virtual machine for real — a <KeyTerm term="stack" def="A last-in-first-out list of 256-bit words, max depth 1024. Almost every opcode pops its inputs off the top and pushes its result back." /> for operands, scratch memory, persistent storage, and a meter. Load a program and step it one instruction at a time; watch values push and pop and the meter tick down (we price that meter properly in the next step).
+
+<WidgetFrame
+  title="EVM stepper"
+  caption="Step or play through the bytecode. The highlighted instruction is the program counter; the stack shows top-first; gas ticks down per op. Storage persists; memory is scratch."
+  source="A faithful EVM subset (arithmetic, stack, memory, storage, jumps, gas), executed in your browser — 16 unit tests covering the opcodes and gas."
+>
+  <EvmStepper client:visible />
+</WidgetFrame>
+
+<Callout type="insight" title="Storage is the expensive resource">
+Watch the gas column. `ADD`, `PUSH`, `MLOAD` cost 3; `SSTORE` of a fresh slot
+costs **20,000**. Memory vanishes when the call ends, but every storage slot must
+be replicated and retained by every node forever — gas is a mirror of real,
+lasting resource use. "Gas golfing" is mostly a fight to touch storage less.
+</Callout>
+
+<Callout type="note" title="Why JUMPs need a JUMPDEST">
+A jump target must be a `JUMPDEST` (0x5b) opcode — and not a byte that happens to
+sit *inside* a `PUSH`'s immediate data. That jumpdest analysis keeps control flow
+analyzable and stops an attacker from jumping into the middle of an instruction.
+</Callout>
+
+Every word on that stack is **256 bits** — sized to hold a keccak256 hash or an address, with arithmetic wrapping modulo 2²⁵⁶ (try `0 - 1` for the max uint256). And the Solidity you might write compiles straight down to this: a `mapping` is a `keccak256(key . slot)` storage address; a function call dispatches on the first 4 bytes of calldata (the <KeyTerm term="function selector" def="The first 4 bytes of keccak256 of the function signature. The contract's dispatcher compares calldata's first 4 bytes against these to pick which function runs." />); `revert` undoes state and refunds the gas left.
+
+<Callout type="warning" title="What breaks">
+Programs can loop forever. One malicious cell saying `while (true) {}` would freeze every node on the planet trying to run it — the halting problem, turned into a weapon. You cannot run untrusted code for free.
+</Callout>
+
+**→ Step 8: put a meter on every instruction.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="Metering work">
+
+## A meter so nothing runs forever
+
+Charge for computation, one instruction at a time. Every operation has a price in **gas**; each transaction prepays a gas budget; the meter ticks down as the program runs, and the instant it hits zero, execution halts and the changes revert. An infinite loop no longer freezes the world — it simply runs out of fuel and dies, with the attacker having paid for every step. Pricing *is* the halting solution.
+
+<Scene name="gas" caption="Each instruction spends gas from a prepaid budget. Run out and execution halts — so no program can run forever." />
+
+That prepaid budget is itself a transaction field — the **gasLimit** — and it quietly does a second job: since execution can never burn more gas than the limit, it caps your worst-case loss when you call a contract whose behavior you don't fully trust. The price you pay needs fields too. Block-to-block the base fee swings, so you don't name an exact price; you name a ceiling, **maxFeePerGas** (the most you'll tolerate), and a **maxPriorityFeePerGas** — a tip on top of the burned base fee to give the proposer a reason to include you. The base fee itself isn't a blind auction; it's a controller that drifts up when blocks are full and down when they're empty, targeting half-full blocks, and it's **burned** rather than pocketed.
+
+### Drive the controller
+
+Before it lands in a block, a signed transaction waits in the **mempool** — a loosely-shared, per-node waiting room, gossiped peer to peer — priced by exactly that controller. Set how full each block is and watch the base fee chase the half-full target: up by at most ⅛ per block when demand runs hot, down when it cools.
+
+<WidgetFrame
+  title="EIP-1559 base-fee simulator"
+  caption="Click a block to change how full it is (or pick a demand pattern). The base fee runs forward block by block — up over target, down under, ±12.5% max. The base fee is burned; the tip goes to the proposer."
+  source="The exact EIP-1559 base-fee formula, in integer arithmetic — unit-tested against the spec."
+>
+  <FeeMarket client:visible />
+</WidgetFrame>
+
+The whole controller is a few lines of integer math on the parent block:
+
+<SpecExcerpt
+  source="EIP-1559: Fee market change"
+  href="https://eips.ethereum.org/EIPS/eip-1559"
+  ref="base fee calculation"
+>
+```python
+# parent over target → base fee rises (capped at +1/8); under → falls
+if parent_gas_used == parent_gas_target:
+    base_fee = parent_base_fee
+elif parent_gas_used > parent_gas_target:
+    delta   = parent_base_fee * (parent_gas_used - parent_gas_target) \
+              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR   # = 8
+    base_fee = parent_base_fee + max(delta, 1)
+else:
+    delta   = parent_base_fee * (parent_gas_target - parent_gas_used) \
+              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR
+    base_fee = parent_base_fee - delta
+```
+</SpecExcerpt>
+
+A transaction then pays `min(maxFeePerGas, baseFee + maxPriorityFeePerGas)` per gas; if the base fee ever climbs above your `maxFeePerGas`, it simply waits rather than overpaying. And one consequence worth naming: the base fee buys *inclusion*, but the tip buys *position* — and position has value (a liquidation to capture, an arbitrage to front-run). That value is <KeyTerm term="MEV" def="Maximal Extractable Value — the profit a builder can extract by choosing which transactions to include and in what order. It turned block-building into a competitive market." />, and under **proposer-builder separation** specialized builders now assemble the most valuable block they can and bid for the proposer to publish it.
+
+That completes the transaction. Lay it out and not one field is decoration — each is the answer to a specific *"what breaks without it?"*
+
+<Scene name="txfields" caption="The whole transaction, field by field. Each row is forced by the attack or failure it prevents — nothing is arbitrary." />
+
+<Callout type="warning" title="What breaks">
+One last gap. Every node is supposed to hold the *exact same* world — every row, every contract, every storage slot. How does a node prove, cheaply and instantly, that its copy matches everyone else's, without shipping the entire spreadsheet to compare?
+</Callout>
+
+**→ Step 9: fold the whole world into one number.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-9" num="9" badge="step" title="One fingerprint">
+
+## One fingerprint for the entire world
+
+Back to the catch: every node must check, cheaply, that it holds the identical world. The naive fix is to hash the entire sheet into one number and compare. It half-works and breaks in two ways: changing a *single* balance forces you to re-hash the whole sheet, and to prove your balance to someone you'd have to hand them the *entire* sheet so they could re-hash it.
+
+Fix both with a **tree of hashes**. Hash accounts in groups, then hash those hashes, level by level, up to a single root. Now editing one account only re-hashes the short path from its leaf to the root — not the whole sheet — and you can prove one account to someone holding only the root by sending just the sibling hashes along that path. That's a Merkle tree.
+
+But state isn't a tidy fixed array; it's a sparse, ever-changing map keyed by 20-byte addresses. A plain tree doesn't encode *where* an account lives. So make the key *be* the path: read the address as a string of hex digits — **nibbles** — and walk them down the tree to find the account.
+
+<Scene name="triepath" caption="An address is a path of nibbles. Walk it down the tree to the account; three node types make that walk efficient." />
+
+Walking that path efficiently forces exactly three kinds of node, and each earns its place. A **branch** node is a 16-way fork — one slot per possible next nibble — used wherever paths diverge. A **leaf** holds the final stretch of path and the account's value. And an **extension** node compresses a long run of nibbles that everything below happens to share, so the tree doesn't waste a whole 16-way branch on a stretch where nothing forks. Hash every node from its children — keccak of its encoding — up to one root, and you have Ethereum's **Merkle-Patricia trie**: the Patricia part makes keyed updates cheap, the Merkle part makes the whole thing one verifiable fingerprint.
+
+<Scene name="root" caption="Edit an account, re-hash up its path, and a brand-new 32-byte state root lands in the block header — the number every node compares." />
+
+### Take the real trie apart
+
+This is the genuine article — the same RLP, hex-prefix node tags, and keccak256 a live client uses; the `stateRoot` it prints is byte-for-byte what go-ethereum or reth would compute. Insert an account and watch the path restructure and pulse to a new root; click any node to read its encoding.
+
+<WidgetFrame
+  title="Merkle-Patricia Trie visualizer"
+  caption="Insert or edit an account. Nodes glide to new positions, the changed path pulses up to a new state root, and it drops into the block header. Click a node to inspect its RLP and hash."
+  source="A real MPT engine, validated byte-for-byte against @ethereumjs/mpt across 100 randomized cases."
+>
+  <TrieVisualizer client:visible />
+</WidgetFrame>
+
+Two encoding rules make every client agree to the byte. **RLP** serializes a node before it's hashed; **hex-prefix encoding** packs a node's nibble path plus a flag (leaf vs. extension, odd vs. even) into bytes. And one rule trips up every hand-rolled trie:
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="Appendix D, Modified Merkle-Patricia Tree"
+>
+The trie's node-cap function hashes a node's RLP only when it is at least 32
+bytes; shorter nodes are **inlined** directly into their parent. That one rule —
+embed if `len(rlp) < 32`, else reference by `keccak256(rlp)` — is the single most
+common reason a hand-rolled trie's root fails to match a client's.
+</SpecExcerpt>
+
+What sits in a leaf isn't just a balance — it's the account's four fields, and one of them nests *another* trie:
+
+<SpecExcerpt
+  kind="code"
+  source="execution-specs"
+  href="https://github.com/ethereum/execution-specs"
+  ref="state account"
+>
+```python
+class Account:
+    nonce: Uint           # transactions sent from this account
+    balance: U256         # wei
+    storage_root: Root    # root of THIS account's storage trie (tries nest!)
+    code_hash: Hash32     # keccak256 of contract code (empty-code hash for EOAs)
+```
+</SpecExcerpt>
+
+So a single `SSTORE` from step 7 ripples a new storage root into the account leaf, which ripples a new state root into the header — the same wave you just watched, nested one level deeper. (One real-world detail: keys are actually `keccak256(address)`, not the raw address — the "secure trie" — which scatters accounts so prefixes rarely collide.)
+
+### Why the shape is still changing
+
+The hexary trie has a bill: to **prove** one account to someone holding only the root — what a <KeyTerm term="stateless client" def="A node that verifies blocks using witnesses (proofs) supplied with the block, instead of storing the full state itself." /> needs — you must reveal, at every level, the *sibling* hashes you didn't descend into. A 16-way branch means up to 15 siblings per level; times depth, witnesses balloon into megabytes. That's the roadblock to statelessness, and it's why the commitment is being redesigned.
+
+<WidgetFrame
+  title="Hexary MPT → Verkle → Binary"
+  caption="The same account, proven three ways. Watch how node arity and witness size trade off — and why the roadmap moved."
+>
+  <StructureCompare client:visible />
+</WidgetFrame>
+
+For years the fix was **Verkle trees** (vector commitments: one short proof for all 256 children, siblings stop mattering). Through 2024–2025 the roadmap pivoted toward a **binary Merkle tree** (EIP-7864): arity 2, ordinary hashing, no trusted setup, and friendly to the <KeyTerm term="SNARK provers" def="Systems that produce succinct proofs that a computation was done correctly. Simple hash-based trees are far cheaper to prove inside a SNARK than vector-commitment schemes." /> that will eventually verify Ethereum's state transitions.
+
+<Callout type="warning" title="Moving target">
+Live protocol design, not settled history. Verkle was the plan; binary trees
+(EIP-7864) are the current front-runner. The durable lesson is the chain of
+cause we just walked: **commitment scheme → tree shape → witness size.**
+</Callout>
+
+<Callout type="insight" title="And that is Ethereum">
+A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; the **hash-linked blockchain** because a copied ledger needs an ordered, tamper-evident past; **proof-of-stake consensus** because forks need a costly, punishable vote to converge on one chain; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **Merkle-Patricia trie** and its **state root** because nodes must agree on the whole world at a glance — and prove any part of it cheaply. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
+</Callout>
 
 </DepthLayer>
 

@@ -9,6 +9,7 @@ interface Props {
   name:
     | "state"
     | "sign"
+    | "verify"
     | "recover"
     | "replay"
     | "txfields"
@@ -62,6 +63,46 @@ const { name, caption, wide } = Astro.props;
         <text class="t-cap" x="300" y="62">signature</text>
         <text class="t-cap" x="430" y="110">verify</text>
         <path class="arrow2" d="M332 104 L398 104" />
+      </svg>
+    )}
+
+    {/* ── verify: one signature accepts a true message, rejects a tampered one ── */}
+    {name === "verify" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="Verification: a valid message passes, a tampered one fails">
+        {/* positive lane */}
+        <text class="t-cap vlbl ok-t" x="92" y="24">✓ untouched message</text>
+        <rect class="vmsg ok" x="16" y="30" width="152" height="46" rx="7" />
+        <text class="t-s" x="92" y="50">send 5 Ξ</text>
+        <text class="t-s" x="92" y="67">to Bob</text>
+        <rect class="vsig" x="188" y="42" width="40" height="22" rx="4" />
+        <text class="t-cap" x="208" y="57">sig</text>
+        <path class="varrow va-a" d="M228 53 H276" />
+        <rect class="vbox" x="276" y="36" width="52" height="34" rx="6" />
+        <text class="t-cap" x="302" y="57">verify</text>
+        <path class="varrow va-b" d="M328 53 H368" />
+        <g class="vres v-ok">
+          <circle class="vmark-c ok-c" cx="388" cy="53" r="15" />
+          <text class="vmark ok-m" x="388" y="59">✓</text>
+          <text class="t-ok" x="430" y="50">VALID</text>
+          <text class="t-cap" x="430" y="65">signer 0xYou</text>
+        </g>
+        {/* negative lane */}
+        <text class="t-cap vlbl bad-t" x="92" y="120">✗ one byte flipped</text>
+        <rect class="vmsg bad" x="16" y="126" width="152" height="46" rx="7" />
+        <text class="t-s" x="92" y="146">send 5 Ξ</text>
+        <text class="t-s bad-word" x="92" y="163">to Eve</text>
+        <rect class="vsig" x="188" y="138" width="40" height="22" rx="4" />
+        <text class="t-cap" x="208" y="153">sig</text>
+        <path class="varrow va-c" d="M228 149 H276" />
+        <rect class="vbox" x="276" y="132" width="52" height="34" rx="6" />
+        <text class="t-cap" x="302" y="153">verify</text>
+        <path class="varrow va-d" d="M328 149 H368" />
+        <g class="vres v-bad">
+          <circle class="vmark-c bad-c" cx="388" cy="149" r="15" />
+          <text class="vmark bad-m" x="388" y="155">✗</text>
+          <text class="t-x" x="430" y="146">INVALID</text>
+          <text class="t-cap" x="430" y="161">signer ≠ you</text>
+        </g>
       </svg>
     )}
 
@@ -386,6 +427,26 @@ const { name, caption, wide } = Astro.props;
   @keyframes stamp { 0% { transform: scale(0.2); opacity: 0 } 15% { transform: scale(1.15); opacity: 1 } 22%,55% { transform: scale(1); opacity: 1 } 70% { opacity: 0.15 } 100% { opacity: 0 } }
   @keyframes crack { 0%,60% { opacity: 0 } 72%,92% { opacity: 1 } 100% { opacity: 0 } }
   @keyframes draw { 0% { stroke-dashoffset: 70 } 20%,100% { stroke-dashoffset: 0 } }
+
+  /* verify: parallel lanes — a true message passes, a tampered one fails */
+  .vmsg { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .vmsg.ok { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .vmsg.bad { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); }
+  .bad-word { fill: var(--color-changed); }
+  .vsig { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); }
+  .vbox { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .vlbl.ok-t { fill: var(--color-node-leaf); } .vlbl.bad-t { fill: var(--color-changed); }
+  .varrow { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; stroke-dasharray: 50; stroke-dashoffset: 50; }
+  .va-a, .va-c { animation: vdraw 4.5s ease-in-out infinite; }
+  .va-b, .va-d { animation: vdraw 4.5s ease-in-out 0.5s infinite; }
+  @keyframes vdraw { 0%,8% { stroke-dashoffset: 50 } 26%,100% { stroke-dashoffset: 0 } }
+  .ok-c { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; }
+  .ok-m { fill: var(--color-node-leaf); font-size: 16px; text-anchor: middle; }
+  .bad-c { fill: color-mix(in oklab, var(--color-changed) 16%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2; }
+  .bad-m { fill: var(--color-changed); font-size: 16px; text-anchor: middle; }
+  .vres { opacity: 0; }
+  .v-ok, .v-bad { animation: vpop 4.5s ease-in-out infinite; }
+  @keyframes vpop { 0%,40% { opacity: 0 } 52%,92% { opacity: 1 } 100% { opacity: 0 } }
 
   /* recover: address materializes */
   .seal-c2 { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); }

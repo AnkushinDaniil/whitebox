@@ -1,7 +1,7 @@
 ---
 title: You could have invented Ethereum
 dek: One page, one continuous build. Start with a single shared spreadsheet, animate the one thing wrong with it, fix exactly that, and repeat — until a programmable, staked world computer falls out as the only thing it could have become.
-summary: The single, complete explanation of how Ethereum works — a step-by-step, fully-animated derivation from scratch (signatures, accounts, the hash-linked blockchain, proof-of-stake consensus, the EVM, gas, the Merkle-Patricia trie), followed by the real differentially-tested engines you can drive yourself and the spec-level detail behind every step. Original analogies, adapted to Ethereum.
+summary: The single, complete explanation of how Ethereum works — a step-by-step, fully-animated derivation from scratch (signatures, accounts, the Merkle-Patricia trie, the hash-linked blockchain, proof-of-stake consensus, the EVM, and gas), each piece introduced exactly when the last one's flaw demands it, with the real differentially-tested engines woven into the steps and the spec detail behind each. Original analogies, adapted to Ethereum.
 topic: Start here
 order: -1
 spine: true
@@ -18,7 +18,6 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
-import Bleed from "@/components/explorable/Bleed.astro";
 import KeyLab from "@/components/sig/KeyLab.tsx";
 import TxSigner from "@/components/tx/TxSigner.tsx";
 import HashMachine from "@/components/trie/HashMachine.tsx";
@@ -39,11 +38,11 @@ And it isn't only animation. The moment a step invents a piece, you'll **drive t
   { id: "step-2", label: "Signing edits" },
   { id: "step-3", label: "Reading the author" },
   { id: "step-4", label: "Everyone's copy" },
-  { id: "step-5", label: "The blockchain" },
-  { id: "step-6", label: "Agreeing on one chain" },
-  { id: "step-7", label: "Cells that compute" },
-  { id: "step-8", label: "Metering work" },
-  { id: "step-9", label: "One fingerprint" },
+  { id: "step-5", label: "One fingerprint" },
+  { id: "step-6", label: "The blockchain" },
+  { id: "step-7", label: "Agreeing on one chain" },
+  { id: "step-8", label: "Cells that compute" },
+  { id: "step-9", label: "Metering work" },
 ]} />
 
 <DepthLayer tier="intuition" id="step-1" num="1" badge="step" title="The shared sheet">
@@ -74,9 +73,27 @@ Give every account a secret. Not a password you show to log in — a <KeyTerm te
 
 Tamper with so much as a single digit of a signed edit and the seal stops matching the contents. The signature isn't glued *near* the message; it's computed *from* it. Your identity on the sheet isn't a name anyone can type — it's simply the ability to produce this stamp.
 
+### Verifying: accept the true, reject the tampered
+
+Verifying is the mirror of signing. Anyone takes the message, the signature, and your public address and checks they agree — and there is no middle ground. The untouched message passes; the same message with a single byte flipped fails, every time. That binary outcome is the whole point: the seal turns "trust me" into "check it yourself."
+
+<Scene name="verify" caption="The same signature, two messages. The untouched one verifies (✓ valid, signer = you); flip one byte and verification fails (✗ invalid) — there is no in-between." />
+
+### From key to address: a one-way hash
+
+Where does that "public address" come from? You run your public key through a **hash** — a one-way fingerprint function, and the first foundational tool we'll lean on again and again. Feed it any input and it returns a fixed 32 bytes; change a single character and almost every output byte flips; and there is no way to run it backward. Your address is just the last 20 bytes of the hash of your public key. Meet the machine here — you'll see this exact avalanche again when we fingerprint the whole state and link blocks together.
+
+<WidgetFrame
+  title="keccak256 — the folding machine"
+  caption="Any input, however long, becomes exactly 32 bytes. Change one character and almost every output byte flips. That sensitivity is the entire reason a fingerprint can detect change."
+  source="Real keccak256 (the same hash Ethereum uses), computed in your browser."
+>
+  <HashMachine client:visible />
+</WidgetFrame>
+
 ### The real seal: secp256k1
 
-That stamp is not a metaphor — it's an **ECDSA signature over the secp256k1 curve**, the exact scheme Ethereum uses. Roll a real key below and watch the one-way pipeline `private key → public key → address`, then sign a message. (You'll notice the signer can be *recovered* from the signature — park that; it's the whole trick of step 3.)
+Now the whole pipeline at once, for real. The seal is an **ECDSA signature over the secp256k1 curve**, the exact scheme Ethereum uses. Roll a key and watch `private key → public key → address` (that last arrow is the hash above), then sign a message. You'll notice the signer can be *recovered* straight from the signature — park that; it's the whole trick of step 3.
 
 <WidgetFrame
   title="Keypair & signature lab"
@@ -181,7 +198,7 @@ That one byte turned "the transaction format" into a versioned family — same c
 
 - **`0x00` Legacy** — the original, pre-typed format.
 - **`0x01` EIP-2930** — adds an access list (pre-declared storage, for gas).
-- **`0x02` EIP-1559** — today's default: base fee + priority tip (the gas fields we reach in step 8).
+- **`0x02` EIP-1559** — today's default: base fee + priority tip (the gas fields we reach in step 9).
 - **`0x03` EIP-4844** — blob-carrying transactions, the heart of L2 data availability.
 - **`0x04` EIP-7702** — lets an EOA temporarily *act as* a smart-contract account.
 
@@ -204,42 +221,119 @@ So nobody hosts the spreadsheet. *Everybody* does. Every participant keeps the f
 This is the real jump from "a database" to "a blockchain": the data stops living somewhere and starts living *everywhere*, with the rules baked into every copy.
 
 <Callout type="warning" title="What breaks">
-Two cracks open at once. Edits arrive at different copies in different *orders*, so whose ordering is the real one? And nothing physically stops me from quietly rewriting last week's edit in my own copy and re-sharing that. Before we can even argue about which history is true, history needs to be **ordered into batches** and made **tamper-evident**.
+Everyone holds the full sheet — but it's hundreds of millions of accounts, and copies drift. How does a node prove, in one cheap check, that its copy is the *exact same world* as everyone else's, without shipping the entire sheet around to compare it row by row?
 </Callout>
 
-**→ Step 5: freeze the past into a chain.**
+**→ Step 5: fold the whole world into one number.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="The blockchain">
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="One fingerprint">
+
+## One fingerprint for the entire world
+
+The blunt fix uses the hash from step 2: run the entire sheet through the folding machine and compare the one number that falls out. It half-works, and breaks two ways: changing a *single* balance forces you to re-hash the whole sheet, and to prove your balance to someone you'd have to hand them the *entire* sheet so they could re-hash it.
+
+Fix both with a **tree of hashes**. Hash accounts in groups, then hash those hashes, level by level, up to a single root. Now editing one account only re-hashes the short path from its leaf to the root — not the whole sheet — and you can prove one account to someone holding only the root by sending just the sibling hashes along that path. That's a Merkle tree.
+
+But state isn't a tidy fixed array; it's a sparse, ever-changing map keyed by 20-byte addresses. A plain tree doesn't encode *where* an account lives. So make the key *be* the path: read the address as a string of hex digits — **nibbles** — and walk them down the tree to find the account.
+
+<Scene name="triepath" caption="An address is a path of nibbles. Walk it down the tree to the account; three node types make that walk efficient." />
+
+Walking that path efficiently forces exactly three kinds of node, and each earns its place. A **branch** node is a 16-way fork — one slot per possible next nibble — used wherever paths diverge. A **leaf** holds the final stretch of path and the account's value. And an **extension** node compresses a long run of nibbles that everything below happens to share, so the tree doesn't waste a whole 16-way branch on a stretch where nothing forks. Hash every node from its children — keccak of its encoding — up to one root, and you have Ethereum's **Merkle-Patricia trie**: the Patricia part makes keyed updates cheap, the Merkle part makes the whole thing one verifiable fingerprint.
+
+<Scene name="root" caption="Edit an account, re-hash up its path, and a brand-new 32-byte state root falls out — the single number that fingerprints the whole world." />
+
+### Take the real trie apart
+
+This is the genuine article — the same RLP, hex-prefix node tags, and keccak256 a live client uses; the `stateRoot` it prints is byte-for-byte what go-ethereum or reth would compute. Insert an account and watch the path restructure and pulse to a new root; click any node to read its encoding.
+
+<WidgetFrame
+  title="Merkle-Patricia Trie visualizer"
+  caption="Insert or edit an account. Nodes glide to new positions and the changed path pulses up to a brand-new state root. Click a node to inspect its RLP and hash."
+  source="A real MPT engine, validated byte-for-byte against @ethereumjs/mpt across 100 randomized cases."
+>
+  <TrieVisualizer client:visible />
+</WidgetFrame>
+
+Two encoding rules make every client agree to the byte. **RLP** serializes a node before it's hashed; **hex-prefix encoding** packs a node's nibble path plus a flag (leaf vs. extension, odd vs. even) into bytes. And one rule trips up every hand-rolled trie:
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="Appendix D, Modified Merkle-Patricia Tree"
+>
+The trie's node-cap function hashes a node's RLP only when it is at least 32
+bytes; shorter nodes are **inlined** directly into their parent. That one rule —
+embed if `len(rlp) < 32`, else reference by `keccak256(rlp)` — is the single most
+common reason a hand-rolled trie's root fails to match a client's.
+</SpecExcerpt>
+
+What sits in a leaf isn't just a balance — it's the account's four fields, and two of them only come alive once accounts can hold code (step 8):
+
+<SpecExcerpt
+  kind="code"
+  source="execution-specs"
+  href="https://github.com/ethereum/execution-specs"
+  ref="state account"
+>
+```python
+class Account:
+    nonce: Uint           # transactions sent from this account
+    balance: U256         # wei
+    storage_root: Root    # root of THIS account's storage trie (tries nest!)
+    code_hash: Hash32     # keccak256 of contract code (empty-code hash for EOAs)
+```
+</SpecExcerpt>
+
+That `storage_root` is the tell: once contracts exist, each one holds *another* MPT for its storage, whose root lives here in the account leaf — so a single storage write ripples a new storage root into the leaf, which ripples a new state root, the same wave nested one level deeper. (One real-world detail: keys are actually `keccak256(address)`, not the raw address — the "secure trie" — which scatters accounts so prefixes rarely collide.)
+
+### Why the shape is still changing
+
+The hexary trie has a bill: to **prove** one account to someone holding only the root — what a <KeyTerm term="stateless client" def="A node that verifies blocks using witnesses (proofs) supplied with the block, instead of storing the full state itself." /> needs — you must reveal, at every level, the *sibling* hashes you didn't descend into. A 16-way branch means up to 15 siblings per level; times depth, witnesses balloon into megabytes. That's the roadblock to statelessness, and it's why the commitment is being redesigned.
+
+<WidgetFrame
+  title="Hexary MPT → Verkle → Binary"
+  caption="The same account, proven three ways. Watch how node arity and witness size trade off — and why the roadmap moved."
+>
+  <StructureCompare client:visible />
+</WidgetFrame>
+
+For years the fix was **Verkle trees** (vector commitments: one short proof for all 256 children, siblings stop mattering). Through 2024–2025 the roadmap pivoted toward a **binary Merkle tree** (EIP-7864): arity 2, ordinary hashing, no trusted setup, and friendly to the <KeyTerm term="SNARK provers" def="Systems that produce succinct proofs that a computation was done correctly. Simple hash-based trees are far cheaper to prove inside a SNARK than vector-commitment schemes." /> that will eventually verify Ethereum's state transitions.
+
+<Callout type="warning" title="Moving target">
+Live protocol design, not settled history. Verkle was the plan; binary trees
+(EIP-7864) are the current front-runner. The durable lesson is the chain of
+cause we just walked: **commitment scheme → tree shape → witness size.**
+</Callout>
+
+<Callout type="warning" title="What breaks">
+One number now pins down *what the balances are* — but it's a snapshot of right-now. It says nothing about the *order* edits happened in, and nothing stops someone quietly rewriting a past edit and recomputing a fresh-looking root. The history itself still needs to be ordered and made impossible to rewrite.
+</Callout>
+
+**→ Step 6: freeze the history into a chain.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="The blockchain">
 
 ## Chain the batches so the past can't move
 
-Stop treating edits as loose slips of paper. Gather them into a numbered **block** and reduce it to a small **header**: its number, the **parentHash** (the hash of the block before it), a **txsRoot** fingerprinting the edits inside, and a **stateRoot** — a single fingerprint of the *entire* sheet, which we build in step 9 as a tree of hashes (a trie). The block's own **hash** is computed from that whole header. A hash changes completely if even one bit of its input changes, so the header binds the block to all of history before it *and* to the exact state it produced.
+Stop treating edits as loose slips of paper. Gather them into a numbered **block** and reduce it to a small **header**: its number, the **parentHash** (the hash of the block before it), a **txsRoot** fingerprinting the edits inside, and the **stateRoot** we just built — the fingerprint of the whole sheet after this block. The block's own **hash** is the hash of that entire header. Because the folding machine from step 2 turns any one-bit change into a totally different output, the header binds the block to all of history before it *and* to the exact state it produced.
 
 <Scene name="blocks" wide caption="A full state trie of four accounts under the block header. Edit Alice's balance (14 → 9) and watch the actual recompute: her leaf hash changes (3c1a → 8a47), its branch re-hashes (3c08 → 8a41), the root re-hashes (91f3 → 2d7a) into a new stateRoot (9f12 → a2e0), the block hash changes, and every later block breaks — while Bob, Carol, and Dave's untouched subtrees keep their hashes." />
 
 Now watch what one tampered balance does. Change `Alice 14 → 9` deep in block #1's state and the effect doesn't stay local. Her account's **leaf** changes, which re-hashes up the trie to a new **stateRoot**; the stateRoot sits in block #1's **header**, so the header changes; the header's **hash** changes; and now block #2's **parentHash** points at a hash that no longer exists — so block #2 is invalid, which invalidates block #3, and so on down the line. One edited number, and the *entire* chain after it falls apart. To rewrite a single past balance you'd have to silently rebuild every block since. The past is frozen not by a guard but by the sheer weight of everything stacked on top. That linked, batched, state-committed history is the **blockchain**.
 
-We've now leaned on the word **hash** twice over — the block hash, and the stateRoot — and every guarantee here rests on it, so meet the machine itself. Feed it anything, however long, and it returns a fixed 32 bytes; change one character and almost every output byte flips. *That* avalanche is why a tampered balance can't quietly produce the same fingerprint:
-
-<WidgetFrame
-  title="keccak256 — the folding machine"
-  caption="Any input, however long, becomes exactly 32 bytes. Change one character and almost every output byte flips. That sensitivity is the entire reason a Merkle structure can detect change."
-  source="Real keccak256 (the same hash Ethereum uses), computed in your browser."
->
-  <HashMachine client:visible />
-</WidgetFrame>
-
 <Callout type="warning" title="What breaks">
 Hash-linking makes *rewriting* a chain obvious — but it doesn't say which chain is the real one. Anyone can build a perfectly valid chain. I can secretly grow an alternate one where I never paid the merchant and reveal it later. Both are valid blockchains. Whose is canonical? This is the **double-spend**, the hardest problem in the design.
 </Callout>
 
-**→ Step 6: agree on one chain, and make lying self-destructive.**
+**→ Step 7: agree on one chain, and make lying self-destructive.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="Agreeing on one chain">
+<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Agreeing on one chain">
 
 ## Agree on one history — and price the lie
 
@@ -305,15 +399,15 @@ And that same accounting prices out the whole family the double-spend belongs to
 This is a beautiful way to agree on *balances*. But all we can express is "move money from row A to row B." I want escrows, tokens, auctions, votes, loans — *rules*, not just transfers. A column of numbers can't hold a rule.
 </Callout>
 
-**→ Step 7: let the cells hold programs.**
+**→ Step 8: let the cells hold programs.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Cells that compute">
+<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="Cells that compute">
 
 ## Cells that run programs
 
-Upgrade the sheet one more time: let a row hold not just a balance but **code**. Now an edit can *call* that code, which runs against the shared state — reading rows, writing rows, refusing if its rules aren't met. Because every node runs the identical program over the identical state, they all reach the identical result. The spreadsheet has quietly become a **world computer**, and the little programs living in its cells are smart contracts.
+Upgrade the sheet one more time: let a row hold not just a balance but **code**. Now an edit can *call* that code, which runs against the shared state — reading rows, writing rows, refusing if its rules aren't met. Because every node runs the identical program over the identical state, they all reach the identical result. The spreadsheet has quietly become a **world computer**, and the little programs living in its cells are smart contracts. (This is the `code_hash` and `storage_root` we saw waiting in the account leaf back in step 5, finally put to use.)
 
 <Scene name="evm" caption="A cell holds a tiny program. A virtual machine steps through its instructions over a stack — the same steps, same result, on every node on Earth." />
 
@@ -352,11 +446,11 @@ Every word on that stack is **256 bits** — sized to hold a keccak256 hash or a
 Programs can loop forever. One malicious cell saying `while (true) {}` would freeze every node on the planet trying to run it — the halting problem, turned into a weapon. You cannot run untrusted code for free.
 </Callout>
 
-**→ Step 8: put a meter on every instruction.**
+**→ Step 9: put a meter on every instruction.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="Metering work">
+<DepthLayer tier="mechanism" id="step-9" num="9" badge="step" title="Metering work">
 
 ## A meter so nothing runs forever
 
@@ -402,99 +496,12 @@ else:
 
 A transaction then pays `min(maxFeePerGas, baseFee + maxPriorityFeePerGas)` per gas; if the base fee ever climbs above your `maxFeePerGas`, it simply waits rather than overpaying. And one consequence worth naming: the base fee buys *inclusion*, but the tip buys *position* — and position has value (a liquidation to capture, an arbitrage to front-run). That value is <KeyTerm term="MEV" def="Maximal Extractable Value — the profit a builder can extract by choosing which transactions to include and in what order. It turned block-building into a competitive market." />, and under **proposer-builder separation** specialized builders now assemble the most valuable block they can and bid for the proposer to publish it.
 
-That completes the transaction. Lay it out and not one field is decoration — each is the answer to a specific *"what breaks without it?"*
+With that, the transaction is complete — and so is the machine. Lay the transaction out and not one field is decoration; each is the answer to a specific *"what breaks without it?"*
 
 <Scene name="txfields" caption="The whole transaction, field by field. Each row is forced by the attack or failure it prevents — nothing is arbitrary." />
 
-<Callout type="warning" title="What breaks">
-One last gap. Every node is supposed to hold the *exact same* world — every row, every contract, every storage slot. How does a node prove, cheaply and instantly, that its copy matches everyone else's, without shipping the entire spreadsheet to compare?
-</Callout>
-
-**→ Step 9: fold the whole world into one number.**
-
-</DepthLayer>
-
-<DepthLayer tier="mechanism" id="step-9" num="9" badge="step" title="One fingerprint">
-
-## One fingerprint for the entire world
-
-Back to the catch: every node must check, cheaply, that it holds the identical world. The naive fix is to hash the entire sheet into one number and compare. It half-works and breaks in two ways: changing a *single* balance forces you to re-hash the whole sheet, and to prove your balance to someone you'd have to hand them the *entire* sheet so they could re-hash it.
-
-Fix both with a **tree of hashes**. Hash accounts in groups, then hash those hashes, level by level, up to a single root. Now editing one account only re-hashes the short path from its leaf to the root — not the whole sheet — and you can prove one account to someone holding only the root by sending just the sibling hashes along that path. That's a Merkle tree.
-
-But state isn't a tidy fixed array; it's a sparse, ever-changing map keyed by 20-byte addresses. A plain tree doesn't encode *where* an account lives. So make the key *be* the path: read the address as a string of hex digits — **nibbles** — and walk them down the tree to find the account.
-
-<Scene name="triepath" caption="An address is a path of nibbles. Walk it down the tree to the account; three node types make that walk efficient." />
-
-Walking that path efficiently forces exactly three kinds of node, and each earns its place. A **branch** node is a 16-way fork — one slot per possible next nibble — used wherever paths diverge. A **leaf** holds the final stretch of path and the account's value. And an **extension** node compresses a long run of nibbles that everything below happens to share, so the tree doesn't waste a whole 16-way branch on a stretch where nothing forks. Hash every node from its children — keccak of its encoding — up to one root, and you have Ethereum's **Merkle-Patricia trie**: the Patricia part makes keyed updates cheap, the Merkle part makes the whole thing one verifiable fingerprint.
-
-<Scene name="root" caption="Edit an account, re-hash up its path, and a brand-new 32-byte state root lands in the block header — the number every node compares." />
-
-### Take the real trie apart
-
-This is the genuine article — the same RLP, hex-prefix node tags, and keccak256 a live client uses; the `stateRoot` it prints is byte-for-byte what go-ethereum or reth would compute. Insert an account and watch the path restructure and pulse to a new root; click any node to read its encoding.
-
-<WidgetFrame
-  title="Merkle-Patricia Trie visualizer"
-  caption="Insert or edit an account. Nodes glide to new positions, the changed path pulses up to a new state root, and it drops into the block header. Click a node to inspect its RLP and hash."
-  source="A real MPT engine, validated byte-for-byte against @ethereumjs/mpt across 100 randomized cases."
->
-  <TrieVisualizer client:visible />
-</WidgetFrame>
-
-Two encoding rules make every client agree to the byte. **RLP** serializes a node before it's hashed; **hex-prefix encoding** packs a node's nibble path plus a flag (leaf vs. extension, odd vs. even) into bytes. And one rule trips up every hand-rolled trie:
-
-<SpecExcerpt
-  source="Ethereum Yellow Paper"
-  href="https://ethereum.github.io/yellowpaper/paper.pdf"
-  ref="Appendix D, Modified Merkle-Patricia Tree"
->
-The trie's node-cap function hashes a node's RLP only when it is at least 32
-bytes; shorter nodes are **inlined** directly into their parent. That one rule —
-embed if `len(rlp) < 32`, else reference by `keccak256(rlp)` — is the single most
-common reason a hand-rolled trie's root fails to match a client's.
-</SpecExcerpt>
-
-What sits in a leaf isn't just a balance — it's the account's four fields, and one of them nests *another* trie:
-
-<SpecExcerpt
-  kind="code"
-  source="execution-specs"
-  href="https://github.com/ethereum/execution-specs"
-  ref="state account"
->
-```python
-class Account:
-    nonce: Uint           # transactions sent from this account
-    balance: U256         # wei
-    storage_root: Root    # root of THIS account's storage trie (tries nest!)
-    code_hash: Hash32     # keccak256 of contract code (empty-code hash for EOAs)
-```
-</SpecExcerpt>
-
-So a single `SSTORE` from step 7 ripples a new storage root into the account leaf, which ripples a new state root into the header — the same wave you just watched, nested one level deeper. (One real-world detail: keys are actually `keccak256(address)`, not the raw address — the "secure trie" — which scatters accounts so prefixes rarely collide.)
-
-### Why the shape is still changing
-
-The hexary trie has a bill: to **prove** one account to someone holding only the root — what a <KeyTerm term="stateless client" def="A node that verifies blocks using witnesses (proofs) supplied with the block, instead of storing the full state itself." /> needs — you must reveal, at every level, the *sibling* hashes you didn't descend into. A 16-way branch means up to 15 siblings per level; times depth, witnesses balloon into megabytes. That's the roadblock to statelessness, and it's why the commitment is being redesigned.
-
-<WidgetFrame
-  title="Hexary MPT → Verkle → Binary"
-  caption="The same account, proven three ways. Watch how node arity and witness size trade off — and why the roadmap moved."
->
-  <StructureCompare client:visible />
-</WidgetFrame>
-
-For years the fix was **Verkle trees** (vector commitments: one short proof for all 256 children, siblings stop mattering). Through 2024–2025 the roadmap pivoted toward a **binary Merkle tree** (EIP-7864): arity 2, ordinary hashing, no trusted setup, and friendly to the <KeyTerm term="SNARK provers" def="Systems that produce succinct proofs that a computation was done correctly. Simple hash-based trees are far cheaper to prove inside a SNARK than vector-commitment schemes." /> that will eventually verify Ethereum's state transitions.
-
-<Callout type="warning" title="Moving target">
-Live protocol design, not settled history. Verkle was the plan; binary trees
-(EIP-7864) are the current front-runner. The durable lesson is the chain of
-cause we just walked: **commitment scheme → tree shape → witness size.**
-</Callout>
-
 <Callout type="insight" title="And that is Ethereum">
-A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; the **hash-linked blockchain** because a copied ledger needs an ordered, tamper-evident past; **proof-of-stake consensus** because forks need a costly, punishable vote to converge on one chain; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **Merkle-Patricia trie** and its **state root** because nodes must agree on the whole world at a glance — and prove any part of it cheaply. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
+A programmable, decentralized, metered world computer, secured by staked money, every account folded into one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; the **Merkle-Patricia trie** and its **state root** because every node must agree on the whole world at a glance — and prove any part of it cheaply; the **hash-linked blockchain** because that state still needs an ordered, un-rewritable history; **proof-of-stake consensus** because competing chains need a costly, punishable vote to converge; the **EVM** and its **data** field because numbers can't hold rules; and **gas** with its **limit** and **fee** fields because code that can do anything must not be able to run forever for free. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
 </Callout>
 
 </DepthLayer>

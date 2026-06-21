@@ -1,13 +1,13 @@
 ---
 title: You could have invented Ethereum
 dek: One page, one continuous build. Start with a single shared spreadsheet, animate the one thing wrong with it, fix exactly that, and repeat — until a programmable, staked world computer falls out as the only thing it could have become.
-summary: A step-by-step, fully-animated derivation of Ethereum from scratch. Eight steps, each with its own animation, each forced by the flaw in the step before it — signatures, accounts, decentralization, staked consensus, the EVM, gas, and the state root. Original analogies, adapted to Ethereum.
+summary: A step-by-step, fully-animated derivation of Ethereum from scratch. Nine steps, each with its own animation, each forced by the flaw in the step before it — signatures, accounts, decentralization, the hash-linked blockchain, proof-of-stake consensus, the EVM, gas, and the Merkle-Patricia trie. Original analogies, adapted to Ethereum.
 topic: Start here
 order: -1
 spine: true
 prerequisites: ["curiosity"]
-updated: 2026-06-20
-readingMinutes: 16
+updated: 2026-06-21
+readingMinutes: 18
 ---
 
 import DepthLayer from "@/components/explorable/DepthLayer.astro";
@@ -17,7 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 
-Most explanations of Ethereum hand you the finished machine and name its parts. This one builds it. We start with the dumbest design that almost works, watch the single thing that breaks it, and fix *exactly* that — nothing more. Do it eight times and the famous pieces stop being trivia to memorize. Each one is just the answer to "what broke in the last step?"
+Most explanations of Ethereum hand you the finished machine and name its parts. This one builds it. We start with the dumbest design that almost works, watch the single thing that breaks it, and fix *exactly* that — nothing more. Do it nine times and the famous pieces stop being trivia to memorize. Each one is just the answer to "what broke in the last step?"
 
 Here is the analogy we'll hold the whole way down. Forget coins and miners for a moment. Picture **one spreadsheet that the entire world shares** — a single sheet of who-owns-what that anyone can read and anyone can propose changes to. By the end, that spreadsheet will be able to *run programs*, no one will own it, and lying to it will cost you a fortune. That spreadsheet is Ethereum.
 
@@ -26,10 +26,11 @@ Here is the analogy we'll hold the whole way down. Forget coins and miners for a
   { id: "step-2", label: "Signing edits" },
   { id: "step-3", label: "Reading the author" },
   { id: "step-4", label: "Everyone's copy" },
-  { id: "step-5", label: "Staked consensus" },
-  { id: "step-6", label: "Cells that compute" },
-  { id: "step-7", label: "Metering work" },
-  { id: "step-8", label: "One fingerprint" },
+  { id: "step-5", label: "The blockchain" },
+  { id: "step-6", label: "Agreeing on one chain" },
+  { id: "step-7", label: "Cells that compute" },
+  { id: "step-8", label: "Metering work" },
+  { id: "step-9", label: "One fingerprint" },
 ]} />
 
 <DepthLayer tier="intuition" id="step-1" num="1" badge="step" title="The shared sheet">
@@ -111,32 +112,56 @@ So nobody hosts the spreadsheet. *Everybody* does. Every participant keeps the f
 This is the real jump from "a database" to "a blockchain": the data stops living somewhere and starts living *everywhere*, with the rules baked into every copy.
 
 <Callout type="warning" title="What breaks">
-With no leader, whose next batch of edits is the *official* one? I can whisper one version to the merchant — "you've been paid" — and a different version to everyone else where I never paid at all. Two valid histories, one of them a lie. This is the **double-spend**, and it is the hardest problem in the entire design.
+Two cracks open at once. Edits arrive at different copies in different *orders*, so whose ordering is the real one? And nothing physically stops me from quietly rewriting last week's edit in my own copy and re-sharing that. Before we can even argue about which history is true, history needs to be **ordered into batches** and made **tamper-evident**.
 </Callout>
 
-**→ Step 5: agree on one order, and make lying self-destructive.**
+**→ Step 5: freeze the past into a chain.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="Staked consensus">
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="The blockchain">
 
-## Make rewriting history burn your own money
+## Chain the batches so the past can't move
 
-We can't appoint a trusted referee, so we make the *truth expensive to fake*. To help decide the next batch of edits, you post a bond — **stake** — real money locked in the sheet itself. Honest work earns a little; the network follows whichever history the most stake has backed. To rewrite a settled history you'd need a third of all the staked money to vouch for two contradictory versions at once — and doing that is *provable*. The protocol catches it and **burns the offender's bond**.
+Stop treating edits as loose slips of paper. Gather them into a numbered **block** — a bundle applied together — so everyone argues about whole batches instead of individual edits. Now make the past immovable with one trick: each block carries the **hash** of the block before it. A hash is a fingerprint that changes completely if even one bit of its input changes.
 
-<Scene name="consensus" caption="The chain follows the most-staked history. Once finalized, contradicting it is a provable offense that destroys the liar's bond." />
+<Scene name="blocks" caption="Each block commits to the hash of the one before it. Alter any past block and its hash changes, breaking every link that followed." />
 
-So the attacker's own deposit is the deterrent. A double-spend isn't blocked by a guard at the door; it's blocked by the fact that attempting it at scale sets fire to a fortune you posted in advance. Once a batch is **finalized**, reversing it costs more than any payment it could undo.
+Watch what that buys you. Every block's identity now depends on *all of history before it*. Tamper with a single edit in an old block and its hash changes; the next block's "previous hash" no longer matches, and so does every block after that — the whole tail lights up as broken. To rewrite one past entry you'd have to silently rebuild every block since. The past is frozen not by a guard, but by the sheer weight of everything stacked on top of it. That linked, batched, fingerprinted history is the **blockchain** — and each block's header also carries the state fingerprint we'll build in the last step.
+
+<Callout type="warning" title="What breaks">
+Hash-linking makes *rewriting* a chain obvious — but it doesn't say which chain is the real one. Anyone can build a perfectly valid chain. I can secretly grow an alternate one where I never paid the merchant and reveal it later. Both are valid blockchains. Whose is canonical? This is the **double-spend**, the hardest problem in the design.
+</Callout>
+
+**→ Step 6: agree on one chain, and make lying self-destructive.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="Agreeing on one chain">
+
+## Agree on one history — and price the lie
+
+We can't appoint a referee, so the network has to *converge* on one chain by itself. The obvious idea — let everyone vote, one node one vote — dies instantly. Identities are free: I spin up a million fake nodes (a **Sybil attack**) and outvote the honest world before breakfast.
+
+<Scene name="sybil" caption="Votes counted per identity fail — identities are free to forge. A vote has to cost something real you can't fake." />
+
+So a vote must *cost* something unforgeable. There are two famous prices. **Proof of work** charges electricity: to extend the chain you burn real computation, and the chain with the most work behind it wins, because faking it means out-burning the entire honest network. **Proof of stake** — Ethereum's choice — charges *bonded money*: validators lock up a deposit to propose and attest to blocks. It's cheaper and greener, but the real prize is something work can't offer: because every voter is a known, bonded deposit, a liar can be *punished*, not merely out-competed.
+
+On that base, two mechanisms settle the chain. **Fork choice** keeps the network on one history moment to moment: follow the fork with the most attesting stake behind it, so a minority can never make their branch the heaviest. **Finality** makes old history permanent: periodically validators vote to *finalize* a checkpoint, and once two-thirds of all stake has, reversing it would require a third of all stake to sign two contradictory checkpoints — a provable crime the protocol catches and punishes by **slashing**, destroying their deposits.
+
+<Scene name="consensus" caption="The chain follows the most-staked fork; a finalized block can't be reversed without validators burning a third of all stake." />
+
+So the attacker's own deposit is the deterrent. The double-spend isn't stopped by a guard at the door — it's stopped because pulling it off at scale sets fire to a fortune you posted in advance, while honest validators simply keep the heaviest, finalized chain.
 
 <Callout type="warning" title="What breaks">
 This is a beautiful way to agree on *balances*. But all we can express is "move money from row A to row B." I want escrows, tokens, auctions, votes, loans — *rules*, not just transfers. A column of numbers can't hold a rule.
 </Callout>
 
-**→ Step 6: let the cells hold programs.**
+**→ Step 7: let the cells hold programs.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="Cells that compute">
+<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Cells that compute">
 
 ## Cells that run programs
 
@@ -152,11 +177,11 @@ And it forces one more field onto the transaction. To *call* a contract, an edit
 Programs can loop forever. One malicious cell saying `while (true) {}` would freeze every node on the planet trying to run it — the halting problem, turned into a weapon. You cannot run untrusted code for free.
 </Callout>
 
-**→ Step 7: put a meter on every instruction.**
+**→ Step 8: put a meter on every instruction.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-7" num="7" badge="step" title="Metering work">
+<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="Metering work">
 
 ## A meter so nothing runs forever
 
@@ -174,20 +199,28 @@ That completes the transaction. Lay it out and not one field is decoration — e
 One last gap. Every node is supposed to hold the *exact same* world — every row, every contract, every storage slot. How does a node prove, cheaply and instantly, that its copy matches everyone else's, without shipping the entire spreadsheet to compare?
 </Callout>
 
-**→ Step 8: fold the whole world into one number.**
+**→ Step 9: fold the whole world into one number.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-8" num="8" badge="step" title="One fingerprint">
+<DepthLayer tier="mechanism" id="step-9" num="9" badge="step" title="One fingerprint">
 
 ## One fingerprint for the entire world
 
-Hash the sheet — but cleverly. Arrange every account into a tree where each node's fingerprint is built from its children's fingerprints, all the way up to a single 32-byte value at the top: the **state root**. Stamp that root into every block. Now two nodes compare *one number* to know they hold the identical world, and changing any single row changes the root. Better still, you can prove one account's balance to someone who has *only the root*, by handing them the short path of hashes from that leaf to the top — no need to send the rest of the sheet.
+Back to the catch: every node must check, cheaply, that it holds the identical world. The naive fix is to hash the entire sheet into one number and compare. It half-works and breaks in two ways: changing a *single* balance forces you to re-hash the whole sheet, and to prove your balance to someone you'd have to hand them the *entire* sheet so they could re-hash it.
 
-<Scene name="root" caption="Every account folds up a hash tree into a single 32-byte state root in the block header — one number that fingerprints the whole world." />
+Fix both with a **tree of hashes**. Hash accounts in groups, then hash those hashes, level by level, up to a single root. Now editing one account only re-hashes the short path from its leaf to the root — not the whole sheet — and you can prove one account to someone holding only the root by sending just the sibling hashes along that path. That's a Merkle tree.
+
+But state isn't a tidy fixed array; it's a sparse, ever-changing map keyed by 20-byte addresses. A plain tree doesn't encode *where* an account lives. So make the key *be* the path: read the address as a string of hex digits — **nibbles** — and walk them down the tree to find the account.
+
+<Scene name="triepath" caption="An address is a path of nibbles. Walk it down the tree to the account; three node types make that walk efficient." />
+
+Walking that path efficiently forces exactly three kinds of node, and each earns its place. A **branch** node is a 16-way fork — one slot per possible next nibble — used wherever paths diverge. A **leaf** holds the final stretch of path and the account's value. And an **extension** node compresses a long run of nibbles that everything below happens to share, so the tree doesn't waste a whole 16-way branch on a stretch where nothing forks. Hash every node from its children — keccak of its encoding — up to one root, and you have Ethereum's **Merkle-Patricia trie**: the Patricia part makes keyed updates cheap, the Merkle part makes the whole thing one verifiable fingerprint.
+
+<Scene name="root" caption="Edit an account, re-hash up its path, and a brand-new 32-byte state root lands in the block header — the number every node compares." />
 
 <Callout type="insight" title="And that is Ethereum">
-A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; **staked consensus** because decentralization invites double-spends; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **state root** because nodes must agree on the whole world at a glance. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
+A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; the **hash-linked blockchain** because a copied ledger needs an ordered, tamper-evident past; **proof-of-stake consensus** because forks need a costly, punishable vote to converge on one chain; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **Merkle-Patricia trie** and its **state root** because nodes must agree on the whole world at a glance — and prove any part of it cheaply. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
 </Callout>
 
 </DepthLayer>
@@ -202,10 +235,10 @@ Every step above is the intuition. Each one also has a full explorable with the 
   links={[
     { kind: "post", label: "Keys, signatures & addresses", note: "Steps 2–3, with a live secp256k1 lab", href: "/keys-signatures-and-addresses" },
     { kind: "post", label: "How transactions work", note: "Step 3, build & sign a real tx", href: "/how-transactions-work" },
-    { kind: "post", label: "How Ethereum stores state", note: "Step 1 & 8, the real Merkle-Patricia trie", href: "/how-ethereum-stores-state" },
-    { kind: "post", label: "Double-spending & the defenses", note: "Steps 4–5, play the attacker", href: "/double-spending" },
-    { kind: "post", label: "The EVM", note: "Step 6, step through real bytecode", href: "/the-evm" },
-    { kind: "post", label: "The mempool & the fee market", note: "Step 7, drive the EIP-1559 controller", href: "/the-mempool-and-fees" },
+    { kind: "post", label: "Double-spending & the defenses", note: "Steps 5–6, play the attacker", href: "/double-spending" },
+    { kind: "post", label: "The EVM", note: "Step 7, step through real bytecode", href: "/the-evm" },
+    { kind: "post", label: "The mempool & the fee market", note: "Step 8, drive the EIP-1559 controller", href: "/the-mempool-and-fees" },
+    { kind: "post", label: "How Ethereum stores state", note: "Steps 5 & 9, the real Merkle-Patricia trie", href: "/how-ethereum-stores-state" },
   ]}
 />
 

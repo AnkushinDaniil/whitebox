@@ -13,9 +13,12 @@ interface Props {
     | "replay"
     | "txfields"
     | "network"
+    | "blocks"
+    | "sybil"
     | "consensus"
     | "evm"
     | "gas"
+    | "triepath"
     | "root";
   caption?: string;
 }
@@ -139,6 +142,42 @@ const { name, caption } = Astro.props;
       </svg>
     )}
 
+    {/* ── blocks: edits batched, hash-linked; tampering the past cascades ── */}
+    {name === "blocks" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Blocks hash-linked into a chain">
+        {[14, 184, 354].map((x, i) => (
+          <g class="blk-g">
+            <rect class="block" x={x} y="50" width="112" height="96" rx="8" />
+            <text class="t-cap" x={x + 56} y="68">block #{i + 1}</text>
+            <rect class={`eline ${i === 0 ? "tamper-line" : ""}`} x={x + 12} y="78" width="88" height="9" rx="2" />
+            <rect class="eline" x={x + 12} y="92" width="68" height="9" rx="2" />
+            <rect class={`hashchip hc${i}`} x={x + 12} y="116" width="88" height="20" rx="4" />
+            <text class={`t-hash htx${i}`} x={x + 56} y="130">hash 9f…{i}c</text>
+          </g>
+        ))}
+        <path class="plink pl1" d="M184 126 H126" /><path class="plink pl2" d="M354 126 H296" />
+        <text class="t-cap" x="155" y="120">prev</text><text class="t-cap" x="325" y="120">prev</text>
+        <text class="t-x tamper-lbl" x="240" y="174">edit one past block → every hash after it breaks</text>
+      </svg>
+    )}
+
+    {/* ── sybil: free identities overwhelm a vote; cost makes them safe ── */}
+    {name === "sybil" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Sybil attack and costly identity">
+        <circle class="attacker" cx="64" cy="98" r="22" />
+        <text class="t-emoji" x="64" y="105">😈</text>
+        <text class="t-cap" x="64" y="138">one actor</text>
+        {[[180, 44], [250, 40], [320, 60], [200, 110], [280, 120], [360, 110]].map(([x, y], i) => (
+          <g class={`clone ${i === 2 ? "clone-keep" : "clone-doom"} sc${i}`}>
+            <circle class="clone-c" cx={x} cy={y} r="13" />
+            <text class="t-vote" x={x} y={y + 4}>+1</text>
+          </g>
+        ))}
+        <text class="t-x sybil-free" x="300" y="166">free identities → outvote everyone</text>
+        <text class="t-ok sybil-cost" x="300" y="166">each must stake real money → can't afford an army</text>
+      </svg>
+    )}
+
     {/* ── consensus: votes pile on the heavier fork; finalized locks ── */}
     {name === "consensus" && (
       <svg viewBox="0 0 480 210" role="img" aria-label="Consensus picks the heaviest chain">
@@ -186,6 +225,35 @@ const { name, caption } = Astro.props;
           {["PUSH −3", "ADD −3", "SSTORE −20000", "out of gas ✋"].map((op, i) => (<text class={`t-op opx o${i}`} x="240" y="118">{op}</text>))}
         </g>
         <text class="t-cap" x="240" y="156">every step costs — no program runs forever</text>
+      </svg>
+    )}
+
+    {/* ── triepath: an address is a path of nibbles down typed nodes ── */}
+    {name === "triepath" && (
+      <svg viewBox="0 0 460 250" role="img" aria-label="Walking an address down the trie">
+        <text class="t-cap" x="44" y="22">address</text>
+        {["a", "7", "3", "f", "c"].map((n, i) => (
+          <g>
+            <rect class={`nib nb${i}`} x={96 + i * 34} y="9" width="28" height="20" rx="4" />
+            <text class={`t-nib nbt${i}`} x={110 + i * 34} y="24">{n}</text>
+          </g>
+        ))}
+        <rect class="root-chip" x="300" y="8" width="146" height="22" rx="5" />
+        <text class="t-root tp-root" x="373" y="23">stateRoot ⟳</text>
+        {[
+          ["branch", "follow slot a"],
+          ["branch", "follow slot 7"],
+          ["extension", "shared “3 f c”"],
+          ["leaf", "value → 9 Ξ"],
+        ].map(([kind, note], i) => (
+          <g class={`tn tn${i}`}>
+            <rect class={`tnode ${kind}`} x="90" y={52 + i * 46} width="280" height="34" rx="6" />
+            <text class="t-field" x="106" y={73 + i * 46}>{kind}</text>
+            <text class="t-cap tnote" x="356" y={73 + i * 46}>{note}</text>
+          </g>
+        ))}
+        <path class="tarrow ta0" d="M230 86 V98" /><path class="tarrow ta1" d="M230 132 V144" /><path class="tarrow ta2" d="M230 178 V190" />
+        <text class="t-cap tp-rehash" x="230" y="244">edit the leaf → re-hash up the path → new root</text>
       </svg>
     )}
 
@@ -303,6 +371,60 @@ const { name, caption } = Astro.props;
   .tr1 .txbar { animation-delay: 1s } .tr2 .txbar { animation-delay: 2s } .tr3 .txbar { animation-delay: 3s } .tr4 .txbar { animation-delay: 4s } .tr5 .txbar { animation-delay: 5s } .tr6 .txbar { animation-delay: 6s } .tr7 .txbar { animation-delay: 7s } .tr8 .txbar { animation-delay: 8s }
   @keyframes rowlit { 0% { opacity: 0.4 } 0.5%,10% { opacity: 1 } 11%,100% { opacity: 0.7 } }
   @keyframes barlit { 0% { fill: transparent } 0.5%,10% { fill: color-mix(in oklab, var(--color-accent) 12%, transparent) } 11%,100% { fill: transparent } }
+
+  /* blocks: hash-linked chain; tampering the past cascades red */
+  .block { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .eline { fill: color-mix(in oklab, var(--color-ink-faint) 14%, var(--color-surface)); stroke: none; }
+  .hashchip { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); }
+  .t-hash { fill: var(--color-hash); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .plink { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; marker-end: none; }
+  .tamper-lbl { animation: fade-hold 6s ease-in-out infinite; }
+  .tamper-line { animation: tamperflip 6s ease-in-out infinite; }
+  .hc0, .t-hash.htx0 { animation: brk 6s ease-in-out infinite; }
+  .pl1 { animation: brkstroke 6s ease-in-out 0.35s infinite; }
+  .hc1, .t-hash.htx1 { animation: brk 6s ease-in-out 0.7s infinite; }
+  .pl2 { animation: brkstroke 6s ease-in-out 1.05s infinite; }
+  .hc2, .t-hash.htx2 { animation: brk 6s ease-in-out 1.4s infinite; }
+  @keyframes brk { 0%,45% { stroke: var(--color-hash); fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)) } 58%,90% { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 18%, var(--color-surface)) } 100% { stroke: var(--color-hash) } }
+  @keyframes brkstroke { 0%,45% { stroke: var(--color-border-strong) } 58%,90% { stroke: var(--color-changed); stroke-dasharray: 4 3 } 100% { stroke: var(--color-border-strong) } }
+  @keyframes tamperflip { 0%,45% { fill: color-mix(in oklab, var(--color-ink-faint) 14%, var(--color-surface)) } 55%,90% { fill: var(--color-changed) } 100% { fill: color-mix(in oklab, var(--color-ink-faint) 14%, var(--color-surface)) } }
+
+  /* sybil: free clones flood a vote; cost collapses the army */
+  .attacker { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke: var(--color-changed); }
+  .t-emoji { font-size: 18px; text-anchor: middle; }
+  .clone-c { fill: color-mix(in oklab, var(--color-changed) 12%, var(--color-surface)); stroke: var(--color-changed); }
+  .t-vote { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .clone { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .clone-doom { animation: clonedoom 6s ease-in-out infinite; }
+  .clone-keep { animation: clonekeep 6s ease-in-out infinite; }
+  .sc0 { animation-delay: 0.1s } .sc1 { animation-delay: 0.25s } .sc3 { animation-delay: 0.4s } .sc4 { animation-delay: 0.55s } .sc5 { animation-delay: 0.7s }
+  .sybil-free { animation: fade-out-half 6s ease-in-out infinite; }
+  .sybil-cost { animation: fade-in-half 6s ease-in-out infinite; }
+  @keyframes clonedoom { 0% { opacity: 0; transform: scale(0.3) } 12%,46% { opacity: 1; transform: scale(1) } 62% { opacity: 0; transform: scale(0.3) } 100% { opacity: 0 } }
+  @keyframes clonekeep { 0% { opacity: 0; transform: scale(0.3) } 12%,100% { opacity: 1; transform: scale(1) } }
+  @keyframes fade-out-half { 0%,40% { opacity: 1 } 52%,100% { opacity: 0 } }
+  @keyframes fade-in-half { 0%,46% { opacity: 0 } 58%,100% { opacity: 1 } }
+
+  /* triepath: walk the nibble path down typed nodes, then re-hash up */
+  .nib { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .t-nib { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .tnode { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tnode.branch { stroke: var(--color-node-branch); }
+  .tnode.extension { stroke: var(--color-node-extension); }
+  .tnode.leaf { stroke: var(--color-node-leaf); }
+  .tnote { text-anchor: end; }
+  .tarrow { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .root-chip { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); }
+  .tp-rehash { animation: fade-hold 6s ease-in-out infinite; }
+  .tn { opacity: 0.55; }
+  .tn0 { animation: walk 6s ease-in-out infinite; } .tn1 { animation: walk 6s ease-in-out 0.5s infinite; }
+  .tn2 { animation: walk 6s ease-in-out 1s infinite; } .tn3 { animation: walk 6s ease-in-out 1.5s infinite; }
+  .nb0 { animation: niblit 6s ease-in-out infinite; } .nb1 { animation: niblit 6s ease-in-out 0.5s infinite; }
+  .nb2, .nb3, .nb4 { animation: niblit 6s ease-in-out 1s infinite; }
+  .tp-root { animation: rootflash 6s ease-in-out infinite; }
+  @keyframes walk { 0% { opacity: 0.55 } 8%,30% { opacity: 1 } 70% { opacity: 1 } 80% { opacity: 0.55 } 100% { opacity: 0.55 } }
+  @keyframes niblit { 0%,4% { fill: var(--color-surface) } 10%,40% { fill: color-mix(in oklab, var(--color-accent) 16%, var(--color-surface)) } 55%,100% { fill: var(--color-surface) } }
+  @keyframes rootflash { 0%,68% { stroke: var(--color-accent); filter: none } 80% { stroke: var(--color-node-leaf); filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { stroke: var(--color-accent); filter: none } }
 
   /* network: copies fan out */
   .copy { opacity: 0; transform-box: fill-box; transform-origin: center; }

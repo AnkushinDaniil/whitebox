@@ -76,7 +76,21 @@ Here's the trick that lets Ethereum drop the "from" field entirely. From a signa
 
 <Scene name="recover" caption="Recovery: the signer's address is derived from the signature alone. The edit never needs to claim who sent it." />
 
-So an Ethereum transaction genuinely has no "from" field. The network takes your signed edit, recovers the address, and *that* is the only row it's allowed to debit. Authorship and authority collapse into one unforgeable stamp. Add a per-account counter — a **nonce** — so the same edit can't be replayed twice, and a single account can finally move its money safely.
+So an Ethereum transaction genuinely has no "from" field. The network takes your signed edit, recovers the address, and *that* is the only row it's allowed to debit. Authorship and authority collapse into one unforgeable stamp — but authorship alone is not yet *safety*.
+
+### A signature is reusable — so the nonce
+
+Here's the flaw the seal doesn't fix: it never expires, and the message it covers is public. The moment you hand Bob a signed "subtract 5 from me, add 5 to Bob," Bob holds a perfectly valid edit he can broadcast *again* — and again. Every copy verifies; every copy moves another 5. One payment becomes a slow leak you never authorized.
+
+<Scene name="replay" caption="A signed message is public and valid forever, so any copy replays. A nonce makes each one single-use." />
+
+The fix is one counter folded into the signed message: a **nonce**, "this is my 7th transaction." The network remembers how many each account has spent and applies only the next number in line. Your nonce-7 edit lands exactly once; every replayed copy now names a 7 the account has already passed, so it bounces. Ordering comes free — an account's edits can only take effect in nonce order, so no one can reshuffle them either.
+
+### Replayable across *worlds* too — so the chainId
+
+One subtler copy remains. The same software runs on testnets and other EVM chains that hold the very same addresses. A signed nonce-7 transfer on a test network would verify just as well *replayed onto the real one*. So the signed message also commits to a **chainId** — making the edit valid on exactly one chain and inert on every other.
+
+A bare transfer is finally watertight, and look at *why* each field is there: a recipient and amount to say what to do, a **nonce** so it can't be replayed here, a **chainId** so it can't be replayed elsewhere, and a signature that *is* the sender. Pull any one out and a specific door swings open.
 
 <Callout type="warning" title="What breaks">
 We've been saying "everyone applies the same edit." But *who holds the sheet?* If one server stores it, that server can drop your edits, reorder them, or quietly rewrite a row — and we've reinvented the bank we just fired.
@@ -132,6 +146,8 @@ Upgrade the sheet one more time: let a row hold not just a balance but **code**.
 
 This is the leap that makes Ethereum *Ethereum* rather than a faster bank. A contract is just an account whose behavior is fixed in code that anyone can read and no one can secretly override — an escrow that releases when conditions are met, a token whose supply rules are public, a vote no clerk can miscount.
 
+And it forces one more field onto the transaction. To *call* a contract, an edit has to say which function and with what arguments — that payload is the **data** field. A plain transfer leaves it empty; calling code fills it with the encoded call. (If a transaction has no recipient at all, the data field is read as the code for a *brand-new* contract — which is exactly how contracts get deployed.)
+
 <Callout type="warning" title="What breaks">
 Programs can loop forever. One malicious cell saying `while (true) {}` would freeze every node on the planet trying to run it — the halting problem, turned into a weapon. You cannot run untrusted code for free.
 </Callout>
@@ -148,7 +164,11 @@ Charge for computation, one instruction at a time. Every operation has a price i
 
 <Scene name="gas" caption="Each instruction spends gas from a prepaid budget. Run out and execution halts — so no program can run forever." />
 
-The same meter doubles as the fee market. The per-gas base price isn't a blind auction; it's a controller that nudges itself up when blocks are full and down when they're empty, targeting half-full blocks — and the base fee is **burned**, not pocketed, so heavy use makes the currency scarcer rather than enriching a collector.
+That prepaid budget is itself a transaction field — the **gasLimit** — and it quietly does a second job: since execution can never burn more gas than the limit, it caps your worst-case loss when you call a contract whose behavior you don't fully trust. The price you pay needs fields too. Block-to-block the base fee swings, so you don't name an exact price; you name a ceiling, **maxFeePerGas** (the most you'll tolerate), and a **maxPriorityFeePerGas** — a tip on top of the burned base fee to give the proposer a reason to include you. The base fee itself isn't a blind auction; it's a controller that drifts up when blocks are full and down when they're empty, targeting half-full blocks, and it's **burned** rather than pocketed.
+
+That completes the transaction. Lay it out and not one field is decoration — each is the answer to a specific *"what breaks without it?"*
+
+<Scene name="txfields" caption="The whole transaction, field by field. Each row is forced by the attack or failure it prevents — nothing is arbitrary." />
 
 <Callout type="warning" title="What breaks">
 One last gap. Every node is supposed to hold the *exact same* world — every row, every contract, every storage slot. How does a node prove, cheaply and instantly, that its copy matches everyone else's, without shipping the entire spreadsheet to compare?
@@ -167,7 +187,7 @@ Hash the sheet — but cleverly. Arrange every account into a tree where each no
 <Scene name="root" caption="Every account folds up a hash tree into a single 32-byte state root in the block header — one number that fingerprints the whole world." />
 
 <Callout type="insight" title="And that is Ethereum">
-A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; **decentralization** because one host is a bank; **staked consensus** because decentralization invites double-spends; the **EVM** because numbers can't hold rules; **gas** because code can loop forever; the **state root** because nodes must agree on the whole world at a glance. You could have invented every piece — each one was forced by the flaw in the one before it.
+A programmable, decentralized, metered world computer, secured by staked money, whose entire state collapses to one verifiable number. Read the chain of fixes backward and nothing in it was arbitrary: **signatures** because edits could be forged; **recovery** because authorship had to be provable, not claimed; the **nonce** and **chainId** because a signature alone is endlessly replayable; **decentralization** because one host is a bank; **staked consensus** because decentralization invites double-spends; the **EVM** and its **data** field because numbers can't hold rules; **gas** with its **limit** and **fee** fields because code can loop forever and must be paid for; the **state root** because nodes must agree on the whole world at a glance. Not one field, not one mechanism, was a free choice — each was forced by the flaw in the one before it. You could have invented every piece.
 </Callout>
 
 </DepthLayer>

@@ -10,6 +10,8 @@ interface Props {
     | "state"
     | "sign"
     | "recover"
+    | "replay"
+    | "txfields"
     | "network"
     | "consensus"
     | "evm"
@@ -71,6 +73,50 @@ const { name, caption } = Astro.props;
           <text class="t-addr" x="360" y="106">0xBob…a3f1</text>
         </g>
         <text class="t-cap" x="360" y="146">no "from" field needed</text>
+      </svg>
+    )}
+
+    {/* ── replay: a signed tx is reusable; the nonce makes it single-use ── */}
+    {name === "replay" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The nonce defeats replay">
+        <rect class="msg rp-card" x="22" y="76" width="158" height="58" rx="8" />
+        <text class="t-s" x="101" y="100">send 5 Ξ → Bob</text>
+        <text class="t-cap rp-nonce" x="101" y="120">nonce 7 · 🔒</text>
+        <rect class="node" x="356" y="76" width="100" height="58" rx="8" />
+        <text class="t-cap" x="406" y="98">0xYou</text>
+        <text class="t-r" x="446" y="122">9 Ξ</text>
+        <path class="arrow rp-ok" d="M180 92 H356" />
+        <text class="t-ok" x="268" y="84">✓ applied once</text>
+        <g class="rp-dup">
+          <rect class="msg ghost" x="22" y="76" width="158" height="58" rx="8" />
+          <text class="t-x" x="101" y="108">✗ copy</text>
+        </g>
+        <text class="t-x rp-reject" x="300" y="160">replay rejected — nonce 7 already spent</text>
+      </svg>
+    )}
+
+    {/* ── txfields: every field justified by the attack it blocks ── */}
+    {name === "txfields" && (
+      <svg viewBox="0 0 480 318" role="img" aria-label="Anatomy of a transaction, every field justified">
+        <text class="t-mid" x="120" y="22">TRANSACTION</text>
+        <text class="t-cap" x="350" y="22">what breaks without it</text>
+        {[
+          ["chainId", "replay onto another chain"],
+          ["nonce", "replay on this chain"],
+          ["to", "no recipient (or: new contract)"],
+          ["value", "how much ether moves"],
+          ["data", "which code + args to run"],
+          ["gasLimit", "a loop drains your balance"],
+          ["maxFeePerGas", "overpaying a volatile fee"],
+          ["maxPriorityFee", "no tip — proposer skips you"],
+          ["sig r,s,yParity", "anyone could forge the sender"],
+        ].map(([f, why], i) => (
+          <g class={`txrow tr${i}`}>
+            <rect class="txbar" x="16" y={34 + i * 29} width="448" height="25" rx="4" />
+            <text class="t-field" x="28" y={51 + i * 29}>{f}</text>
+            <text class="t-why" x="210" y={51 + i * 29}>{why}</text>
+          </g>
+        ))}
       </svg>
     )}
 
@@ -224,6 +270,39 @@ const { name, caption } = Astro.props;
   @keyframes blink { 0%,40% { opacity: 1 } 55%,100% { opacity: 0 } }
   @keyframes draw3 { 0%,15% { stroke-dashoffset: 100 } 45%,100% { stroke-dashoffset: 0 } }
   @keyframes reveal { 0%,45% { opacity: 0; transform: translateX(-8px) } 60%,100% { opacity: 1; transform: translateX(0) } }
+
+  .t-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  /* replay: tx applies once, duplicate bounces off the nonce */
+  .rp-nonce { fill: var(--color-accent-strong); }
+  .ghost { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); stroke-dasharray: 4 3; }
+  .rp-ok { stroke: var(--color-node-leaf); stroke-dasharray: 180; stroke-dashoffset: 180; animation: draw-ok 5s ease-in-out infinite; }
+  .t-ok { animation: fade-hold 5s ease-in-out infinite; }
+  .rp-dup { animation: dupbounce 5s ease-in-out infinite; }
+  .rp-reject { animation: reject 5s ease-in-out infinite; }
+  @keyframes draw-ok { 0% { stroke-dashoffset: 180 } 25%,100% { stroke-dashoffset: 0 } }
+  @keyframes fade-hold { 0%,10% { opacity: 0 } 25%,100% { opacity: 1 } }
+  @keyframes dupbounce { 0%,40% { transform: translate(0,0); opacity: 0 } 50% { opacity: 1 } 62% { transform: translate(150px,0); opacity: 1 } 78% { transform: translate(40px,0); opacity: 1 } 92% { transform: translate(40px,0); opacity: 0 } 100% { opacity: 0 } }
+  @keyframes reject { 0%,62% { opacity: 0 } 74%,92% { opacity: 1 } 100% { opacity: 0 } }
+
+  /* txfields: each row's justification highlights in turn */
+  .txbar { fill: transparent; stroke: none; }
+  .t-field { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 13px; }
+  .t-why { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 11px; }
+  .txrow { opacity: 0.4; }
+  .tr0 { animation: rowlit 9s steps(1) infinite; }
+  .tr1 { animation: rowlit 9s steps(1) 1s infinite; }
+  .tr2 { animation: rowlit 9s steps(1) 2s infinite; }
+  .tr3 { animation: rowlit 9s steps(1) 3s infinite; }
+  .tr4 { animation: rowlit 9s steps(1) 4s infinite; }
+  .tr5 { animation: rowlit 9s steps(1) 5s infinite; }
+  .tr6 { animation: rowlit 9s steps(1) 6s infinite; }
+  .tr7 { animation: rowlit 9s steps(1) 7s infinite; }
+  .tr8 { animation: rowlit 9s steps(1) 8s infinite; }
+  .txrow.tr0 .txbar, .txrow.tr1 .txbar, .txrow.tr2 .txbar, .txrow.tr3 .txbar, .txrow.tr4 .txbar, .txrow.tr5 .txbar, .txrow.tr6 .txbar, .txrow.tr7 .txbar, .txrow.tr8 .txbar { animation: barlit 9s steps(1) infinite; }
+  .tr1 .txbar { animation-delay: 1s } .tr2 .txbar { animation-delay: 2s } .tr3 .txbar { animation-delay: 3s } .tr4 .txbar { animation-delay: 4s } .tr5 .txbar { animation-delay: 5s } .tr6 .txbar { animation-delay: 6s } .tr7 .txbar { animation-delay: 7s } .tr8 .txbar { animation-delay: 8s }
+  @keyframes rowlit { 0% { opacity: 0.4 } 0.5%,10% { opacity: 1 } 11%,100% { opacity: 0.7 } }
+  @keyframes barlit { 0% { fill: transparent } 0.5%,10% { fill: color-mix(in oklab, var(--color-accent) 12%, transparent) } 11%,100% { fill: transparent } }
 
   /* network: copies fan out */
   .copy { opacity: 0; transform-box: fill-box; transform-origin: center; }

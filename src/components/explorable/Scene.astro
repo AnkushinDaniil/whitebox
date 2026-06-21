@@ -21,11 +21,13 @@ interface Props {
     | "triepath"
     | "root";
   caption?: string;
+  /** widen the figure frame for dense diagrams */
+  wide?: boolean;
 }
-const { name, caption } = Astro.props;
+const { name, caption, wide } = Astro.props;
 ---
 
-<figure class="scene">
+<figure class:list={["scene", wide && "scene-wide"]}>
   <div class="scene-stage" data-scene={name}>
     {/* ── the shared state: a spreadsheet an edit mutates ── */}
     {name === "state" && (
@@ -142,40 +144,79 @@ const { name, caption } = Astro.props;
       </svg>
     )}
 
-    {/* ── blocks: one balance edit ripples leaf → stateRoot → header → hash → chain ── */}
+    {/* ── blocks: a full state trie; one balance edit recomputes the path up
+         to a new stateRoot, into the header, then breaks every later block ── */}
     {name === "blocks" && (
-      <svg viewBox="0 0 480 304" role="img" aria-label="One state change ripples through the trie and the whole chain">
+      <svg viewBox="0 0 480 326" role="img" aria-label="A full state trie recomputing one path into the block chain">
+        {/* the block chain, top */}
         {[0, 1, 2].map((i) => {
           const x = 14 + i * 162;
-          const sr = i === 0 ? "9f → a2" : i === 1 ? "71c4" : "0db8";
-          const h = i === 0 ? "3a → 7e" : i === 1 ? "88b2" : "f0c5";
+          const sr = i === 1 ? "71c4" : "0db8";
+          const h = i === 0 ? "3a07" : i === 1 ? "88b2" : "f0c5";
           return (
             <g class="blk-g">
-              <rect class="block" x={x} y="18" width="132" height="104" rx="8" />
-              <text class="t-cap" x={x + 66} y="35">block #{i + 1}</text>
-              <rect class={`fchip ${i === 0 ? "g4" : ""}`} x={x + 8} y="42" width="116" height="18" rx="3" />
-              <text class="t-fld" x={x + 14} y="55">stateRoot {sr}</text>
-              <rect class="fchip" x={x + 8} y="64" width="116" height="18" rx="3" />
-              <text class="t-fld" x={x + 14} y="77">txsRoot c1{i}9</text>
-              <text class="t-cap" x={x + 18} y="108">prev</text>
-              <rect class={`hchip ${i === 0 ? "g5" : i === 1 ? "g6" : "g7"}`} x={x + 48} y="94" width="76" height="18" rx="3" />
-              <text class="t-fld" x={x + 55} y="107">hash {h}</text>
+              <rect class="block" x={x} y="12" width="132" height="86" rx="8" />
+              <text class="t-cap" x={x + 66} y="27">block #{i + 1}</text>
+              <rect class="fchip" x={x + 8} y="33" width="116" height="17" rx="3" />
+              {i === 0 && <text class="t-fld old oD" x={x + 14} y="45">stateRoot 9f12</text>}
+              {i === 0 && <text class="t-fld new nD" x={x + 14} y="45">stateRoot a2e0</text>}
+              {i !== 0 && <text class="t-fld" x={x + 14} y="45">stateRoot {sr}</text>}
+              <rect class="fchip" x={x + 8} y="53" width="116" height="17" rx="3" />
+              <text class="t-fld" x={x + 14} y="65">txsRoot c1{i}9</text>
+              <text class="t-cap" x={x + 18} y="90">prev</text>
+              <rect class={`hchip ${i === 0 ? "gE" : i === 1 ? "gF" : "gG"}`} x={x + 48} y="76" width="76" height="17" rx="3" />
+              <text class="t-fld" x={x + 55} y="89">hash {h}</text>
             </g>
           );
         })}
-        <path class="plink g6" d="M146 103 H176" /><path class="plink g7" d="M308 103 H338" />
-        <rect class="tnode branch g3" x="20" y="150" width="120" height="22" rx="5" />
-        <text class="t-fld" x="34" y="165">root = stateRoot</text>
-        <rect class="tnode branch g2" x="20" y="196" width="120" height="22" rx="5" />
-        <text class="t-fld" x="34" y="211">branch</text>
-        <rect class="tnode leaf g1" x="20" y="242" width="120" height="24" rx="5" />
-        <text class="t-fld leaf-t" x="34" y="258">Alice 14 → 9</text>
-        <path class="tarrow" d="M80 242 V220" /><path class="tarrow" d="M80 196 V174" />
-        <path class="feed g3" d="M20 161 H8 V51 H22" />
-        <text class="t-cap" x="300" y="160">edit one balance ↓</text>
-        <text class="t-cap" x="300" y="176">it ripples up the trie,</text>
-        <text class="t-cap" x="300" y="192">into the header, the hash,</text>
-        <text class="t-cap" x="300" y="208">then breaks every block after.</text>
+        <path class="plink gF" d="M146 85 H176" /><path class="plink gG" d="M308 85 H338" />
+        <path class="feed" d="M160 143 H6 V44 H22" />
+        <text class="t-cap feed-lbl" x="350" y="128">root → block.stateRoot</text>
+
+        {/* root branch */}
+        <rect class="tnode branch" x="160" y="128" width="100" height="30" rx="6" />
+        <text class="t-fld" x="172" y="141">branch</text>
+        <text class="t-h old oC" x="172" y="153">root 91f3</text>
+        <text class="t-h new nC" x="172" y="153">root 2d7a</text>
+
+        {/* edges from root */}
+        <path class="edge edge-on" d="M198 158 L120 190" /><text class="t-nib" x="148" y="178">a</text>
+        <path class="edge" d="M224 158 L312 190" /><text class="t-nib" x="276" y="178">f</text>
+
+        {/* on-path branch (prefix a) and off-path branch (prefix f) */}
+        <rect class="tnode branch" x="64" y="190" width="92" height="30" rx="6" />
+        <text class="t-fld" x="74" y="203">branch</text>
+        <text class="t-h old oB" x="74" y="215">a· 3c08</text>
+        <text class="t-h new nB" x="74" y="215">a· 8a41</text>
+        <rect class="tnode branch" x="274" y="190" width="92" height="30" rx="6" />
+        <text class="t-fld" x="284" y="203">branch</text>
+        <text class="t-h" x="284" y="215">f· 77c2</text>
+
+        {/* edges to leaves */}
+        <path class="edge edge-on" d="M100 220 L74 264" /><text class="t-nib" x="80" y="246">7</text>
+        <path class="edge" d="M120 220 L162 264" /><text class="t-nib" x="150" y="246">9</text>
+        <path class="edge" d="M312 220 L300 264" /><text class="t-nib" x="300" y="246">2</text>
+        <path class="edge" d="M330 220 L388 264" /><text class="t-nib" x="366" y="246">5</text>
+
+        {/* the four accounts — only Alice (a7) changes */}
+        <rect class="tnode leaf changed-leaf" x="24" y="264" width="92" height="50" rx="6" />
+        <text class="t-fld leaf-t" x="34" y="278">a7 · Alice</text>
+        <text class="t-bal old oA" x="34" y="293">bal 14 Ξ</text>
+        <text class="t-bal new nA" x="34" y="293">bal 9 Ξ</text>
+        <text class="t-h old oA" x="34" y="307">h 3c1a</text>
+        <text class="t-h new nA" x="34" y="307">h 8a47</text>
+        {[
+          [120, "a9 · Bob", "bal 6 Ξ", "h 55de"],
+          [250, "f2 · Carol", "bal 20 Ξ", "h 9e10"],
+          [346, "f5 · Dave", "bal 3 Ξ", "h b204"],
+        ].map(([x, who, bal, h]) => (
+          <g>
+            <rect class="tnode leaf" x={x} y="264" width="92" height="50" rx="6" />
+            <text class="t-fld leaf-t" x={Number(x) + 10} y="278">{who}</text>
+            <text class="t-bal" x={Number(x) + 10} y="293">{bal}</text>
+            <text class="t-h" x={Number(x) + 10} y="307">{h}</text>
+          </g>
+        ))}
       </svg>
     )}
 
@@ -302,6 +343,7 @@ const { name, caption } = Astro.props;
     background: radial-gradient(120% 100% at 50% 0%, var(--color-surface-2), var(--color-canvas));
     padding: 1.1rem 1.2rem 0.9rem;
   }
+  .scene-wide { max-width: 720px; }
   .scene-stage svg { width: 100%; height: auto; display: block; }
   figcaption {
     margin-top: 0.5rem;
@@ -390,26 +432,38 @@ const { name, caption } = Astro.props;
   @keyframes rowlit { 0% { opacity: 0.4 } 0.5%,10% { opacity: 1 } 11%,100% { opacity: 0.7 } }
   @keyframes barlit { 0% { fill: transparent } 0.5%,10% { fill: color-mix(in oklab, var(--color-accent) 12%, transparent) } 11%,100% { fill: transparent } }
 
-  /* blocks: one edit ripples leaf → stateRoot → header → hash → chain */
+  /* blocks: a full trie whose changed path recomputes into the chain */
   .block { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .fchip { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-border); }
   .hchip { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
   .t-fld { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; }
+  .t-bal { fill: var(--color-ink); font-family: var(--font-mono); font-size: 10px; }
+  .t-h { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8px; }
   .leaf-t { fill: var(--color-node-leaf); }
   .plink { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   .feed { fill: none; stroke: var(--color-accent-dim); stroke-width: 1.4; stroke-dasharray: 3 3; }
-  /* the ripple: a glow wave sweeps each element in causal order */
-  .g1 { animation: gw1 8s linear infinite; } .g2 { animation: gw2 8s linear infinite; }
-  .g3 { animation: gw3 8s linear infinite; } .g4 { animation: gw4 8s linear infinite; }
-  .g5 { animation: gw5 8s linear infinite; } .g6 { animation: gw6 8s linear infinite; }
-  .g7 { animation: gw7 8s linear infinite; }
-  @keyframes gw1 { 0%,2% { filter: none } 6%,12% { filter: drop-shadow(0 0 7px var(--color-changed)) } 18%,100% { filter: none } }
-  @keyframes gw2 { 0%,12% { filter: none } 16%,22% { filter: drop-shadow(0 0 7px var(--color-changed)) } 28%,100% { filter: none } }
-  @keyframes gw3 { 0%,22% { filter: none } 26%,33% { filter: drop-shadow(0 0 7px var(--color-changed)) } 39%,100% { filter: none } }
-  @keyframes gw4 { 0%,39% { filter: none } 43%,49% { filter: drop-shadow(0 0 8px var(--color-changed)) } 55%,100% { filter: none } }
-  @keyframes gw5 { 0%,49% { filter: none } 53%,59% { filter: drop-shadow(0 0 8px var(--color-changed)) } 65%,100% { filter: none } }
-  @keyframes gw6 { 0%,59% { filter: none } 63%,70% { filter: drop-shadow(0 0 8px var(--color-changed)) } 76%,100% { filter: none } }
-  @keyframes gw7 { 0%,71% { filter: none } 75%,84% { filter: drop-shadow(0 0 8px var(--color-changed)) } 90%,100% { filter: none } }
+  .feed-lbl { fill: var(--color-accent-dim); }
+  .edge { fill: none; stroke: var(--color-border); stroke-width: 1.3; }
+  .edge-on { stroke: var(--color-accent); stroke-width: 1.9; }
+  .changed-leaf { stroke: var(--color-changed); }
+  /* "new" values are the recomputed ones; they cross-fade in as the wave climbs */
+  .new, .t-h.new, .t-bal.new { fill: var(--color-changed); }
+  .old.oA { animation: kOA 9s linear infinite; } .new.nA { animation: kNA 9s linear infinite; }
+  .old.oB { animation: kOB 9s linear infinite; } .new.nB { animation: kNB 9s linear infinite; }
+  .old.oC { animation: kOC 9s linear infinite; } .new.nC { animation: kNC 9s linear infinite; }
+  .old.oD { animation: kOD 9s linear infinite; } .new.nD { animation: kND 9s linear infinite; }
+  .gE { animation: kGE 9s linear infinite; } .gF { animation: kGF 9s linear infinite; } .gG { animation: kGG 9s linear infinite; }
+  @keyframes kOA { 0%,9% { opacity: 1 } 15%,93% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes kNA { 0%,9% { opacity: 0 } 15%,93% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes kOB { 0%,23% { opacity: 1 } 29%,93% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes kNB { 0%,23% { opacity: 0 } 29%,93% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes kOC { 0%,35% { opacity: 1 } 41%,93% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes kNC { 0%,35% { opacity: 0 } 41%,93% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes kOD { 0%,45% { opacity: 1 } 51%,93% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes kND { 0%,45% { opacity: 0 } 51%,93% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes kGE { 0%,53% { filter: none } 57%,64% { filter: drop-shadow(0 0 8px var(--color-changed)) } 70%,100% { filter: none } }
+  @keyframes kGF { 0%,63% { filter: none } 67%,74% { filter: drop-shadow(0 0 8px var(--color-changed)) } 80%,100% { filter: none } }
+  @keyframes kGG { 0%,73% { filter: none } 77%,86% { filter: drop-shadow(0 0 8px var(--color-changed)) } 92%,100% { filter: none } }
 
   /* sybil: free clones flood a vote; cost collapses the army */
   .attacker { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke: var(--color-changed); }

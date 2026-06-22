@@ -27,6 +27,7 @@ interface Props {
     | "synclight"
     | "synccheckpoint"
     | "dbtrie"
+    | "dbhalfpath"
     | "dbflat"
     | "dblayers";
   caption?: string;
@@ -481,10 +482,29 @@ const { name, caption, wide } = Astro.props;
       </svg>
     )}
 
+    {/* ── halfpath: keying nodes by trie path clusters them on disk (locality) ── */}
+    {name === "dbhalfpath" && (
+      <svg viewBox="0 0 480 232" role="img" aria-label="HalfPath keys nodes by trie path so neighbouring nodes sit together on disk">
+        <text class="t-fld hp-bad" x="28" y="26">hash-keyed — random disk slots</text>
+        {Array.from({ length: 16 }).map((_, i) => (
+          <rect class={`hp-cell ${[1, 4, 6, 10, 14].includes(i) ? "hp-node" : ""}`} x={28 + i * 26} y="38" width="24" height="22" rx="3" />
+        ))}
+        <rect class="hp-head hp-head-a" x="0" y="34" width="6" height="30" rx="2" />
+        <text class="t-x" x="240" y="94">six hops, each to a random slot — a cache miss every time</text>
+        <text class="t-fld hp-ok" x="28" y="142">path-keyed — neighbours sit together</text>
+        {Array.from({ length: 16 }).map((_, i) => (
+          <rect class={`hp-cell ${[6, 7, 8, 9, 10].includes(i) ? "hp-node-ok" : ""}`} x={28 + i * 26} y="154" width="24" height="22" rx="3" />
+        ))}
+        <rect class="hp-head hp-head-b" x="0" y="150" width="6" height="30" rx="2" />
+        <text class="t-ok" x="240" y="210">one sweep over neighbouring slots — ~50% faster, ~25% smaller</text>
+      </svg>
+    )}
+
     {/* ── flat-db: read the value directly from a flat column, trie kept only for the root ── */}
     {name === "dbflat" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="Flat DB reads the value in one direct lookup; the trie is kept only to recompute the root">
         <rect class="db-q" x="14" y="22" width="150" height="26" rx="5" /><text class="t-fld" x="24" y="39">read 0xA7… balance</text>
+        <text class="df-six" x="24" y="62">✗ 6 disk hops</text><text class="df-one" x="24" y="62">✓ 1 lookup</text>
         <path class="sarrow df-arrow" d="M164 35 H214" />
         <text class="t-cap" x="280" y="20">flat account column</text>
         {[0, 1, 2, 3].map((i) => (
@@ -832,7 +852,22 @@ const { name, caption, wide } = Astro.props;
   .da3 { animation: dadraw 5s ease-out 1.5s infinite; } .da4 { animation: dadraw 5s ease-out 2.1s infinite; }
   @keyframes dadraw { 0%,6% { stroke-dashoffset: 260 } 16%,100% { stroke-dashoffset: 0 } }
 
+  /* dbhalfpath: a disk head seeks wildly when hash-keyed, sweeps when path-keyed */
+  .hp-cell { fill: var(--color-surface); stroke: var(--color-border); }
+  .hp-node { fill: color-mix(in oklab, var(--color-node-extension) 22%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .hp-node-ok { fill: color-mix(in oklab, var(--color-node-leaf) 20%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .hp-bad { fill: var(--color-changed); } .hp-ok { fill: var(--color-node-leaf); }
+  .hp-head { fill: var(--color-accent); }
+  .hp-head-a { animation: hashseek 5s linear infinite; }
+  .hp-head-b { animation: pathsweep 5s ease-in-out infinite; }
+  @keyframes hashseek { 0% { transform: translateX(63px) } 20% { transform: translateX(141px) } 40% { transform: translateX(193px) } 60% { transform: translateX(297px) } 80% { transform: translateX(401px) } 100% { transform: translateX(63px) } }
+  @keyframes pathsweep { 0% { transform: translateX(193px) } 45%,55% { transform: translateX(297px) } 100% { transform: translateX(193px) } }
+
   /* dbflat: one quick lookup hits a flat row; the trie waits aside */
+  .df-six { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-decoration: line-through; animation: dfsix 4.5s ease-in-out infinite; }
+  .df-one { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; opacity: 0; animation: dfone 4.5s ease-in-out infinite; }
+  @keyframes dfsix { 0%,40% { opacity: 1 } 55%,100% { opacity: 0 } }
+  @keyframes dfone { 0%,45% { opacity: 0 } 58%,100% { opacity: 1 } }
   .db-flatrow { fill: var(--color-surface); stroke: var(--color-border); }
   .df-hit .db-flatrow { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
   .df-arrow { stroke-dasharray: 50; stroke-dashoffset: 50; animation: dfdraw 4.5s ease-in-out infinite; }

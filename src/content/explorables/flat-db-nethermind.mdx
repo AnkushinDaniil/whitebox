@@ -23,9 +23,10 @@ This is a deeper, implementation-level explorable: the same build-from-the-flaw 
 
 <JourneyNav client:load steps={[
   { id: "step-1", label: "The read tax" },
-  { id: "step-2", label: "Flat DB" },
-  { id: "step-3", label: "Remembering the past" },
-  { id: "step-4", label: "Why it needs the trie" },
+  { id: "step-2", label: "HalfPath" },
+  { id: "step-3", label: "Flat DB" },
+  { id: "step-4", label: "Remembering the past" },
+  { id: "step-5", label: "Why it needs the trie" },
 ]} />
 
 <DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The read tax">
@@ -36,17 +37,35 @@ Store the trie the obvious way: each node in a key-value table, keyed by its has
 
 <Scene name="dbtrie" caption="Hash-keyed storage: one account read becomes 4–6 scattered disk reads, hopping node to node down the trie. The traversal — not the data — is the cost." />
 
-Nethermind's previous design, **HalfPath**, already attacked the *locality* half of this: it prefixes each node's database key with the trie *path* to that node, so nodes that sit near each other in the tree sit near each other on disk. That alone bought roughly 40–50% faster block processing and a smaller database — a real win. But it left the deeper problem untouched: **you still walk the trie on every read**. HalfPath rearranged the shelves; you're still pulling six books to answer one question.
+Two separate things hurt here, and it's worth pulling them apart. First, **depth**: every read is several dependent hops down the tree. Second, **locality**: because the key of each node is its *hash* — effectively a random number — the node you need next sits at a random place on disk, so each hop is a fresh cache miss and a real seek. Fix the cheaper one first.
 
 <Callout type="warning" title="What breaks">
-The traversal itself is the tax. Whether the nodes are keyed by hash or by path, reading one account means several dependent lookups down the tree. But step back: you only need the *trie* to compute the root and prove things. To simply *read* a value, the tree is in the way.
+The hash keys throw the data all over the disk. Two nodes that are neighbours *in the tree* — a parent and the child you're about to visit — land nowhere near each other *on disk*. The reads can't ride the cache. Can we lay the same trie out so that walking it is at least a local, sequential motion?
 </Callout>
 
-**→ Step 2: read the value directly, and keep the trie off the hot path.**
+**→ Step 2: key nodes by where they live in the tree, not by their hash.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Flat DB">
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="HalfPath">
+
+## Key nodes by their path, so neighbours sit together
+
+This was Nethermind's previous design, **HalfPath**, and it's a clean half-step toward Flat DB. Keep the trie exactly as it is, but change the *database key* of each node: instead of its hash, prefix the key with the **trie path** to that node. Now a node's key encodes *where it lives in the tree*, so RocksDB — which stores entries sorted by key — physically places parent and child near each other. Walking a path becomes a short, sequential sweep instead of a scatter of random seeks.
+
+<Scene name="dbhalfpath" caption="Same trie, different key. Hash keys scatter a path's nodes to random disk slots (a cache miss per hop); path keys cluster them, so one read sweeps neighbouring slots — and the more orderly bytes compress better too." />
+
+That layout change alone is a big win: roughly **40–50% faster** block processing, and a database about **25% smaller**, because path-ordered data is far more compressible (in one 12-day test the uncompressed DB grew **1.28%** instead of the usual **14.62%**). The "Half" in the name is the honest part — it's a *hybrid*: it reorganizes the keys but keeps the rest of the trie machinery, a middle ground between the old hash-keyed store and a pure path-based one.
+
+<Callout type="warning" title="What breaks">
+HalfPath fixed *locality* — but not *depth*. In Nethermind's own words, it "still doesn't let you access a value without going through the trie." You've made the six hops cheap and sequential, but they're still six hops. To kill them, stop using the tree for reads at all.
+</Callout>
+
+**→ Step 3: read the value directly, and keep the trie off the hot path.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Flat DB">
 
 ## Store the values flat; keep the trie only for the root
 
@@ -60,11 +79,11 @@ A read collapses from 4–6 dependent lookups to **one**. In Nethermind's tests 
 A flat `address → value` table is a snapshot of *right now*. But chains reorg, and a node must serve recent past states — snap sync alone needs state up to 128 blocks deep. A single flat table has no memory of the past. How do you read flat *and* read history?
 </Callout>
 
-**→ Step 3: give the flat store a memory.**
+**→ Step 4: give the flat store a memory.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Remembering the past">
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Remembering the past">
 
 ## Layered snapshots, compacted by powers of two
 
@@ -78,11 +97,11 @@ So **compact**. Older single-block layers merge into bigger **compacted snapshot
 We've got fast reads and a working memory of recent history. But there's a catch the team hit head-on: turn this on as-is and it's *barely faster than HalfPath*. Where did the win go?
 </Callout>
 
-**→ Step 4: find the read you forgot you were still doing.**
+**→ Step 5: find the read you forgot you were still doing.**
 
 </DepthLayer>
 
-<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Why it needs the trie">
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="Why it needs the trie">
 
 ## You still touch the trie — to commit
 
@@ -114,6 +133,8 @@ Flat DB isn't a single setting — it's a family of layouts trading speed agains
 | **PreimageFlat** | flat with raw (un-hashed) keys | experimentation only | can't sync or import state |
 
 The throughline is the same one from the whole derivation: the protocol fixes the *root*, never the *storage*. Every row here computes the identical `stateRoot` — they just disagree about how much disk, memory, and risk to spend getting reads to go faster.
+
+HalfPath and Flat DB weren't the only directions Nethermind explored, either. Alongside them sat **Path-Based storage** (replace hash identifiers with trie paths *entirely* at the RocksDB level — no pruning needed, and a natural fit for serving snap sync) and **Paprika** (a custom Patricia-tree engine built from scratch around path-based access, with merkleization as a pluggable component and finality driving when the database flushes). Same goal, three different bets on how far to rebuild the storage layer.
 
 <Callout type="note" title="A caveat on the numbers">
 Figures here are from Nethermind's own early benchmarks (≈20% throughput, ≈40% on heavy blocks, ~260 GB) and will move as the work matures past alpha. Treat them as direction, not a settled scoreboard — the durable lesson is the *architecture*, not the exact percentages.

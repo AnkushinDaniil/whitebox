@@ -20,7 +20,12 @@ interface Props {
     | "evm"
     | "gas"
     | "triepath"
-    | "root";
+    | "root"
+    | "syncgenesis"
+    | "synctrie"
+    | "syncsnap"
+    | "synclight"
+    | "synccheckpoint";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -371,6 +376,93 @@ const { name, caption, wide } = Astro.props;
         <text class="t-cap" x="240" y="194">32 bytes that fingerprint the entire world</text>
       </svg>
     )}
+
+    {/* ── full sync: replay every block from genesis, rebuilding state ── */}
+    {name === "syncgenesis" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Full sync replays every block from genesis">
+        <text class="t-cap" x="40" y="26">genesis</text>
+        <text class="t-cap" x="442" y="26">head</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <rect class="block" x={24 + i * 56} y="34" width="44" height="30" rx="5" />
+        ))}
+        <rect class="sg-marker" x="24" y="32" width="44" height="34" rx="6" />
+        <text class="t-cap" x="240" y="90">re-execute every transaction, block by block</text>
+        <rect class="sg-track" x="24" y="106" width="432" height="20" rx="6" />
+        <rect class="sg-fill" x="26" y="108" width="428" height="16" rx="5" />
+        <text class="t-fld sg-state" x="240" y="121">rebuilding state…</text>
+        <text class="t-x" x="240" y="162">⏱ days — but every state transition personally verified</text>
+      </svg>
+    )}
+
+    {/* ── fast sync: download the state trie node by node, verify by hash ── */}
+    {name === "synctrie" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Fast sync downloads the state trie node by node">
+        <path class="sedge" d="M240 46 L150 78" /><path class="sedge" d="M240 46 L240 78" /><path class="sedge" d="M240 46 L330 78" />
+        <path class="sedge" d="M150 104 L96 136" /><path class="sedge" d="M150 104 L150 136" /><path class="sedge" d="M330 104 L330 136" /><path class="sedge" d="M330 104 L384 136" />
+        <g class="st-n s0"><rect class="tnode branch" x="208" y="22" width="64" height="24" rx="5" /><text class="t-cap" x="240" y="38">root</text><text class="st-ok" x="278" y="30">✓</text></g>
+        <g class="st-n s1"><rect class="tnode branch" x="118" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="150" y="96">node</text><text class="st-ok" x="188" y="88">✓</text></g>
+        <g class="st-n s2"><rect class="tnode branch" x="208" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="240" y="96">node</text><text class="st-ok" x="278" y="88">✓</text></g>
+        <g class="st-n s3"><rect class="tnode branch" x="298" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="330" y="96">node</text><text class="st-ok" x="368" y="88">✓</text></g>
+        {[[64, "s4"], [118, "s5"], [298, "s6"], [352, "s7"]].map(([x, c]) => (
+          <g class={`st-n ${c}`}><rect class="tnode leaf" x={x} y="138" width="48" height="22" rx="5" /><text class="t-cap" x={Number(x) + 24} y="153">leaf</text></g>
+        ))}
+        <text class="t-cap" x="240" y="188">verify each node against its parent's hash — but millions of tiny requests, and the pivot keeps moving</text>
+      </svg>
+    )}
+
+    {/* ── snap sync: download flat key ranges with proofs, rebuild, heal ── */}
+    {name === "syncsnap" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Snap sync downloads flat ranges then heals the trie">
+        <text class="t-cap" x="104" y="26">flat state, in big ranges</text>
+        {[0, 1, 2, 3].map((i) => (
+          <g class={`sn-range r${i}`}>
+            <rect class="sn-bar" x="20" y={36 + i * 30} width="176" height="22" rx="5" />
+            <text class="t-fld" x="30" y={51 + i * 30}>0x{i}0…{i}f</text>
+            <text class="st-ok" x="180" y={51 + i * 30}>✓</text>
+          </g>
+        ))}
+        <path class="sarrow sn-arrow" d="M200 96 H250" />
+        <text class="t-cap" x="350" y="26">rebuilt locally</text>
+        <rect class="tnode branch sn-t0" x="300" y="40" width="100" height="22" rx="5" /><text class="t-cap" x="350" y="55">root</text>
+        <rect class="tnode leaf sn-t1" x="288" y="74" width="56" height="20" rx="4" /><rect class="tnode leaf sn-t2" x="356" y="74" width="56" height="20" rx="4" />
+        <g class="sn-heal"><rect class="tnode leaf sn-heal-n" x="356" y="74" width="56" height="20" rx="4" /><text class="st-ok" x="384" y="112">heal ✓</text></g>
+        <text class="t-cap" x="240" y="182">a handful of big sequential ranges, not a million nodes — hours, not days</text>
+      </svg>
+    )}
+
+    {/* ── light client: only headers; fetch state on demand with a proof ── */}
+    {name === "synclight" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A light client keeps only headers and verifies proofs on demand">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <g><rect class="lhdr" x={20 + i * 74} y="26" width="62" height="26" rx="5" /><text class="t-cap" x={51 + i * 74} y="43">root #{i}</text></g>
+        ))}
+        <path class="sarrow" d="M51 52 V70" /><text class="t-fld lq" x="120" y="92">balance 0xA?</text>
+        <path class="sarrow lp" d="M60 78 L60 110 L160 110" />
+        <g class="lproof">
+          <rect class="tnode branch" x="160" y="98" width="50" height="22" rx="4" /><rect class="tnode branch" x="230" y="98" width="50" height="22" rx="4" /><rect class="tnode leaf" x="300" y="98" width="56" height="22" rx="4" />
+          <path class="sedge on" d="M210 109 H230" /><path class="sedge on" d="M280 109 H300" />
+          <text class="t-ok" x="392" y="114">✓ 12 Ξ</text>
+        </g>
+        <text class="t-cap" x="240" y="172">stores only headers — asks a full node for state, gets a Merkle proof, verifies it itself</text>
+      </svg>
+    )}
+
+    {/* ── checkpoint sync: trust a recent finalized anchor, skip genesis ── */}
+    {name === "synccheckpoint" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Checkpoint sync starts from a recent trusted finalized block">
+        <g class="ck-old">
+          <rect class="block" x="20" y="34" width="40" height="26" rx="5" /><text class="t-cap" x="40" y="50">gen</text>
+          <path class="ck-crawl" d="M62 47 H430" />
+          <text class="t-cap" x="430" y="50">head</text>
+          <text class="t-x" x="240" y="78">replay/verify all of history from genesis — weeks</text>
+        </g>
+        <text class="t-cap ck-instead" x="60" y="116">instead:</text>
+        <rect class="ck-anchor" x="280" y="124" width="96" height="30" rx="6" /><text class="t-cap" x="328" y="138">checkpoint</text><text class="ck-lock" x="328" y="150">🔒 finalized</text>
+        <path class="sarrow ck-hop" d="M376 139 H424" />
+        <rect class="block" x="424" y="126" width="34" height="26" rx="5" /><text class="t-cap" x="441" y="142">head</text>
+        <text class="t-ok" x="180" y="186">trusted recent anchor → snap forward → minutes</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -608,4 +700,59 @@ const { name, caption, wide } = Astro.props;
   .t-root { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
   @keyframes flow { 0% { stroke-dashoffset: 120 } 60%,100% { stroke-dashoffset: 0 } }
   @keyframes rootpulse { 0%,55% { filter: none } 70% { filter: drop-shadow(0 0 8px var(--color-accent-dim)) } 100% { filter: none } }
+
+  /* sync — shared bits */
+  .sedge { fill: none; stroke: var(--color-border); stroke-width: 1.2; }
+  .sedge.on { stroke: var(--color-accent); stroke-width: 1.8; }
+  .sarrow { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .st-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  /* full sync: a marker crawls block by block while state fills, slowly */
+  .sg-marker { fill: none; stroke: var(--color-accent); stroke-width: 2; transform-box: fill-box; animation: sgstep 7s steps(8) infinite; }
+  @keyframes sgstep { 0% { transform: translateX(0) } 100% { transform: translateX(392px) } }
+  .sg-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sg-fill { fill: color-mix(in oklab, var(--color-accent) 30%, var(--color-surface)); transform-box: fill-box; transform-origin: left; animation: sgfill 7s linear infinite; }
+  @keyframes sgfill { 0% { transform: scaleX(0.02) } 100% { transform: scaleX(1) } }
+
+  /* fast sync: nodes pop in one by one, top-down */
+  .st-n { opacity: 0; }
+  .s0 { animation: stpop 6s ease-out infinite; } .s1 { animation: stpop 6s ease-out 0.5s infinite; }
+  .s2 { animation: stpop 6s ease-out 1s infinite; } .s3 { animation: stpop 6s ease-out 1.5s infinite; }
+  .s4 { animation: stpop 6s ease-out 2.2s infinite; } .s5 { animation: stpop 6s ease-out 2.7s infinite; }
+  .s6 { animation: stpop 6s ease-out 3.2s infinite; } .s7 { animation: stpop 6s ease-out 3.7s infinite; }
+  @keyframes stpop { 0%,3% { opacity: 0; transform: translateY(-4px) } 9%,90% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
+
+  /* snap sync: big ranges fill fast, then the trie assembles and heals */
+  .sn-bar { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .sn-range { opacity: 0; }
+  .r0 { animation: snrange 6s ease-out infinite; } .r1 { animation: snrange 6s ease-out 0.6s infinite; }
+  .r2 { animation: snrange 6s ease-out 1.2s infinite; } .r3 { animation: snrange 6s ease-out 1.8s infinite; }
+  @keyframes snrange { 0%,4% { opacity: 0; transform: translateX(-10px) } 12%,100% { opacity: 1; transform: translateX(0) } }
+  .sn-arrow { stroke-dasharray: 50; stroke-dashoffset: 50; animation: sndraw 6s ease-out infinite; }
+  @keyframes sndraw { 0%,30% { stroke-dashoffset: 50 } 42%,100% { stroke-dashoffset: 0 } }
+  .sn-t0, .sn-t1, .sn-t2 { opacity: 0; animation: snbuild 6s ease-out infinite; }
+  .sn-t1 { animation-delay: 0.3s; } .sn-t2 { animation-delay: 0.5s; }
+  @keyframes snbuild { 0%,45% { opacity: 0 } 55%,100% { opacity: 1 } }
+  .sn-heal { opacity: 0; animation: snheal 6s ease-in-out infinite; }
+  .sn-heal-n { stroke: var(--color-changed); }
+  @keyframes snheal { 0%,72% { opacity: 0 } 80% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-changed)) } 92%,100% { opacity: 0 } }
+
+  /* light client: a query lights a proof path, returns a verified value */
+  .lhdr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .lq { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .lp { stroke-dasharray: 140; stroke-dashoffset: 140; animation: ldraw 5s ease-in-out infinite; }
+  @keyframes ldraw { 0%,18% { stroke-dashoffset: 140 } 40%,100% { stroke-dashoffset: 0 } }
+  .lproof { opacity: 0; animation: lreveal 5s ease-in-out infinite; }
+  @keyframes lreveal { 0%,42% { opacity: 0 } 56%,92% { opacity: 1 } 100% { opacity: 0 } }
+
+  /* checkpoint sync: the long crawl dims, a trusted anchor hops to head */
+  .ck-old { animation: ckdim 6s ease-in-out infinite; }
+  @keyframes ckdim { 0%,30% { opacity: 1 } 48%,100% { opacity: 0.32 } }
+  .ck-crawl { fill: none; stroke: var(--color-changed); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-dashoffset: 366; animation: ckcrawl 6s linear infinite; }
+  @keyframes ckcrawl { 0% { stroke-dashoffset: 366 } 40%,100% { stroke-dashoffset: 0 } }
+  .ck-instead, .ck-anchor, .ck-lock, .ck-hop { opacity: 0; animation: ckin 6s ease-out infinite; }
+  .ck-anchor { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ck-lock { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .ck-hop { stroke: var(--color-node-leaf); }
+  @keyframes ckin { 0%,50% { opacity: 0 } 62%,100% { opacity: 1 } }
 </style>

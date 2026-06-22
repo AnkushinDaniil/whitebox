@@ -1,0 +1,171 @@
+---
+title: How a node syncs
+dek: You download a fresh client and it has to catch up to a chain that's been running for years. The way it does that — and the five ways it could — is a clean little derivation, starting from the slowest, most paranoid method and earning every shortcut from there.
+summary: A step-by-step, animated derivation of Ethereum node sync. Start by replaying every block from genesis (full sync), then earn each faster method as a fix for the last one's flaw — fast sync (download the trie), snap sync (flat ranges + heal), light clients (headers + proofs), and checkpoint sync (trust a recent finalized anchor). Each trade between trust, speed, and disk made concrete.
+topic: Networking & sync
+order: 1
+spine: true
+prerequisites: ["how Ethereum stores state", "finality"]
+updated: 2026-06-22
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+
+You install a fresh node and press start. The network has been running for years; there are hundreds of millions of accounts and a chain of blocks stretching back to genesis. Your node knows *none* of it. Before it can validate a single new block or answer "what's Alice's balance?", it has to **catch up** — reach the exact same current state as everyone else, and prove to itself that the state is right.
+
+There isn't one way to do that. There are five, and they're not arbitrary: each is the fix for a specific flaw in the one before it. Start with the slowest, most paranoid method imaginable and we'll earn every shortcut from there. (This builds directly on [the trie that stores the state](/you-could-have-invented-ethereum#step-5) and [finality](/you-could-have-invented-ethereum#step-7) — if those are fuzzy, skim them first.)
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "What sync must do" },
+  { id: "step-2", label: "Full sync" },
+  { id: "step-3", label: "Fast sync" },
+  { id: "step-4", label: "Snap sync" },
+  { id: "step-5", label: "Light clients" },
+  { id: "step-6", label: "Checkpoint sync" },
+]} />
+
+<DepthLayer tier="intuition" id="step-1" num="1" badge="step" title="What sync must do">
+
+## Two things, and a tension between them
+
+To "be synced" means your node holds two things: the **current state** — every account and contract, the same one committed in the latest block's <KeyTerm term="stateRoot" def="The 32-byte root of the Merkle-Patricia trie that fingerprints the entire world state. It lives in every block header; two nodes with the same stateRoot hold the identical state." /> — and enough of the **chain** to keep validating new blocks as they arrive.
+
+The whole subject is one tension. You could *recompute* everything yourself from the beginning and trust nobody — slow but bulletproof. Or you could *download* the finished state from a peer and trust it's correct — fast but credulous. Every sync mode is a different point on that line between **trust** and **speed** (and a third axis: how much **disk** you're willing to burn). Watch where each one lands.
+
+<Callout type="warning" title="What breaks">
+We have no method yet. The most honest thing a node could do is assume nothing and rebuild the entire world itself. Let's start there — and find out why almost nobody does.
+</Callout>
+
+**→ Step 2: trust nothing. Replay all of history.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Full sync">
+
+## Replay every block from genesis
+
+The zero-trust design: download every block from genesis to the head, and **re-execute every transaction** in order, applying each to your own local copy of the state — exactly as the original validators did. After the last block, your computed stateRoot will match the head block's, and you'll *know* it does, because you did every step yourself. This is **full sync**, and it's the ground truth every other method is measured against.
+
+<Scene name="syncgenesis" caption="Full sync re-executes every transaction since genesis, rebuilding the state from nothing. Maximally trustless — and brutally slow." />
+
+Nothing is more trustworthy: you've personally verified every state transition in Ethereum's history. (Keep *all* the intermediate states and you have an **archive node** — the thing block explorers run, hundreds of terabytes.)
+
+<Callout type="warning" title="What breaks">
+It's punishingly slow — re-executing well over a billion historical transactions takes days to weeks, and you're grinding through ancient state you don't even care about. But notice: the current state is *already committed* in the head block's stateRoot. Why recompute what's been fingerprinted for us?
+</Callout>
+
+**→ Step 3: stop re-executing. Just download the state.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Fast sync">
+
+## Download the trie instead of rebuilding it
+
+Here's the leap. The state is a Merkle trie, and a Merkle trie is *self-verifying*: every node references its children by their hash, so if a downloaded node hashes to the value its parent expected, it cannot be fake. So pick a recent **pivot** block, take its stateRoot on faith for a moment, and download the trie underneath it directly from peers — root first, then each child by its hash, checking every node as it lands. No re-execution at all. This was **fast sync**.
+
+<Scene name="synctrie" caption="Fast sync downloads the state trie node by node, verifying each against its parent's hash — no transactions replayed. But the trie has hundreds of millions of scattered nodes." />
+
+You only verify the *head* by following block headers and consensus, then trust the Merkle math to vouch for the downloaded state. Days collapse toward hours.
+
+<Callout type="warning" title="What breaks">
+The trie has hundreds of millions of nodes, their keys are hashed and so effectively random, and you fetch them a few at a time — that's an avalanche of tiny, latency-bound requests. Worse, the chain keeps advancing while you sync, so the pivot moves and you're forever re-fetching nodes that just changed. Walking the tree is the wrong shape for a *bulk* download.
+</Callout>
+
+**→ Step 4: forget the tree shape. Download the raw data in bulk.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Snap sync">
+
+## Download flat ranges, then heal
+
+The trie is just an index over plain `key → value` pairs. So stop asking for it node by node. Instead ask peers for **contiguous ranges** of the flat account data — "every account from `0x00…` to `0x20…`" — served straight from a flat snapshot in big sequential chunks, each chunk carrying a **range proof** (a small Merkle proof that the chunk is correct and complete against the stateRoot). Download the whole state as a handful of fat range requests, rebuild the trie *locally* from the flat data, then do one final **heal** pass to patch the few nodes that shifted while you were downloading. This is **snap sync** — today's default in geth and reth.
+
+<Scene name="syncsnap" caption="Snap sync pulls the state as big flat ranges (each with a proof), rebuilds the trie locally, and heals the parts that moved. A few large requests instead of millions of tiny ones." />
+
+Same trust model as fast sync — verify the head, trust the proofs for the state — but the bandwidth is used efficiently. A full mainnet node syncs in a few hours.
+
+<Callout type="warning" title="What breaks">
+We've gone from days to hours, but you still download and *store the entire state* — hundreds of gigabytes that only grow. What if you're a phone, a browser tab, an embedded device — something that can't hold the world and just wants to check one balance?
+</Callout>
+
+**→ Step 5: don't hold the state at all.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="Light clients">
+
+## Keep only headers; ask for the rest, with proof
+
+Drop the state entirely. A block **header** is tiny — a few hundred bytes — and it carries the stateRoot. So keep *only* the header chain. When you actually need something — Alice's balance, a storage slot — ask a full node for it *together with a Merkle proof*: the short chain of sibling hashes from that leaf up to the stateRoot you already hold. You verify the proof yourself against the trusted root. If it checks out, the answer is genuine; the full node can't lie without breaking the hash. This is a **light client**.
+
+<Scene name="synclight" caption="A light client stores only headers. It fetches each piece of state on demand with a Merkle proof and verifies it against the header's stateRoot — trustless answers, almost no storage." />
+
+You store kilobytes instead of hundreds of gigabytes, and every answer is still cryptographically verified — you've traded *holding* the state for *proving* each piece on demand.
+
+<Callout type="warning" title="What breaks">
+Two cracks. You lean on full nodes to serve those proofs (a <KeyTerm term="witness" def="The set of sibling hashes along a Merkle path that lets someone holding only the root verify a single leaf without the rest of the tree." /> per query). And there's a deeper one shared by *every* method so far: they all assume you can trust the **head** — but to trust the head you have to verify consensus, and re-checking every attestation back to genesis is its own mountain of work. Where does a brand-new node even safely *start*?
+</Callout>
+
+**→ Step 6: start from a recent point you can trust.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="Checkpoint sync">
+
+## Trust one recent finalized block, and skip the rest
+
+Every method above quietly walks *forward from genesis*, trusting the heaviest chain. But proof-of-stake has a subtlety: a node syncing from genesis alone can be fooled by long-dead validators signing an alternate ancient history (a long-range attack). The fix doubles as the biggest speedup in the whole subject. Don't start at genesis — start at a recent **finalized checkpoint**: a block root only weeks old, taken from a trusted source (your client ships a list; you can cross-check a block explorer or a friend). Because it's [finalized](/you-could-have-invented-ethereum#step-7), reversing it would burn a third of all staked ETH — so it's a safe anchor. From there, snap-sync the state and follow forward. This is **checkpoint sync** (a.k.a. weak-subjectivity sync), and it's how real nodes actually bootstrap.
+
+<Scene name="synccheckpoint" caption="Instead of replaying history from genesis, checkpoint sync trusts one recent finalized root and snaps forward from there — weeks of work become minutes." />
+
+This is the one mode that changes the *starting point* rather than the download method, and it composes with the others: modern clients pair a checkpoint-synced consensus layer with a snap-synced execution layer, and a node that was offline for months can be live again in minutes.
+
+<Callout type="insight" title="And that is sync">
+Five methods, one ladder of trade-offs — and you could have invented every rung. **Full sync** replays everything because it trusts nothing; **fast sync** downloads the trie because the stateRoot already vouches for the state; **snap sync** downloads flat ranges because the *tree shape* was the wrong unit for bulk transfer; **light clients** keep only headers because not everyone can hold the world; and **checkpoint sync** starts from a recent finalized anchor because trusting genesis-forward is both slow and, under proof-of-stake, unsafe. Each one trades a little trust for a lot of speed — and the trick is knowing exactly how much you gave up.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec" id="compare" title="The whole ladder at a glance">
+
+## What you traded, made explicit
+
+| Method | Trust model | Time to sync | Disk |
+|---|---|---|---|
+| **Full / archive** | re-executes all history — trusts nothing | days–weeks | 100s GB – TBs |
+| **Fast** (legacy) | verifies head, trusts Merkle for state | hours+ | ~state size |
+| **Snap** (default) | verifies head, trusts range proofs | a few hours | ~state size |
+| **Light client** | header chain + a proof per query | seconds | KBs–MBs |
+| **Checkpoint** | trusts one recent *finalized* root | minutes | pairs with snap |
+
+The column that matters is **trust model**: everything to the right is just the price you pay, and everything to the left is what you're willing to take on faith. Snap-from-a-checkpoint won because it gives up almost nothing real — a finalized root is about as trustworthy as a thing can be — for almost all of the speed.
+
+<Callout type="note" title="Two more you'll hear named">
+**Optimistic sync** is the post-Merge handshake: the consensus layer follows the chain's *head* before the execution layer has finished validating the payloads underneath, marking those blocks "optimistic" until execution catches up — so the node stays at the tip instead of stalling. And **stateless clients** are the endgame: nodes that hold *no* state at all and validate each block purely from a witness shipped alongside it — the same [witness-size problem](/you-could-have-invented-ethereum#step-5) that's driving the trie from hexary toward a binary, SNARK-friendly shape.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "You could have invented Ethereum", note: "The trie & finality this builds on", href: "/you-could-have-invented-ethereum" },
+    { kind: "spec", label: "geth — snap sync", note: "The protocol and the heal phase, in depth", href: "https://github.com/ethereum/go-ethereum/blob/master/eth/protocols/snap/protocol.md" },
+    { kind: "spec", label: "consensus-specs — weak subjectivity", note: "Why checkpoint sync is safe (and necessary)", href: "https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/weak-subjectivity.md" },
+    { kind: "post", label: "Vitalik — weak subjectivity", note: "The long-range-attack argument", href: "https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity" },
+    { kind: "spec", label: "The Portal Network", note: "Serving light clients without full nodes", href: "https://www.ethportal.net/" },
+  ]}
+/>
+
+</DepthLayer>

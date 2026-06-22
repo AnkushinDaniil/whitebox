@@ -25,7 +25,10 @@ interface Props {
     | "synctrie"
     | "syncsnap"
     | "synclight"
-    | "synccheckpoint";
+    | "synccheckpoint"
+    | "dbtrie"
+    | "dbflat"
+    | "dblayers";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -463,6 +466,63 @@ const { name, caption, wide } = Astro.props;
         <text class="t-ok" x="180" y="186">trusted recent anchor → snap forward → minutes</text>
       </svg>
     )}
+
+    {/* ── flat-db: reading a value by walking the trie = many scattered disk reads ── */}
+    {name === "dbtrie" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="Reading one account walks the trie as several scattered disk reads">
+        <rect class="db-q" x="14" y="12" width="168" height="26" rx="5" /><text class="t-fld" x="24" y="29">read 0xA7… balance</text>
+        <path class="da da1" d="M70 70 L300 60" /><path class="da da2" d="M334 72 L150 104" /><path class="da da3" d="M118 116 L350 116" /><path class="da da4" d="M350 128 L246 150" />
+        <g class="dr dr0"><rect class="db-node" x="36" y="56" width="68" height="24" rx="5" /><text class="t-cap" x="70" y="72">root</text></g>
+        <g class="dr dr1"><rect class="db-node" x="300" y="48" width="68" height="24" rx="5" /><text class="t-cap" x="334" y="64">node</text></g>
+        <g class="dr dr2"><rect class="db-node" x="84" y="104" width="68" height="24" rx="5" /><text class="t-cap" x="118" y="120">node</text></g>
+        <g class="dr dr3"><rect class="db-node" x="316" y="104" width="68" height="24" rx="5" /><text class="t-cap" x="350" y="120">node</text></g>
+        <g class="dr dr4"><rect class="db-node db-val" x="212" y="150" width="68" height="24" rx="5" /><text class="t-cap" x="246" y="166">value</text></g>
+        <text class="t-x" x="240" y="200">one account = 4–6 random disk reads, walking the trie node by node</text>
+      </svg>
+    )}
+
+    {/* ── flat-db: read the value directly from a flat column, trie kept only for the root ── */}
+    {name === "dbflat" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Flat DB reads the value in one direct lookup; the trie is kept only to recompute the root">
+        <rect class="db-q" x="14" y="22" width="150" height="26" rx="5" /><text class="t-fld" x="24" y="39">read 0xA7… balance</text>
+        <path class="sarrow df-arrow" d="M164 35 H214" />
+        <text class="t-cap" x="280" y="20">flat account column</text>
+        {[0, 1, 2, 3].map((i) => (
+          <g class={`df-row ${i === 1 ? "df-hit" : ""}`}>
+            <rect class="db-flatrow" x="220" y={28 + i * 26} width="170" height="22" rx="4" />
+            <text class="t-fld" x="230" y={43 + i * 26}>0x{i === 1 ? "A7" : i + "" + i}… → {i === 1 ? "12 Ξ" : "…"}</text>
+          </g>
+        ))}
+        <text class="t-ok df-ok" x="430" y="59">✓ 1 read</text>
+        <g class="df-trie">
+          <rect class="tnode branch" x="196" y="150" width="88" height="22" rx="5" /><text class="t-cap" x="240" y="165">trie root</text>
+          <text class="t-cap" x="240" y="190">kept aside — only to recompute the stateRoot at commit</text>
+        </g>
+      </svg>
+    )}
+
+    {/* ── flat-db: a read falls through layered snapshots to find a past value ── */}
+    {name === "dblayers" && (
+      <svg viewBox="0 0 480 224" role="img" aria-label="Layered snapshots let a flat read see recent and past blocks">
+        <circle class="dl-token" cx="60" cy="24" r="9" /><text class="dl-qt" x="60" y="28">?</text>
+        <text class="t-cap" x="150" y="20">read 0xA7… as of block N−2</text>
+        {[
+          ["block N — 1-block snapshot", "t1"],
+          ["block N−1", "t1"],
+          ["block N−2", "t1 hit"],
+          ["compacted N−4 … N−1", "t2"],
+          ["compacted N−32 … N", "t2"],
+          ["base flat DB", "base"],
+        ].map(([label, kind], i) => (
+          <g class={`dl-layer dll${i} ${kind.includes("hit") ? "dl-found" : ""}`}>
+            <rect class={`db-layer ${kind.split(" ")[0]}`} x="120" y={36 + i * 28} width="300" height="22" rx="4" />
+            <text class="t-fld" x="132" y={51 + i * 28}>{label}</text>
+            {kind.includes("hit") && <text class="st-ok" x="404" y={51 + i * 28}>✓</text>}
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="214">a read falls through ~7 layers — enough for the 128-block reorg depth snap sync needs</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -755,4 +815,42 @@ const { name, caption, wide } = Astro.props;
   .ck-lock { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
   .ck-hop { stroke: var(--color-node-leaf); }
   @keyframes ckin { 0%,50% { opacity: 0 } 62%,100% { opacity: 1 } }
+
+  /* flat-db shared */
+  .db-q { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .db-node { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .db-val { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); }
+
+  /* dbtrie: scattered reads fire in sequence along crossing arrows */
+  .dr { opacity: 0; }
+  .dr0 { animation: drpop 5s ease-out infinite; } .dr1 { animation: drpop 5s ease-out 0.6s infinite; }
+  .dr2 { animation: drpop 5s ease-out 1.2s infinite; } .dr3 { animation: drpop 5s ease-out 1.8s infinite; }
+  .dr4 { animation: drpop 5s ease-out 2.4s infinite; }
+  @keyframes drpop { 0%,4% { opacity: 0; transform: scale(0.6) } 12%,90% { opacity: 1; transform: scale(1) } 100% { opacity: 1 } }
+  .da { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 260; stroke-dashoffset: 260; }
+  .da1 { animation: dadraw 5s ease-out 0.3s infinite; } .da2 { animation: dadraw 5s ease-out 0.9s infinite; }
+  .da3 { animation: dadraw 5s ease-out 1.5s infinite; } .da4 { animation: dadraw 5s ease-out 2.1s infinite; }
+  @keyframes dadraw { 0%,6% { stroke-dashoffset: 260 } 16%,100% { stroke-dashoffset: 0 } }
+
+  /* dbflat: one quick lookup hits a flat row; the trie waits aside */
+  .db-flatrow { fill: var(--color-surface); stroke: var(--color-border); }
+  .df-hit .db-flatrow { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
+  .df-arrow { stroke-dasharray: 50; stroke-dashoffset: 50; animation: dfdraw 4.5s ease-in-out infinite; }
+  @keyframes dfdraw { 0%,10% { stroke-dashoffset: 50 } 30%,100% { stroke-dashoffset: 0 } }
+  .df-hit, .df-ok { animation: dfhit 4.5s ease-in-out infinite; }
+  @keyframes dfhit { 0%,30% { opacity: 0.35 } 42%,100% { opacity: 1 } }
+  .df-trie { animation: dftrie 4.5s ease-in-out infinite; }
+  @keyframes dftrie { 0%,60% { opacity: 0.4 } 74% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { opacity: 0.4 } }
+
+  /* dblayers: a token falls through snapshot layers, stops where the value lives */
+  .db-layer { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .db-layer.t1 { stroke: var(--color-node-extension); }
+  .db-layer.t2 { stroke: var(--color-node-branch); }
+  .db-layer.base { stroke: var(--color-hash); fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); }
+  .dl-found .db-layer { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
+  .dl-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); animation: dldrop 5s ease-in infinite; }
+  .dl-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: dldrop 5s ease-in infinite; }
+  @keyframes dldrop { 0%,8% { transform: translateY(0) } 30% { transform: translateY(23px) } 45% { transform: translateY(51px) } 60%,90% { transform: translateY(79px) } 100% { transform: translateY(0) } }
+  .dl-found { animation: dlfound 5s ease-in-out infinite; }
+  @keyframes dlfound { 0%,55% { opacity: 0.55 } 64%,90% { opacity: 1 } 100% { opacity: 0.55 } }
 </style>

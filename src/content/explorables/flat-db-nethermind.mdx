@@ -1,0 +1,138 @@
+---
+title: Flat DB — reading state in one hop
+dek: The protocol says state is a trie. It never says how to lay that trie on a disk and read it billions of times — and that's exactly where clients quietly compete. Nethermind's Flat DB, by Muhammad Amirul Ashraf, is a ground-up answer.
+summary: How an Ethereum client physically stores the state trie on disk, derived from the flaw in each layout — from hash-keyed nodes and Nethermind's HalfPath (every read still walks the trie) to Ashraf's Flat DB, which reads accounts directly from flat RocksDB columns and keeps the trie only to recompute the stateRoot, with a layered-snapshot scheme for reorgs. The real speedup, and the honest disk and complexity it costs.
+topic: Client internals
+order: 2
+spine: true
+prerequisites: ["how Ethereum stores state"]
+updated: 2026-06-22
+readingMinutes: 13
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+
+The protocol's view of state is clean and final: every account folds into a [Merkle-Patricia trie](/you-could-have-invented-ethereum#step-5), committed to a single 32-byte `stateRoot`. But that's a *logical* picture. A real client has to take that trie and put it on a physical SSD, inside an embedded key-value database (RocksDB), and then *read* from it — thousands of accounts and storage slots per block, billions of times over a sync. How you arrange those bytes on disk is invisible to the protocol and decides whether a block executes in 200 milliseconds or two seconds. It's one of the few places clients genuinely compete, and the spec says nothing about it.
+
+This is a deeper, implementation-level explorable: the same build-from-the-flaw approach, applied to a piece of real, recent engineering. In 2024–2025, Nethermind engineer **Muhammad Amirul Ashraf** shipped **Flat DB**, a ground-up rethink of how the .NET client stores state. Let's derive it the way it was discovered — one bottleneck at a time.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The read tax" },
+  { id: "step-2", label: "Flat DB" },
+  { id: "step-3", label: "Remembering the past" },
+  { id: "step-4", label: "Why it needs the trie" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The read tax">
+
+## To read one balance, you walk the whole trie
+
+Store the trie the obvious way: each node in a key-value table, keyed by its hash. To read Alice's balance you start at the `stateRoot`, look up that node, find the child hash for the first nibble of her key, look *that* up, and so on — **4 to 6 separate lookups**, each a potential disk read, just to reach one leaf. And because keys are hashes, consecutive accounts scatter randomly across the disk, so there's no locality to exploit; worse, trie nodes are bulky — a branch lists sixteen child hashes — so you haul tens of times more bytes than the value you wanted.
+
+<Scene name="dbtrie" caption="Hash-keyed storage: one account read becomes 4–6 scattered disk reads, hopping node to node down the trie. The traversal — not the data — is the cost." />
+
+Nethermind's previous design, **HalfPath**, already attacked the *locality* half of this: it prefixes each node's database key with the trie *path* to that node, so nodes that sit near each other in the tree sit near each other on disk. That alone bought roughly 40–50% faster block processing and a smaller database — a real win. But it left the deeper problem untouched: **you still walk the trie on every read**. HalfPath rearranged the shelves; you're still pulling six books to answer one question.
+
+<Callout type="warning" title="What breaks">
+The traversal itself is the tax. Whether the nodes are keyed by hash or by path, reading one account means several dependent lookups down the tree. But step back: you only need the *trie* to compute the root and prove things. To simply *read* a value, the tree is in the way.
+</Callout>
+
+**→ Step 2: read the value directly, and keep the trie off the hot path.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Flat DB">
+
+## Store the values flat; keep the trie only for the root
+
+Here's the move. Split the two jobs the trie was doing. *Proving* the state — recomputing the `stateRoot` — genuinely needs the tree. *Reading* a value does not. So keep a dedicated **flat column** of `address → account` and another of `(address, slot) → value`, and answer every read from those in a single direct lookup. The trie is still maintained, but off to the side, consulted only when you need to recompute the root at the end of a block. That's **Flat DB**: account data, storage data, and trie nodes split into separate RocksDB columns, with the flat columns — not the trie — as the primary read path.
+
+<Scene name="dbflat" caption="Flat DB answers a read from a flat key-value column in one lookup. The trie is kept aside, used only to recompute the stateRoot at commit time." />
+
+A read collapses from 4–6 dependent lookups to **one**. In Nethermind's tests that's about **20% higher execution throughput** over HalfPath, and around **40%** on read-heavy blocks where state access dominates. It also moves less data, since a flat account entry is far smaller than the trie nodes you'd have walked to reach it.
+
+<Callout type="warning" title="What breaks">
+A flat `address → value` table is a snapshot of *right now*. But chains reorg, and a node must serve recent past states — snap sync alone needs state up to 128 blocks deep. A single flat table has no memory of the past. How do you read flat *and* read history?
+</Callout>
+
+**→ Step 3: give the flat store a memory.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Remembering the past">
+
+## Layered snapshots, compacted by powers of two
+
+Don't overwrite the flat data in place — *layer* it. Each block's writes go into a small **single-block snapshot** stacked on top (tier one). To read a value as of some recent block, you start at the top and fall through the layers until you find it. That keeps every recent state readable — but if every block were its own layer forever, a read near the tip would have to fall through hundreds of them.
+
+<Scene name="dblayers" caption="A read falls through stacked snapshots — recent single-block layers, then compacted multi-block layers, down to the base flat DB — stopping at the first layer that holds the value." />
+
+So **compact**. Older single-block layers merge into bigger **compacted snapshots** (tier two), and the merge follows a power-of-two rule: a layer's span is the largest power of two that divides its block number, up to a cap of 32 blocks. That keeps the number of layers *logarithmic* in how far back you read — a lookup typically crosses about **seven layers** to cover the 128-block <KeyTerm term="reorg" def="A reorganization: the chain switches to a different, heavier fork, so recent blocks are rolled back and replaced. A node must be able to recompute state across this depth." /> depth that snap sync demands. The heavy compaction work happens in the background instead of blocking each block.
+
+<Callout type="warning" title="What breaks">
+We've got fast reads and a working memory of recent history. But there's a catch the team hit head-on: turn this on as-is and it's *barely faster than HalfPath*. Where did the win go?
+</Callout>
+
+**→ Step 4: find the read you forgot you were still doing.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Why it needs the trie">
+
+## You still touch the trie — to commit
+
+Flat reads are fast, but a block isn't only reads. At the end of every block the client must **recompute the new `stateRoot`**, and that still means reading and rehashing trie nodes along every changed path. Ashraf is blunt about it: *"Without these optimizations, Flat DB is not significantly faster than HalfPath."* The flat read path removed one bottleneck and exposed the next.
+
+The fix is two pieces of plumbing around that commit-time trie access. A **`TrieNodeCache`** — a sharded hash table indexed by path and hash — keeps the hot trie nodes in memory. And a **`TrieNodeWarmer`** prefetches the trie nodes a block is about to touch, so they're already in memory when the root computation needs them, hiding the disk latency. With those in place, the flat read win actually shows up end-to-end.
+
+<Callout type="warning" title="The honest cost">
+None of this is free, and Flat DB is upfront about the bill. The database gets *bigger*, not smaller — roughly **260 GB** versus HalfPath's ~200 GB, because you now store both the flat columns and the trie. Memory rises too (~32 GB in the default layout, ~2.5 GB of RocksDB index held in RAM). And as of writing it's **alpha** — merged but disabled by default, with known occasional hangs and crashes, no support yet for deep reorgs, archive mode, or long-range finality. Speed was bought with disk, memory, and a lot of new complexity.
+</Callout>
+
+<Callout type="insight" title="What Flat DB really shows">
+"The state is a trie" is a statement about the *protocol*, not about your disk. The only thing the network checks is that you can reproduce the one number — the `stateRoot` — in each block header. *How* you store the values underneath is entirely yours. Flat DB takes that freedom to its logical end: read accounts from flat columns for speed, keep the trie around purely to regenerate the root, and layer snapshots so you can still see the recent past. Same protocol, same root, a very different machine under it.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec" id="layouts" title="The layouts, side by side">
+
+## One idea, four shapes
+
+Flat DB isn't a single setting — it's a family of layouts trading speed against memory, because different operators want different points on that line:
+
+| Layout | Read path | Tuned for | Cost |
+|---|---|---|---|
+| **HalfPath** | walk the path-keyed trie | the shipping default | ~200 GB, slower reads |
+| **Flat** | direct flat lookup | lowest latency | ~260 GB, ~32 GB RAM |
+| **FlatInTrie** | flat index inside the trie | constrained memory | few-MB index, noticeably slower |
+| **PreimageFlat** | flat with raw (un-hashed) keys | experimentation only | can't sync or import state |
+
+The throughline is the same one from the whole derivation: the protocol fixes the *root*, never the *storage*. Every row here computes the identical `stateRoot` — they just disagree about how much disk, memory, and risk to spend getting reads to go faster.
+
+<Callout type="note" title="A caveat on the numbers">
+Figures here are from Nethermind's own early benchmarks (≈20% throughput, ≈40% on heavy blocks, ~260 GB) and will move as the work matures past alpha. Treat them as direction, not a settled scoreboard — the durable lesson is the *architecture*, not the exact percentages.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "Flat DB: A New State Storage Architecture in Nethermind", note: "Ashraf & Moné — the source for this page", href: "https://www.nethermind.io/blog/flat-db-a-new-state-storage-architecture-in-nethermind" },
+    { kind: "post", label: "Nethermind — 3 experimental state-DB approaches", note: "HalfPath and the alternatives it grew from", href: "https://www.nethermind.io/blog/nethermind-client-3-experimental-approaches-to-state-database-change" },
+    { kind: "post", label: "You could have invented Ethereum — the trie", note: "The Merkle-Patricia trie this all stores", href: "/you-could-have-invented-ethereum#step-5" },
+    { kind: "post", label: "How a node syncs — snap sync", note: "Why 128-block reorg depth matters here", href: "/how-a-node-syncs#step-4" },
+    { kind: "code", label: "NethermindEth/nethermind", note: "The client where Flat DB lives", href: "https://github.com/NethermindEth/nethermind" },
+  ]}
+/>
+
+</DepthLayer>

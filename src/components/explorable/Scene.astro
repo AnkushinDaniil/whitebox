@@ -30,6 +30,8 @@ interface Props {
     | "dbhalfpath"
     | "dbflat"
     | "dbcompact"
+    | "dbdiff"
+    | "dbmerge"
     | "dblayers";
   caption?: string;
   /** widen the figure frame for dense diagrams */
@@ -536,6 +538,40 @@ const { name, caption, wide } = Astro.props;
       </svg>
     )}
 
+    {/* ── flat-db: a layer is a diff of changed keys; a read takes the newest match ── */}
+    {name === "dbdiff" && (
+      <svg viewBox="0 0 480 224" role="img" aria-label="A layer is a diff of changed keys; a read takes the newest match, else the base">
+        <rect class="db-q" x="14" y="18" width="118" height="24" rx="5" /><text class="t-fld" x="24" y="34">read key B</text>
+        <circle class="dd-token" cx="158" cy="30" r="9" /><text class="dd-qt" x="158" y="34">B</text>
+        <rect class="dd-card" x="186" y="34" width="196" height="34" rx="5" />
+        <text class="t-fld dd-tag" x="196" y="55">block N · diff</text><text class="t-fld" x="300" y="55">A=9  C=2</text>
+        <rect class="dd-card dd-hit" x="186" y="78" width="196" height="34" rx="5" />
+        <text class="t-fld dd-tag" x="196" y="99">block N−1 · diff</text><text class="t-fld dd-found" x="300" y="99">B=5  ✓</text>
+        <rect class="dd-card" x="186" y="122" width="196" height="34" rx="5" />
+        <text class="t-fld dd-tag" x="196" y="143">block N−2 · diff</text><text class="t-fld dd-shadow" x="300" y="143">A=7</text><text class="t-fld" x="338" y="143">D=1</text>
+        <text class="dd-shadnote" x="392" y="143">↑ shadowed</text>
+        <rect class="dd-base" x="186" y="166" width="196" height="28" rx="5" />
+        <text class="t-cap" x="284" y="184">base flat DB · the full state</text>
+        <text class="t-cap" x="240" y="214">a layer holds only the keys its block changed; reads take the first (newest) match, else fall to the base</text>
+      </svg>
+    )}
+
+    {/* ── flat-db: merging two diffs keeps the newest value per key (dedup) ── */}
+    {name === "dbmerge" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Merging two diff layers keeps the newest value of each key, so duplicates collapse">
+        <rect class="dd-card" x="18" y="26" width="150" height="44" rx="5" />
+        <text class="t-fld dd-tag" x="30" y="44">block 5 · diff</text><text class="t-fld" x="30" y="62">A=7   B=5</text>
+        <rect class="dd-card" x="18" y="98" width="150" height="44" rx="5" />
+        <text class="t-fld dd-tag" x="30" y="116">block 6 · diff</text><text class="t-fld" x="30" y="134">A=9   C=2</text>
+        <path class="sarrow dm-arrow" d="M168 84 H236" />
+        <rect class="dd-card dm-merged" x="240" y="52" width="200" height="78" rx="6" />
+        <text class="t-fld dd-tag dm-keep" x="252" y="72">compacted 5–6 · diff</text>
+        <text class="t-fld dm-keep" x="252" y="94">A=9   B=5   C=2</text>
+        <text class="t-x dm-drop" x="252" y="116">A=7 dropped — block 5's value is gone</text>
+        <text class="t-cap" x="240" y="178">keep the newest value of each key — duplicates collapse (smaller); intra-range reads are lost</text>
+      </svg>
+    )}
+
     {/* ── flat-db: a read falls through layered snapshots to find a past value ── */}
     {name === "dblayers" && (
       <svg viewBox="0 0 480 224" role="img" aria-label="Layered snapshots let a flat read see recent and past blocks">
@@ -911,6 +947,28 @@ const { name, caption, wide } = Astro.props;
   .c-count { opacity: 0; }
   .cc0 { animation: clk0 8s ease-in-out infinite; } .cc1 { animation: clk1 8s ease-in-out infinite; }
   .cc2 { animation: clk2 8s ease-in-out infinite; } .cc3 { animation: clk3 8s ease-in-out infinite; }
+
+  /* dbdiff: a query token falls through diff layers to the first (newest) match */
+  .dd-card { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .dd-hit { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .dd-base { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-hash); }
+  .dd-tag { fill: var(--color-ink-faint); text-anchor: start; }
+  .dd-found { fill: var(--color-node-leaf); }
+  .dd-shadow { fill: var(--color-ink-faint); text-decoration: line-through; }
+  .dd-shadnote { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: start; }
+  .dd-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); animation: ddfall 5s ease-in-out infinite; }
+  .dd-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: ddfall 5s ease-in-out infinite; }
+  @keyframes ddfall { 0%,16% { transform: translateY(0) } 32% { transform: translateY(21px) } 50%,90% { transform: translateY(63px) } 100% { transform: translateY(0) } }
+
+  /* dbmerge: the merged card assembles; the duplicate key drops out */
+  .dm-arrow { stroke-dasharray: 70; stroke-dashoffset: 70; animation: dmdraw 5s ease-in-out infinite; }
+  @keyframes dmdraw { 0%,12% { stroke-dashoffset: 70 } 30%,100% { stroke-dashoffset: 0 } }
+  .dm-merged { stroke: var(--color-node-leaf); }
+  rect.dm-merged { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .dm-merged, .dm-keep { opacity: 0; animation: dmrev 5s ease-in-out infinite; }
+  @keyframes dmrev { 0%,30% { opacity: 0 } 44%,100% { opacity: 1 } }
+  .dm-drop { opacity: 0; animation: dmdrop 5s ease-in-out infinite; }
+  @keyframes dmdrop { 0%,46% { opacity: 0 } 58%,100% { opacity: 1 } }
 
   /* dblayers: a token falls through snapshot layers, stops where the value lives */
   .db-layer { fill: var(--color-surface); stroke: var(--color-border-strong); }

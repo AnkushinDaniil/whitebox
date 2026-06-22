@@ -85,23 +85,33 @@ A flat `address → value` table is a snapshot of *right now*. But chains reorg,
 
 <DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Remembering the past">
 
-## Layered snapshots, merged in powers of two
+## First: a layer is a *diff*, not a copy
 
-Don't overwrite the flat data in place — *layer* it. Each new block's writes go into a small **single-block snapshot** stacked on top. To read a value as of a recent block you start at the newest layer and fall down until you find it. Simple — but if every block kept its own layer forever, you'd have *thousands* of them, and a read would crawl through the whole pile.
+This is the bit that trips everyone, so let's nail it before anything else. A layer is **not** a full flat DB for that block. It's a **diff** — only the handful of accounts and storage slots that *that one block changed*, mapped to their new values. At the very bottom sits the **base flat DB**, the complete state as of some older point; every layer above it is a thin patch. To read a key you check the newest layer, then the next, falling down until you hit it — the **first (newest) match wins** — and if no layer mentions it, you land on the full base.
 
-So **compact**: every so often, fuse a run of small layers into one bigger layer. The only real question is *which* runs to fuse, and the answer is the clever bit — **powers of two**. Keep merging so that at any moment you hold *at most one layer of each size*: one 1-block layer, one 2-block, one 4-block, one 8-block, and so on. Watch eight blocks' worth of layers collapse:
+<Scene name="dbdiff" caption="Each layer holds only the keys its block touched. A read falls from the newest layer down and takes the first match — so block N's A=9 shadows the stale A=7 below it. Miss every layer and you read the full base." />
+
+So one block's layer is *tiny* (a block writes a few thousand keys, not millions). The only problem is their **number**: one diff per block means thousands of layers, and a read would crawl through the whole pile. That's the thing compaction fixes — and now you can see exactly what "merge" means.
+
+## Merging two layers = keep the newest value of each key
+
+Fusing block 5's diff with block 6's diff is just what you'd guess: take the **union** of their keys, and wherever both touched the same key, **keep the newer value** and discard the older. That's the answer to *why it gets smaller* — a key that was rewritten across the range collapses from several entries down to one. Hot keys (a busy contract's storage, an exchange's balance) change almost every block, so the overlap, and the savings, are large.
+
+<Scene name="dbmerge" caption="Merge = union the two diffs, keep the newest value per key. A was written in both blocks, so the older A=7 is dropped and only A=9 survives — three entries instead of four. The merged layer is smaller than the two it replaced." />
+
+And that *also* answers "how do you tell the merged blocks apart inside a compacted layer?" — you **don't**, and you don't need to. A compacted "blocks 5–8" layer keeps only each key's *final* value as of block 8; block 6's intermediate value is gone for good. You've given up the ability to read a state from *inside* the range. That's safe for one precise reason: single-block layers are only kept for the **recent, reorg-able blocks** — the ones you might have to roll back. Older blocks are settled, so no one will ever ask to read "as of block 6" specifically, and collapsing them costs you nothing you'll miss.
+
+## Which runs to merge: powers of two
+
+That leaves one question — *which* runs of layers to fuse. The clever answer is **powers of two**: keep merging so that at any moment you hold *at most one layer of each size* — one 1-block, one 2-block, one 4-block, one 8-block, and so on.
 
 <Scene name="dbcompact" caption="Compaction fuses layers in pairs — 8 single-block layers become 4, then 2, then 1. Each round halves the count, so the number of layers grows like the number of bits, not the number of blocks." />
 
-The precise rule is "a new compacted layer's span is the largest power of two that divides the block number." Roll it forward and a pattern falls out: blocks 1 and 2 fuse into a 2-layer; block 3 sits alone until block 4 fuses everything into a 4-layer; and so on. The set of layers you're holding is therefore exactly the **binary digits of the current block number**. After block 13 — binary `1101` — you hold an 8-layer, a 4-layer, and a 1-layer: just *three* layers covering thirteen blocks.
+The precise rule is "a new compacted layer's span is the largest power of two that divides the block number." Roll it forward and a pattern falls out: blocks 1 and 2 fuse into a 2-layer; block 3 sits alone until block 4 fuses everything into a 4-layer; and so on. The set of layers you hold is therefore exactly the **binary digits of the current block number**. After block 13 — binary `1101` — you hold an 8-layer, a 4-layer, and a 1-layer: just *three* layers covering thirteen blocks.
 
 <Callout type="note" title="Why powers of two">
-Because the layer count then grows like the *number of bits*, not the number of blocks. With layers capped at 32 blocks, a read crosses only about **seven** of them to see the full 128-block <KeyTerm term="reorg" def="A reorganization: the chain switches to a different, heavier fork, so recent blocks are rolled back and replaced. A node must be able to recompute state across this depth." /> depth that snap sync needs — instead of falling through 128. It's the same logarithmic trick a binary counter uses to count to 128 with 7 digits.
+Because the layer count then grows like the *number of bits*, not the number of blocks. With layers capped at 32 blocks, a read crosses only about **seven** of them to see the full 128-block <KeyTerm term="reorg" def="A reorganization: the chain switches to a different, heavier fork, so recent blocks are rolled back and replaced. A node must be able to recompute state across this depth." /> depth that snap sync needs — instead of falling through 128. It's the same logarithmic trick a binary counter uses to count to 128 with 7 digits. The heavy merging runs in the background, off each block's critical path.
 </Callout>
-
-Now the read is cheap again: a lookup falls through that short stack of layers — newest single-block snapshots first, then the compacted ones, then the base flat DB — and stops at the first layer that holds the value. The heavy merging runs in the background, off each block's critical path.
-
-<Scene name="dblayers" caption="A read falls through the stacked snapshots — recent single-block layers, then compacted multi-block layers, down to the base flat DB — stopping at the first layer that holds the value." />
 
 <Callout type="warning" title="What breaks">
 We've got fast reads and a working memory of recent history. But there's a catch the team hit head-on: turn this on as-is and it's *barely faster than HalfPath*. Where did the win go?

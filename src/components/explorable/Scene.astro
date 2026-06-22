@@ -32,7 +32,13 @@ interface Props {
     | "dbcompact"
     | "dbdiff"
     | "dbmerge"
-    | "dblayers";
+    | "dblayers"
+    | "cl-slots"
+    | "cl-randao"
+    | "cl-attest"
+    | "cl-epoch"
+    | "cl-pbs"
+    | "cl-life";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -594,6 +600,105 @@ const { name, caption, wide } = Astro.props;
         <text class="t-cap" x="240" y="214">a read falls through ~7 layers — enough for the 128-block reorg depth snap sync needs</text>
       </svg>
     )}
+
+    {/* ── consensus: time is sliced into 12s slots, one proposer each ── */}
+    {name === "cl-slots" && (
+      <svg viewBox="0 0 480 166" role="img" aria-label="Time is divided into 12-second slots, each with one chosen proposer">
+        <text class="t-cap" x="44" y="22">time →</text>
+        {["7k", "41k", "220k", "98k", "3k", "160k", "55k", "12k"].map((id, i) => (
+          <g>
+            <rect class="sl-cell" x={16 + i * 57} y="40" width="50" height="56" rx="5" />
+            <circle class="sl-prop" cx={41 + i * 57} cy="62" r="7" />
+            <text class="t-cap" x={41 + i * 57} y="86">#{id}</text>
+          </g>
+        ))}
+        <rect class="sl-now" x="14" y="38" width="54" height="60" rx="6" />
+        <text class="t-cap" x="240" y="124">one 12-second slot · one chosen proposer · one block</text>
+      </svg>
+    )}
+
+    {/* ── consensus: RANDAO picks each slot's proposer from the validator set ── */}
+    {name === "cl-randao" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="A shared random seed picks the proposer for each slot">
+        <rect class="rd-seed" x="20" y="58" width="124" height="60" rx="8" />
+        <text class="t-cap" x="82" y="80">RANDAO seed</text>
+        <text class="t-fld rd-v rdv0" x="82" y="100">0x9f3a…</text><text class="t-fld rd-v rdv1" x="82" y="100">0x2c71…</text><text class="t-fld rd-v rdv2" x="82" y="100">0xb480…</text>
+        {[0, 1, 2, 3, 4, 5].map((c) => [0, 1, 2, 3].map((r) => (
+          <circle class={`rd-dot ${c === 2 && r === 1 ? "rd-chosen" : ""}`} cx={210 + c * 42} cy={46 + r * 36} r="6" />
+        )))}
+        <path class="rd-pick" d="M144 88 L290 82" />
+        <text class="t-cap rd-lbl" x="300" y="64">→ proposer</text>
+        <path class="rd-mix" d="M252 46 Q180 20 110 56" /><text class="t-cap rd-mixl" x="200" y="18">each proposer stirs it back in</text>
+        <text class="t-cap" x="240" y="186">a shared random seed picks each slot's proposer — unpredictable and ungameable</text>
+      </svg>
+    )}
+
+    {/* ── consensus: a committee attests; votes are weight fork choice follows ── */}
+    {name === "cl-attest" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Each slot a committee attests, voting on the head and a checkpoint">
+        <text class="t-cap" x="86" y="24">this slot's committee</text>
+        {[0, 1, 2, 3, 4, 5].map((i) => (<circle class={`at-v av${i}`} cx={46 + (i % 3) * 40} cy={56 + Math.floor(i / 3) * 40} r="8" />))}
+        {[0, 1, 2, 3, 4, 5].map((i) => (<path class={`at-a aa${i}`} d={`M${66 + (i % 3) * 40} ${56 + Math.floor(i / 3) * 40} L318 80`} />))}
+        <rect class="block at-head" x="318" y="56" width="108" height="46" rx="6" /><text class="t-cap" x="372" y="76">head block</text>
+        <text class="t-cap" x="372" y="92">+ checkpoint</text>
+        <rect class="at-wtrack" x="318" y="116" width="108" height="14" rx="4" /><rect class="at-wfill" x="320" y="118" width="104" height="10" rx="3" />
+        <text class="t-cap" x="372" y="148">accumulated weight</text>
+        <text class="t-cap" x="240" y="182">each validator attests once per epoch — the vote names the head (fork choice) and a checkpoint (finality)</text>
+      </svg>
+    )}
+
+    {/* ── consensus: epochs, justification, finalization ── */}
+    {name === "cl-epoch" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Epochs group 32 slots; two-thirds justifies a checkpoint, two in a row finalizes">
+        <path class="ep-line" d="M40 56 H440" />
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<line class="ep-tick" x1={70 + i * 20} y1="50" x2={70 + i * 20} y2="62" />))}
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (<line class="ep-tick" x1={262 + i * 20} y1="50" x2={262 + i * 20} y2="62" />))}
+        <text class="t-cap" x="160" y="40">epoch N · 32 slots</text><text class="t-cap" x="350" y="40">epoch N+1</text>
+        <circle class="ep-cp ep-c0" cx="92" cy="56" r="11" /><circle class="ep-cp ep-c1" cx="240" cy="56" r="11" /><circle class="ep-cp" cx="400" cy="56" r="11" />
+        <rect class="ep-track" x="52" y="92" width="80" height="12" rx="4" /><rect class="ep-fill ep-f0" x="54" y="94" width="76" height="8" rx="3" />
+        <rect class="ep-track" x="200" y="92" width="80" height="12" rx="4" /><rect class="ep-fill ep-f1" x="202" y="94" width="76" height="8" rx="3" />
+        <text class="t-ok ep-j0" x="92" y="124">justified</text><text class="t-ok ep-j1" x="240" y="124">justified</text>
+        <text class="ep-lock" x="92" y="80">🔒</text><text class="t-ok ep-final" x="92" y="150">finalized</text>
+        <text class="t-cap" x="240" y="186">⅔ of staked ETH justifies a checkpoint · two justified in a row finalizes the first</text>
+      </svg>
+    )}
+
+    {/* ── consensus: proposer-builder separation ── */}
+    {name === "cl-pbs" && (
+      <svg viewBox="0 0 480 208" role="img" aria-label="Proposer-builder separation: builders bid, the proposer signs the best header blind">
+        {[["0.08", "b0"], ["0.12", "b1"], ["0.05", "b2"]].map(([bid, c], i) => (
+          <g class={`pb-builder ${i === 1 ? "pb-win" : ""}`}>
+            <rect class="pb-box" x="14" y={18 + i * 56} width="128" height="44" rx="6" />
+            <text class="t-fld" x="26" y={38 + i * 56}>builder</text><text class="t-fld pb-bid" x="26" y={54 + i * 56}>bid {bid} Ξ</text>
+            <path class={`pb-a ${c}`} d={`M142 ${40 + i * 56} L170 95`} />
+          </g>
+        ))}
+        <rect class="pb-relay" x="170" y="72" width="80" height="64" rx="8" /><text class="t-cap" x="210" y="100">relay</text><text class="t-cap" x="210" y="116">holds blocks</text>
+        <path class="pb-a2" d="M250 104 H290" />
+        <rect class="pb-prop" x="290" y="74" width="166" height="58" rx="8" /><text class="t-cap" x="373" y="96">proposer</text><text class="t-cap pb-sign" x="373" y="114">✓ signs best header, blind</text>
+        <path class="pb-a3" d="M373 132 V158" /><rect class="pb-block" x="306" y="160" width="134" height="36" rx="6" /><text class="t-cap" x="373" y="182">block published</text>
+        <text class="t-cap" x="150" y="206">builders bid · the relay reveals the body only after the proposer commits to the header</text>
+      </svg>
+    )}
+
+    {/* ── consensus: the validator lifecycle ── */}
+    {name === "cl-life" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="A validator's life: deposit, activation queue, active, exit queue, withdraw — or slashing">
+        {[["deposit 32Ξ", 0], ["activation", 1], ["active", 2], ["exit queue", 3], ["withdraw", 4]].map(([label, i]) => (
+          <g>
+            <rect class={`vl-box ${i === 2 ? "vl-active" : ""}`} x={10 + Number(i) * 94} y="36" width="84" height="46" rx="6" />
+            <text class="t-cap" x={52 + Number(i) * 94} y="62">{label}</text>
+            {Number(i) < 4 && <path class="vl-a" d={`M${94 + Number(i) * 94} 59 H${104 + Number(i) * 94}`} />}
+          </g>
+        ))}
+        <circle class="vl-token" cx="10" cy="59" r="7" />
+        <g class="vl-slashgrp">
+          <path class="vl-branch" d="M240 82 V120 H300" />
+          <rect class="vl-slash" x="300" y="104" width="140" height="34" rx="6" /><text class="t-x" x="370" y="125">slashed ✗ — ejected, stake cut</text>
+        </g>
+        <text class="t-cap" x="240" y="172">32 ETH in → queues → years of attesting → exit → withdraw. Equivocate and you're slashed.</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -981,4 +1086,82 @@ const { name, caption, wide } = Astro.props;
   @keyframes dldrop { 0%,8% { transform: translateY(0) } 30% { transform: translateY(23px) } 45% { transform: translateY(51px) } 60%,90% { transform: translateY(79px) } 100% { transform: translateY(0) } }
   .dl-found { animation: dlfound 5s ease-in-out infinite; }
   @keyframes dlfound { 0%,55% { opacity: 0.55 } 64%,90% { opacity: 1 } 100% { opacity: 0.55 } }
+
+  /* consensus — slots: a "now" marker steps across the slot timeline */
+  .sl-cell { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sl-prop { fill: color-mix(in oklab, var(--color-node-extension) 18%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .sl-now { fill: color-mix(in oklab, var(--color-accent) 8%, transparent); stroke: var(--color-accent); stroke-width: 2.2; animation: slnow 8s steps(8) infinite; }
+  @keyframes slnow { 0% { transform: translateX(0) } 100% { transform: translateX(399px) } }
+
+  /* consensus — randao: the seed cycles, a pick lands on a validator */
+  .rd-seed { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
+  .rd-v { text-anchor: middle; fill: var(--color-hash); }
+  .rdv0 { animation: rdv 4.5s steps(1) infinite; } .rdv1 { opacity: 0; animation: rdv 4.5s steps(1) 1.5s infinite; } .rdv2 { opacity: 0; animation: rdv 4.5s steps(1) 3s infinite; }
+  @keyframes rdv { 0%,30% { opacity: 1 } 34%,100% { opacity: 0 } }
+  .rd-dot { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .rd-chosen { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); animation: rdpulse 4.5s ease-in-out infinite; }
+  @keyframes rdpulse { 0%,40% { filter: none } 55% { filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { filter: none } }
+  .rd-pick { fill: none; stroke: var(--color-accent); stroke-width: 1.6; stroke-dasharray: 160; stroke-dashoffset: 160; animation: rddraw 4.5s ease-in-out infinite; }
+  @keyframes rddraw { 0%,22% { stroke-dashoffset: 160 } 45%,100% { stroke-dashoffset: 0 } }
+  .rd-lbl { animation: fade-hold 4.5s ease-in-out infinite; }
+  .rd-mix { fill: none; stroke: var(--color-border-strong); stroke-width: 1.3; stroke-dasharray: 3 3; }
+  .rd-mixl { fill: var(--color-ink-faint); }
+
+  /* consensus — attest: committee fires votes, head weight fills */
+  .at-v { fill: color-mix(in oklab, var(--color-node-extension) 16%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .at-head { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .at-a { fill: none; stroke: var(--color-accent); stroke-width: 1.4; stroke-dasharray: 320; stroke-dashoffset: 320; }
+  .aa0 { animation: atdraw 5s ease-out infinite; } .aa1 { animation: atdraw 5s ease-out 0.3s infinite; } .aa2 { animation: atdraw 5s ease-out 0.6s infinite; }
+  .aa3 { animation: atdraw 5s ease-out 0.9s infinite; } .aa4 { animation: atdraw 5s ease-out 1.2s infinite; } .aa5 { animation: atdraw 5s ease-out 1.5s infinite; }
+  @keyframes atdraw { 0%,6% { stroke-dashoffset: 320 } 30%,90% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: 0 } }
+  .at-wtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .at-wfill { fill: var(--color-node-leaf); transform-box: fill-box; transform-origin: left; animation: atfill 5s ease-in-out infinite; }
+  @keyframes atfill { 0% { transform: scaleX(0.04) } 70%,100% { transform: scaleX(1) } }
+
+  /* consensus — epoch: two gauges fill, justify, then finalize */
+  .ep-line { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .ep-tick { stroke: var(--color-border); stroke-width: 1; }
+  .ep-cp { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .ep-c0 { animation: epc0 7s ease-in-out infinite; } .ep-c1 { animation: epc1 7s ease-in-out infinite; }
+  @keyframes epc0 { 0%,24% { stroke: var(--color-border-strong) } 30%,100% { stroke: var(--color-node-leaf) } }
+  @keyframes epc1 { 0%,54% { stroke: var(--color-border-strong) } 60%,100% { stroke: var(--color-node-leaf) } }
+  .ep-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ep-fill { fill: var(--color-node-leaf); transform-box: fill-box; transform-origin: left; }
+  .ep-f0 { animation: epf0 7s ease-in-out infinite; } .ep-f1 { animation: epf1 7s ease-in-out infinite; }
+  @keyframes epf0 { 0% { transform: scaleX(0.04) } 24%,100% { transform: scaleX(1) } }
+  @keyframes epf1 { 0%,30% { transform: scaleX(0.04) } 54%,100% { transform: scaleX(1) } }
+  .ep-j0 { text-anchor: middle; opacity: 0; animation: epj0 7s ease-in-out infinite; }
+  .ep-j1 { text-anchor: middle; opacity: 0; animation: epj1 7s ease-in-out infinite; }
+  @keyframes epj0 { 0%,26% { opacity: 0 } 32%,100% { opacity: 1 } }
+  @keyframes epj1 { 0%,56% { opacity: 0 } 62%,100% { opacity: 1 } }
+  .ep-lock { font-size: 13px; text-anchor: middle; opacity: 0; animation: epfin 7s ease-in-out infinite; }
+  .ep-final { text-anchor: middle; opacity: 0; animation: epfin 7s ease-in-out infinite; }
+  @keyframes epfin { 0%,62% { opacity: 0 } 70%,100% { opacity: 1 } }
+
+  /* consensus — pbs: bids arrive, winner signed, body revealed */
+  .pb-box { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .pb-bid { fill: var(--color-ink-muted); }
+  .pb-win .pb-box { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .pb-win .pb-bid { fill: var(--color-node-leaf); }
+  .pb-relay { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .pb-prop { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .pb-a, .pb-a2, .pb-a3 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 70; stroke-dashoffset: 70; }
+  .b0 { animation: pbdraw 6s ease-out 0.2s infinite; } .b1 { animation: pbdraw 6s ease-out 0.4s infinite; } .b2 { animation: pbdraw 6s ease-out 0.6s infinite; }
+  .pb-a2 { animation: pbdraw 6s ease-out 1.6s infinite; } .pb-a3 { animation: pbdraw 6s ease-out 3s infinite; }
+  @keyframes pbdraw { 0%,8% { stroke-dashoffset: 70 } 24%,100% { stroke-dashoffset: 0 } }
+  .pb-sign { fill: var(--color-node-leaf); animation: pbsign 6s ease-in-out infinite; }
+  @keyframes pbsign { 0%,40% { opacity: 0.25 } 52%,100% { opacity: 1 } }
+  .pb-block { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); animation: pbblock 6s ease-in-out infinite; }
+  @keyframes pbblock { 0%,55% { opacity: 0.3 } 68%,100% { opacity: 1 } }
+
+  /* consensus — validator lifecycle: a token flows through the stages */
+  .vl-box { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .vl-active { stroke: var(--color-node-leaf); }
+  .vl-a { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .vl-token { fill: color-mix(in oklab, var(--color-accent) 24%, var(--color-surface)); stroke: var(--color-accent); animation: vlflow 7s ease-in-out infinite; }
+  @keyframes vlflow { 0%,4% { transform: translateX(0) } 24% { transform: translateX(94px) } 46% { transform: translateX(188px) } 68% { transform: translateX(282px) } 88%,100% { transform: translateX(376px) } }
+  .vl-branch { fill: none; stroke: var(--color-changed); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .vl-slash { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
+  .vl-slashgrp { opacity: 0; animation: vlslash 7s ease-in-out infinite; }
+  @keyframes vlslash { 0%,40% { opacity: 0 } 48%,62% { opacity: 1 } 70%,100% { opacity: 0 } }
 </style>

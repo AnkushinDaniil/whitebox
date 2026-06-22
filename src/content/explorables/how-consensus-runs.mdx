@@ -1,0 +1,169 @@
+---
+title: How consensus runs
+dek: The capstone showed why proof of stake works. This is the clockwork that runs it — how a million validators with no leader take turns making one block every twelve seconds and agree on it. Slots, committees, epochs, finality, block builders, and the validator's whole life.
+summary: A step-by-step, animated tour of how Ethereum's proof-of-stake consensus actually runs — 12-second slots and the RANDAO proposer lottery, committees and attestations, epochs with Casper-FFG justification and finalization, proposer-builder separation (builders, relays, MEV-Boost), and the validator lifecycle from a 32-ETH deposit through attesting to exit or slashing. Each piece derived from the flaw in the last.
+topic: Consensus
+order: 3
+spine: true
+prerequisites: ["proof of stake", "finality"]
+updated: 2026-06-22
+readingMinutes: 16
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+
+The [capstone](/you-could-have-invented-ethereum#step-7) settled *why* Ethereum uses proof of stake: bond real money, follow the heaviest-attested chain, and make reverting a finalized block cost a third of all staked ETH. That's the principle. This page is the **clockwork** — the actual machine that turns it into running blocks.
+
+The problem it solves is brutal: over a million [validators](/you-could-have-invented-ethereum#step-7), scattered across the planet, with **no leader and no clock they share**, somehow have to take turns producing exactly one block at a time and agree on which blocks count — fast enough to be usable and cheap enough that anyone can join. Watch it assemble, one fix at a time.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The clock: slots" },
+  { id: "step-2", label: "The proposer lottery" },
+  { id: "step-3", label: "Everyone votes" },
+  { id: "step-4", label: "Epochs & finality" },
+  { id: "step-5", label: "Who builds the block" },
+  { id: "step-6", label: "A validator's life" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The clock: slots">
+
+## Chop time into slots
+
+If any validator could publish a block whenever it liked, a million of them would constantly collide — two blocks at the same height, no way to say which came "first" without a shared clock. So invent one. Carve time into fixed **<KeyTerm term="slot" def="A fixed 12-second window. Exactly one validator is assigned to propose a block in each slot; 32 slots make an epoch." />s** of **12 seconds**, and in each slot anoint exactly **one** validator as the **proposer** — the only one allowed to make a block right then. A steady, leaderless heartbeat: one slot, one proposer, one block.
+
+<Scene name="cl-slots" caption="Time is sliced into 12-second slots. Each slot has one pre-assigned proposer — a shared heartbeat that replaces the missing global clock." />
+
+Empty slots are fine (if a proposer is offline, the slot just passes), and everyone agrees on the schedule because slots are counted from a fixed genesis time. The chain now has a tempo.
+
+<Callout type="warning" title="What breaks">
+But *who* is the proposer for each slot? Announce it far in advance and an attacker can bribe or DDoS exactly the right validator at the right second. Let everyone decide for themselves and they'll disagree. We need an assignment that's **unpredictable** ahead of time yet **verifiable** by all, with no one able to rig it.
+</Callout>
+
+**→ Step 2: pick the proposer by a lottery nobody can game.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="The proposer lottery">
+
+## A shared random seed: RANDAO
+
+Generate one number the whole network trusts and can't predict, and use it to map each slot to a proposer. That number is **<KeyTerm term="RANDAO" def="A shared randomness accumulated on-chain: each proposer mixes a value (revealed from their BLS signature) into the running seed, so no single party controls the result and it can't be known far in advance." />**. Every proposer, as part of proposing, reveals a value derived from their signature and **mixes it into a running seed**. Because the final seed depends on *everyone's* contribution, no single validator can steer it; because each contribution is only revealed at proposal time, it can't be known far ahead. The seed then deterministically picks each slot's proposer — and the committees we're about to meet — so anyone can recompute and verify the assignment, but no one can rig it.
+
+<Scene name="cl-randao" caption="A shared seed, stirred by every proposer, deterministically draws each slot's proposer from the whole validator set — unpredictable in advance, verifiable after, riggable by no one." />
+
+<Callout type="warning" title="What breaks">
+A proposer publishes a block — but a block is just *one* validator's say-so. With no leader to trust, why should the other million accept it as the head of the chain? One signature isn't agreement.
+</Callout>
+
+**→ Step 3: have everyone vote on what they see.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Everyone votes">
+
+## Attestations: a vote from every validator
+
+Agreement comes from votes, not authority. Every validator casts an **<KeyTerm term="attestation" def="A validator's signed vote, cast once per epoch. It names the block it sees as the head (the LMD-GHOST/fork-choice vote) and a source-to-target checkpoint pair (the Casper-FFG/finality vote)." />** — a signed vote that says two things at once: *this is the head block I see* (the fork-choice vote, which adds weight to that branch) and *this is the checkpoint I consider current* (the finality vote, in a moment). Fork choice then follows the branch carrying the most attesting stake, so a minority fork can never out-weigh the honest majority.
+
+A million validators can't all vote every slot without drowning the network, so they're split into **<KeyTerm term="committee" def="A pseudo-random subset of validators. The set is divided into 32 committees per epoch, one assigned to each slot, so every validator attests exactly once per epoch." />s** — 32 of them per epoch, one assigned to each slot. Each validator votes **exactly once per epoch**, in its slot's committee. The votes pile up as weight on the chain.
+
+<Scene name="cl-attest" caption="Each slot, one committee attests — every vote names the head (adding fork-choice weight) and a checkpoint (the finality vote). Split into 32 committees, every validator votes once per epoch." />
+
+<Callout type="warning" title="What breaks">
+Votes accumulate and the head is clear moment to moment — but weight can always shift. When does a block stop being "currently favored" and become **settled**, so a merchant can trust a payment is irreversible?
+</Callout>
+
+**→ Step 4: turn a pile of votes into finality.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Epochs & finality">
+
+## Epochs, justification, finalization
+
+Group every **32 slots** into an **<KeyTerm term="epoch" def="A span of 32 slots (~6.4 minutes). Epoch boundaries carry checkpoints; finality is decided epoch to epoch." />** — about 6.4 minutes — and treat the block at each boundary as a **checkpoint**. The finality vote inside every attestation is a vote for a checkpoint. The rule (Casper-FFG) is two-step: when **≥⅔ of all staked ETH** attests to a checkpoint, it becomes **justified**; when two checkpoints in a row are justified, the earlier one becomes **finalized**.
+
+<Scene name="cl-epoch" caption="32 slots make an epoch. Two-thirds of staked ETH justifies a checkpoint; two justified in a row finalizes the first — and reverting a finalized block would require a third of all stake to be slashed." />
+
+Finalized means *economically irreversible*: undoing it would require validators holding a third of all stake to sign two contradictory checkpoints — provable, slashable, and ruinous. In normal operation a block finalizes about **two epochs (~13 minutes)** after it's proposed. That's the number a careful merchant waits for.
+
+<Callout type="warning" title="What breaks">
+We can now produce blocks and finalize them. But we glossed over the hardest job: *what goes in the block?* Ordering transactions to squeeze out the most value is specialized, capital-intensive work — and if every proposer must do it well, block production centralizes into a few sophisticated players, exactly what staking was meant to avoid.
+</Callout>
+
+**→ Step 5: split proposing from building.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="Who builds the block">
+
+## Proposer-builder separation
+
+Separate the *small* job (propose: sign one header in your slot) from the *big* job (build: assemble the most valuable ordering of transactions). Specialized **builders** compete to construct the most profitable block they can — mempool transactions plus private order flow, optimally ordered to capture <KeyTerm term="MEV" def="Maximal Extractable Value — profit available from choosing which transactions to include and in what order. Building to capture it is specialized work, which is why it's outsourced to builders." /> — and **bid** for the right to have it proposed. A trusted **relay** escrows the candidate blocks and shows the proposer only the *headers and bids*, never the bodies. The proposer signs the **highest-bid header blind** — committing to it before seeing its contents — and only then does the relay release the body to the network.
+
+<Scene name="cl-pbs" caption="Builders bid; a relay escrows the blocks; the proposer blind-signs the best header, and only then is the body revealed. The lucrative work is outsourced, so a home staker stays competitive." />
+
+A solo home staker, who could never out-build a professional shop, simply takes the best bid and earns the same. Today this runs as off-protocol **MEV-Boost**; folding it into the protocol — *enshrined* PBS — is active roadmap work, precisely because trusting relays is the soft spot.
+
+<Callout type="warning" title="What breaks">
+Slots, lottery, votes, finality, building — the machine turns. But it only turns because a million validators show up and behave. What actually makes them? What is the *life* of one validator, and what happens when one cheats?
+</Callout>
+
+**→ Step 6: meet the validator.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-6" num="6" badge="step" title="A validator's life">
+
+## Deposit, attest, exit — or get slashed
+
+A **validator** is 32 ETH and a set of keys. Its life is a pipeline: deposit 32 ETH, wait in a rate-limited **activation queue** (so the validator set can't lurch), then go **active** — attesting every epoch, proposing on the rare slot the lottery hands you. Do it correctly and on time and you earn steady rewards; miss your duties and you pay small penalties; if the chain ever stops finalizing, an **inactivity leak** bleeds the absent validators until the active two-thirds is restored. To leave, you request a voluntary exit, wait in the **exit queue**, and withdraw your stake.
+
+<Scene name="cl-life" caption="32 ETH in → activation queue → years of attesting (and the odd proposal) → exit queue → withdrawal. Equivocate, and instead you're slashed: ejected and your stake cut." />
+
+And the cliff that makes all the earlier steps real: **<KeyTerm term="slashing" def="The penalty for provably contradictory messages — proposing two blocks for one slot, or casting conflicting attestations. The validator is force-exited and a chunk (up to all) of its stake is burned." />**. Sign two blocks for one slot, or two conflicting attestations, and anyone can submit the proof; you're force-exited and a piece of your stake — up to all of it — is burned. Every "they can't lie without losing money" from the capstone is *this*: an automatic, provable, on-chain punishment.
+
+<Callout type="insight" title="And that is consensus, running">
+A leaderless clock of 12-second slots; a RANDAO lottery that names each slot's proposer and committees; an attestation from every validator each epoch that votes the head and a checkpoint; a two-thirds, two-in-a-row rule that finalizes history every ~13 minutes; proposer-builder separation so the lucrative work doesn't centralize; and a validator economy of rewards, leaks, and slashing that makes honesty the profitable choice. Each piece is forced by the last one's gap — and together they're how a million strangers agree, every twelve seconds, with no one in charge.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="spec" id="more" title="A few pieces we skipped">
+
+## The rest of the beacon machinery
+
+The six steps are the spine; a handful of real mechanisms hang off them:
+
+- **The sync committee.** A rotating group of **512** validators, refreshed every **256 epochs (~27 hours)**, signs every block header. It exists so [light clients](/how-a-node-syncs#step-5) can follow the chain by checking one small, slowly-changing signature set instead of a million attestations.
+- **The beacon chain vs. execution.** All of the above lives on the **consensus layer** (the beacon chain). The actual transactions and EVM execution live on the **execution layer**; since the Merge, each block pairs the two, and the consensus layer drives the execution layer through the engine API.
+- **Aggregation.** Individual attestations are **aggregated** (BLS signatures combine into one) before going on-chain, which is what makes a million votes per epoch fit at all.
+- **Validator caps & consolidation.** A validator's effective balance is capped (historically 32 ETH; raised for large stakers by EIP-7251) so weight stays proportional and the set stays manageable.
+
+<Callout type="note" title="Names you'll see">
+"Gasper" is the combination of **LMD-GHOST** (the fork-choice rule that follows the heaviest attestations) and **Casper-FFG** (the justify-then-finalize checkpoint rule). The capstone derives *why* they work; this page is *how* they're scheduled and run.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "You could have invented Ethereum — consensus", note: "Why staking, fork choice & finality work", href: "/you-could-have-invented-ethereum#step-7" },
+    { kind: "spec", label: "consensus-specs", note: "The beacon chain, slot by slot", href: "https://github.com/ethereum/consensus-specs" },
+    { kind: "post", label: "Ben Edgington — eth2book", note: "The clearest deep reference on the beacon chain", href: "https://eth2book.info/" },
+    { kind: "post", label: "Gasper — combining GHOST and Casper", note: "The paper behind the two rules", href: "https://arxiv.org/abs/2003.03052" },
+    { kind: "post", label: "MEV-Boost / proposer-builder separation", note: "How block building works today", href: "https://docs.flashbots.net/flashbots-mev-boost/introduction" },
+    { kind: "tool", label: "beaconcha.in", note: "Watch slots, epochs, and validators live", href: "https://beaconcha.in/" },
+  ]}
+/>
+
+</DepthLayer>

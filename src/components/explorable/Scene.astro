@@ -687,11 +687,11 @@ const { name, caption, wide } = Astro.props;
         {[["deposit 32Ξ", 0], ["activation", 1], ["active", 2], ["exit queue", 3], ["withdraw", 4]].map(([label, i]) => (
           <g>
             <rect class={`vl-box ${i === 2 ? "vl-active" : ""}`} x={10 + Number(i) * 94} y="36" width="84" height="46" rx="6" />
-            <text class="t-cap" x={52 + Number(i) * 94} y="62">{label}</text>
-            {Number(i) < 4 && <path class="vl-a" d={`M${94 + Number(i) * 94} 59 H${104 + Number(i) * 94}`} />}
+            <text class="t-cap" x={52 + Number(i) * 94} y="66">{label}</text>
+            {Number(i) < 4 && <path class="vl-a" d={`M${94 + Number(i) * 94} 50 H${104 + Number(i) * 94}`} />}
           </g>
         ))}
-        <circle class="vl-token" cx="10" cy="59" r="7" />
+        <circle class="vl-token" cx="10" cy="50" r="6" />
         <g class="vl-slashgrp">
           <path class="vl-branch" d="M240 82 V120 H300" />
           <rect class="vl-slash" x="300" y="104" width="140" height="34" rx="6" /><text class="t-x" x="370" y="125">slashed ✗ — ejected, stake cut</text>
@@ -944,7 +944,7 @@ const { name, caption, wide } = Astro.props;
   .st-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
 
   /* full sync: a marker crawls block by block while state fills, slowly */
-  .sg-marker { fill: none; stroke: var(--color-accent); stroke-width: 2; transform-box: fill-box; animation: sgstep 7s steps(8) infinite; }
+  .sg-marker { fill: none; stroke: var(--color-accent); stroke-width: 2; transform-box: fill-box; animation: sgstep 7s steps(8, jump-none) infinite; }
   @keyframes sgstep { 0% { transform: translateX(0) } 100% { transform: translateX(392px) } }
   .sg-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .sg-fill { fill: color-mix(in oklab, var(--color-accent) 30%, var(--color-surface)); transform-box: fill-box; transform-origin: left; animation: sgfill 7s linear infinite; }
@@ -1090,7 +1090,7 @@ const { name, caption, wide } = Astro.props;
   /* consensus — slots: a "now" marker steps across the slot timeline */
   .sl-cell { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .sl-prop { fill: color-mix(in oklab, var(--color-node-extension) 18%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .sl-now { fill: color-mix(in oklab, var(--color-accent) 8%, transparent); stroke: var(--color-accent); stroke-width: 2.2; animation: slnow 8s steps(8) infinite; }
+  .sl-now { fill: color-mix(in oklab, var(--color-accent) 8%, transparent); stroke: var(--color-accent); stroke-width: 2.2; animation: slnow 8s steps(8, jump-none) infinite; }
   @keyframes slnow { 0% { transform: translateX(0) } 100% { transform: translateX(399px) } }
 
   /* consensus — randao: the seed cycles, a pick lands on a validator */
@@ -1159,7 +1159,7 @@ const { name, caption, wide } = Astro.props;
   .vl-active { stroke: var(--color-node-leaf); }
   .vl-a { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; }
   .vl-token { fill: color-mix(in oklab, var(--color-accent) 24%, var(--color-surface)); stroke: var(--color-accent); animation: vlflow 7s ease-in-out infinite; }
-  @keyframes vlflow { 0%,4% { transform: translateX(0) } 24% { transform: translateX(94px) } 46% { transform: translateX(188px) } 68% { transform: translateX(282px) } 88%,100% { transform: translateX(376px) } }
+  @keyframes vlflow { 0%,4% { transform: translateX(42px) } 24% { transform: translateX(136px) } 46% { transform: translateX(230px) } 68% { transform: translateX(324px) } 88%,100% { transform: translateX(418px) } }
   .vl-branch { fill: none; stroke: var(--color-changed); stroke-width: 1.4; stroke-dasharray: 4 3; }
   .vl-slash { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
   .vl-slashgrp { opacity: 0; animation: vlslash 7s ease-in-out infinite; }

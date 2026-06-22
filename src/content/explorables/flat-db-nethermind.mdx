@@ -85,13 +85,23 @@ A flat `address → value` table is a snapshot of *right now*. But chains reorg,
 
 <DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Remembering the past">
 
-## Layered snapshots, compacted by powers of two
+## Layered snapshots, merged in powers of two
 
-Don't overwrite the flat data in place — *layer* it. Each block's writes go into a small **single-block snapshot** stacked on top (tier one). To read a value as of some recent block, you start at the top and fall through the layers until you find it. That keeps every recent state readable — but if every block were its own layer forever, a read near the tip would have to fall through hundreds of them.
+Don't overwrite the flat data in place — *layer* it. Each new block's writes go into a small **single-block snapshot** stacked on top. To read a value as of a recent block you start at the newest layer and fall down until you find it. Simple — but if every block kept its own layer forever, you'd have *thousands* of them, and a read would crawl through the whole pile.
 
-<Scene name="dblayers" caption="A read falls through stacked snapshots — recent single-block layers, then compacted multi-block layers, down to the base flat DB — stopping at the first layer that holds the value." />
+So **compact**: every so often, fuse a run of small layers into one bigger layer. The only real question is *which* runs to fuse, and the answer is the clever bit — **powers of two**. Keep merging so that at any moment you hold *at most one layer of each size*: one 1-block layer, one 2-block, one 4-block, one 8-block, and so on. Watch eight blocks' worth of layers collapse:
 
-So **compact**. Older single-block layers merge into bigger **compacted snapshots** (tier two), and the merge follows a power-of-two rule: a layer's span is the largest power of two that divides its block number, up to a cap of 32 blocks. That keeps the number of layers *logarithmic* in how far back you read — a lookup typically crosses about **seven layers** to cover the 128-block <KeyTerm term="reorg" def="A reorganization: the chain switches to a different, heavier fork, so recent blocks are rolled back and replaced. A node must be able to recompute state across this depth." /> depth that snap sync demands. The heavy compaction work happens in the background instead of blocking each block.
+<Scene name="dbcompact" caption="Compaction fuses layers in pairs — 8 single-block layers become 4, then 2, then 1. Each round halves the count, so the number of layers grows like the number of bits, not the number of blocks." />
+
+The precise rule is "a new compacted layer's span is the largest power of two that divides the block number." Roll it forward and a pattern falls out: blocks 1 and 2 fuse into a 2-layer; block 3 sits alone until block 4 fuses everything into a 4-layer; and so on. The set of layers you're holding is therefore exactly the **binary digits of the current block number**. After block 13 — binary `1101` — you hold an 8-layer, a 4-layer, and a 1-layer: just *three* layers covering thirteen blocks.
+
+<Callout type="note" title="Why powers of two">
+Because the layer count then grows like the *number of bits*, not the number of blocks. With layers capped at 32 blocks, a read crosses only about **seven** of them to see the full 128-block <KeyTerm term="reorg" def="A reorganization: the chain switches to a different, heavier fork, so recent blocks are rolled back and replaced. A node must be able to recompute state across this depth." /> depth that snap sync needs — instead of falling through 128. It's the same logarithmic trick a binary counter uses to count to 128 with 7 digits.
+</Callout>
+
+Now the read is cheap again: a lookup falls through that short stack of layers — newest single-block snapshots first, then the compacted ones, then the base flat DB — and stops at the first layer that holds the value. The heavy merging runs in the background, off each block's critical path.
+
+<Scene name="dblayers" caption="A read falls through the stacked snapshots — recent single-block layers, then compacted multi-block layers, down to the base flat DB — stopping at the first layer that holds the value." />
 
 <Callout type="warning" title="What breaks">
 We've got fast reads and a working memory of recent history. But there's a catch the team hit head-on: turn this on as-is and it's *barely faster than HalfPath*. Where did the win go?

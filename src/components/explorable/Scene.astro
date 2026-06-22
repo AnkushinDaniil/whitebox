@@ -29,6 +29,7 @@ interface Props {
     | "dbtrie"
     | "dbhalfpath"
     | "dbflat"
+    | "dbcompact"
     | "dblayers";
   caption?: string;
   /** widen the figure frame for dense diagrams */
@@ -521,6 +522,20 @@ const { name, caption, wide } = Astro.props;
       </svg>
     )}
 
+    {/* ── flat-db: compaction merges layers in powers of two (8→4→2→1) ── */}
+    {name === "dbcompact" && (
+      <svg viewBox="0 0 480 214" role="img" aria-label="Compaction merges snapshot layers in powers of two, halving the count each round">
+        <g class="cl cl3"><rect class="cbox c8" x="48" y="18" width="384" height="26" rx="5" /><text class="t-fld c-on" x="240" y="35">1 layer — blocks 1–8</text></g>
+        <g class="cl cl2">{[0, 1].map((i) => (<g><rect class="cbox c4" x={48 + i * 196} y="64" width="188" height="24" rx="5" /><text class="t-fld c-on" x={142 + i * 196} y="80">blocks {i * 4 + 1}–{i * 4 + 4}</text></g>))}</g>
+        <g class="cl cl1">{[0, 1, 2, 3].map((i) => (<g><rect class="cbox c2" x={48 + i * 98} y="110" width="90" height="22" rx="4" /><text class="t-fld c-on" x={93 + i * 98} y="125">{i * 2 + 1}–{i * 2 + 2}</text></g>))}</g>
+        <g class="cl cl0">{[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<g><rect class="cbox c1" x={48 + i * 48} y="156" width="40" height="22" rx="4" /><text class="t-fld c-on" x={68 + i * 48} y="171">b{i + 1}</text></g>))}</g>
+        <text class="t-cap c-count cc0" x="240" y="196">8 single-block layers pile up…</text>
+        <text class="t-cap c-count cc1" x="240" y="196">merge in pairs → 4 layers</text>
+        <text class="t-cap c-count cc2" x="240" y="196">merge again → 2 layers</text>
+        <text class="t-cap c-count cc3" x="240" y="196">…→ 1 layer. each round halves them, so 128 blocks need only ~7</text>
+      </svg>
+    )}
+
     {/* ── flat-db: a read falls through layered snapshots to find a past value ── */}
     {name === "dblayers" && (
       <svg viewBox="0 0 480 224" role="img" aria-label="Layered snapshots let a flat read see recent and past blocks">
@@ -876,6 +891,26 @@ const { name, caption, wide } = Astro.props;
   @keyframes dfhit { 0%,30% { opacity: 0.35 } 42%,100% { opacity: 1 } }
   .df-trie { animation: dftrie 4.5s ease-in-out infinite; }
   @keyframes dftrie { 0%,60% { opacity: 0.4 } 74% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { opacity: 0.4 } }
+
+  /* dbcompact: levels appear bottom-up, 8 boxes merging to 4 to 2 to 1 */
+  .cbox { stroke-width: 1.2; }
+  .c1 { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .c2 { fill: color-mix(in oklab, var(--color-node-branch) 14%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .c4 { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .c8 { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .c-on { fill: var(--color-ink-muted); }
+  .cl { opacity: 0; }
+  .cl0 { animation: clk0 8s ease-in-out infinite; }
+  .cl1 { animation: clk1 8s ease-in-out infinite; }
+  .cl2 { animation: clk2 8s ease-in-out infinite; }
+  .cl3 { animation: clk3 8s ease-in-out infinite; }
+  @keyframes clk0 { 0%,20% { opacity: 1 } 27%,93% { opacity: 0 } 100% { opacity: 1 } }
+  @keyframes clk1 { 0%,22% { opacity: 0 } 29%,44% { opacity: 1 } 51%,100% { opacity: 0 } }
+  @keyframes clk2 { 0%,46% { opacity: 0 } 53%,66% { opacity: 1 } 73%,100% { opacity: 0 } }
+  @keyframes clk3 { 0%,68% { opacity: 0 } 75%,92% { opacity: 1 } 99%,100% { opacity: 0 } }
+  .c-count { opacity: 0; }
+  .cc0 { animation: clk0 8s ease-in-out infinite; } .cc1 { animation: clk1 8s ease-in-out infinite; }
+  .cc2 { animation: clk2 8s ease-in-out infinite; } .cc3 { animation: clk3 8s ease-in-out infinite; }
 
   /* dblayers: a token falls through snapshot layers, stops where the value lives */
   .db-layer { fill: var(--color-surface); stroke: var(--color-border-strong); }

@@ -1,0 +1,146 @@
+---
+title: "EIP-1559: the fee market that prices itself"
+dek: "Before 1559, every transaction bid blind in a first-price auction — overpay or get stuck. Derive the replacement one fix at a time: a posted price, a thermostat that sets it, elastic blocks for the spikes, and a burn that removes the last bad incentive."
+summary: A step-by-step derivation of Ethereum's EIP-1559 fee market — from the broken first-price gas auction to a protocol-posted base fee, a ±12.5%-per-block controller that targets half-full blocks, elastic 2× blocks that absorb demand spikes, and the burn-plus-tip split that made fees predictable and ETH partly deflationary. With the live base-fee simulator.
+topic: EIPs
+order: 4
+spine: true
+prerequisites: ["gas", "the mempool"]
+updated: 2026-06-23
+readingMinutes: 13
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import FeeMarket from "@/components/fees/FeeMarket.tsx";
+
+Every transaction pays for the [gas](/you-could-have-invented-ethereum#step-9) it burns — but at *what price per gas*? For Ethereum's first six years the answer was an auction, and it was miserable: fees that swung 10× in an hour, wallets that guessed wrong, and a quiet tax of chronic overpayment on everyone. **EIP-1559** replaced it. The replacement looks clever and a little arbitrary the first time you see it — a "base fee," a magic 12.5%, a burn — so let's not memorize it. Let's *derive* it, starting from the auction and fixing exactly what's wrong, one step at a time.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The blind auction" },
+  { id: "step-2", label: "A posted price" },
+  { id: "step-3", label: "Elastic blocks" },
+  { id: "step-4", label: "Burn it" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The blind auction">
+
+## The problem: everyone bids blind
+
+The original design is the obvious one. Each transaction names a single number — its `gasPrice` — and the block proposer simply sorts all the pending transactions by that number and fills the block from the highest down. Clean to implement, and quietly terrible to *use*, because it's a **sealed first-price auction**: you must name a price without knowing what anyone else bid or what it takes to get in.
+
+<Scene name="fee-auction" caption="A first-price auction: the block fills with the highest bids. Bid too high and you overpay (you paid 100 to beat 45); bid too low and your transaction just stalls. Nobody knows the clearing price." />
+
+Both failure modes hurt. Bid high to be safe and you hand over far more than you needed (the *winner's curse*). Bid low to save money and you sit in the mempool for hours. And because nobody can see the clearing price, every wallet runs its own guess, fees are volatile block to block, and a demand spike becomes a stampede of panic-bidding. The auction isn't pricing the resource — it's taxing everyone for the privilege of guessing.
+
+<Callout type="warning" title="What breaks">
+A sealed first-price auction is the wrong tool for a thing people use thousands of times a day. We don't want a bidding war for the *floor* price at all — we want a single, visible price that reflects how busy the chain is. So: stop making people guess.
+</Callout>
+
+**→ Step 2: let the protocol post the price.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A posted price">
+
+## Post one price — and let a thermostat set it
+
+Here's the move. Instead of an auction for the floor, the **protocol posts a single price per gas** that *every* transaction in a block pays — the <KeyTerm term="base fee" def="A per-gas price set by the protocol each block (not by bidders), the same for everyone in that block, and burned rather than paid to the proposer. EIP-1559." />. No more bidding to discover the floor; you read the posted price and pay it. The whole sealed-auction guessing game for inclusion vanishes.
+
+But that just moves the question: *who sets the base fee, and how do they know the right number?* Demand changes by the minute — any fixed price is wrong, and any human or oracle setting it is a target for manipulation. The trick is to not *forecast* demand at all, but to *react* to it with a simple feedback loop — a thermostat. Each block looks at how full the **previous** block was and nudges the base fee toward a target of **half-full**: over target → raise it; under → lower it; capped at **±12.5% per block** so it can never lurch.
+
+<WidgetFrame
+  title="EIP-1559 base-fee simulator"
+  caption="Set how full each block is and watch the base fee respond — up over the half-full target, down under it, by at most ⅛ per block. It's a controller reacting to the last block, not a forecast."
+  source="The exact EIP-1559 base-fee formula, in integer arithmetic — unit-tested against the spec."
+>
+  <FeeMarket client:visible />
+</WidgetFrame>
+
+The whole rule is a few lines of integer math on the parent block — no auction, no oracle, just a controller:
+
+<SpecExcerpt
+  source="EIP-1559: Fee market change"
+  href="https://eips.ethereum.org/EIPS/eip-1559"
+  ref="base fee calculation"
+>
+```python
+# parent over target → base fee rises (capped at +1/8); under → falls
+if parent_gas_used == parent_gas_target:
+    base_fee = parent_base_fee
+elif parent_gas_used > parent_gas_target:
+    delta   = parent_base_fee * (parent_gas_used - parent_gas_target) \
+              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR   # = 8
+    base_fee = parent_base_fee + max(delta, 1)
+else:
+    delta   = parent_base_fee * (parent_gas_target - parent_gas_used) \
+              // parent_gas_target // BASE_FEE_MAX_CHANGE_DENOMINATOR
+    base_fee = parent_base_fee - delta
+```
+</SpecExcerpt>
+
+That ±12.5% cap is the quiet hero: a demand shock can't 10× your fee in one block — it ramps over several, giving wallets a stable, *predictable* number to show you. Sustained congestion still gets expensive (1.125ⁿ compounds), but it does so visibly and gradually instead of in a panic.
+
+<Callout type="warning" title="What breaks">
+There's a gap. If every block is sized exactly at the target and the base fee only catches up *next* block, where does a sudden burst of demand go *this* block? A hard cap at the target would just re-create an auction for the overflow.
+</Callout>
+
+**→ Step 3: give blocks room to stretch.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Elastic blocks">
+
+## Let blocks stretch to absorb the spike
+
+Split "the size we *aim* for" from "the size we *allow*". The base-fee controller targets a **gas target**, but a block may burst up to **twice** it — the gas *limit* is `2 × target`. So when demand spikes, the extra transactions fit *immediately* into the elastic room above the target, instead of fighting an auction; the controller then sees that over-full block and ramps the base fee up over the next few blocks to pull demand back down to target.
+
+<Scene name="fee-elastic" caption="The block aims for half-full (the target) but can stretch to 2× it. A spike bursts into the elastic room now; the base fee then climbs over the next blocks to bring demand back to target." />
+
+So elasticity and the controller are two halves of one mechanism: **elasticity** handles the *instant* (room to absorb a burst), the **controller** handles the *trend* (re-pricing so the burst doesn't last). Average block stays near 50% full, which is exactly the headroom that keeps the controller responsive in both directions.
+
+<Callout type="warning" title="What breaks">
+One last thing smells wrong. The base fee is real money — *who gets it?* If it goes to the block proposer, the proposer is now incentivized to stuff the block with fake transactions to drive the base fee up and pay it to themselves. The mechanism would be gaming itself.
+</Callout>
+
+**→ Step 4: pay it to no one.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Burn it">
+
+## Burn the base fee; tip the proposer
+
+The fix is almost shocking the first time: **burn** the base fee. Destroy it. The proposer receives *nothing* from it — so there's no longer any reason to manipulate it upward, and the controller is safe to trust. As a bonus, burning ties the currency's scarcity to network usage: heavy demand removes ETH from supply.
+
+But a proposer still needs a reason to include *your* transaction and to order it well, so 1559 adds a small **priority fee** — a *tip* — paid directly to the proposer on top of the burned base fee. You sign two ceilings: `maxFeePerGas` (the most you'll pay per gas, base + tip) and `maxPriorityFeePerGas` (the tip). You pay `min(maxFeePerGas, baseFee + maxPriorityFeePerGas)` — the base fee burned, the rest tipped.
+
+<Scene name="fee-burn" caption="Your fee splits: the base fee is burned (so no one can be bribed to inflate it, and ETH gets scarcer), and the tip goes to the proposer to buy inclusion and ordering." />
+
+<Callout type="insight" title="And that is EIP-1559">
+The auction is gone for the floor: a **posted base fee** (no guessing), set by a **±12.5% controller** (predictable), with **elastic blocks** (spikes absorbed), and **burned** (no one to bribe, ETH made scarcer) — while a small **tip** still handles ordering. Every piece falls out of the last one's flaw: post the price because auctions waste; control it because a fixed price is wrong; stretch blocks because the controller lags; burn it because the proposer would otherwise game it. Fees became something you can *read* instead of *gamble on* — and the burn quietly turned ETH partly deflationary along the way.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-1559: Fee market change", note: "The spec, base-fee formula and rationale", href: "https://eips.ethereum.org/EIPS/eip-1559" },
+    { kind: "post", label: "Tim Roughgarden — economic analysis of 1559", note: "Why a controller beats an auction", href: "https://timroughgarden.org/papers/eip1559.pdf" },
+    { kind: "post", label: "You could have invented Ethereum — gas & fees", note: "Where 1559 sits in the whole machine", href: "/you-could-have-invented-ethereum#step-9" },
+    { kind: "post", label: "How consensus runs — PBS & the tip", note: "How the tip and block-building interact", href: "/how-consensus-runs#step-5" },
+    { kind: "tool", label: "ultrasound.money", note: "Watch the base fee burn in real time", href: "https://ultrasound.money/" },
+  ]}
+/>
+
+</DepthLayer>

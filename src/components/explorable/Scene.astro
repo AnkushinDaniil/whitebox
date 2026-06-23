@@ -40,7 +40,10 @@ interface Props {
     | "cl-attest"
     | "cl-epoch"
     | "cl-pbs"
-    | "cl-life";
+    | "cl-life"
+    | "fee-auction"
+    | "fee-elastic"
+    | "fee-burn";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -703,6 +706,51 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="172">{L("32 ETH in → queues → years of attesting → exit → withdraw. Equivocate and you’re slashed.")}</text>
       </svg>
     )}
+
+    {/* ── EIP-1559: the blind first-price auction it replaced ── */}
+    {name === "fee-auction" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="A blind first-price gas auction: you overpay or get stuck">
+        <text class="t-cap" x="200" y="22">{L("everyone names a price · the block takes the highest")}</text>
+        <rect class="fa-block" x="142" y="30" width="160" height="78" rx="6" />
+        {[["100 gwei (you)", "fa-you", 0], ["50 gwei", "fa-in", 1], ["45 gwei", "fa-in", 2], ["30 gwei", "fa-out", 3], ["12 gwei", "fa-out", 4], ["8 gwei", "fa-out", 5]].map(([label, cls, i]) => (
+          <g class={`fa-tag ${cls}`}>
+            <rect class="fa-rect" x="150" y={34 + Number(i) * 25} width="144" height="20" rx="4" />
+            <text class="t-fld" x="160" y={48 + Number(i) * 25}>{label}</text>
+          </g>
+        ))}
+        <text class="t-fld fa-blbl" x="316" y="62">{L("← top bids fill the block")}</text>
+        <text class="t-fld fa-stall" x="316" y="140">{L("← these just stall")}</text>
+        <text class="t-x" x="240" y="200">{L("you paid 100 gwei to beat 45 — overpaid; no posted price, no discovery")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-1559: elastic blocks absorb a demand spike ── */}
+    {name === "fee-elastic" && (
+      <svg viewBox="0 0 480 178" role="img" aria-label="Elastic blocks absorb a spike while the base fee ramps">
+        <rect class="el-block" x="40" y="30" width="120" height="118" rx="8" />
+        <rect class="el-fill" x="42" y="32" width="116" height="114" rx="6" />
+        <line class="el-target" x1="32" y1="89" x2="168" y2="89" />
+        <text class="t-cap" x="206" y="40" text-anchor="start">{L("limit = 2× target")}</text>
+        <text class="t-cap" x="206" y="92" text-anchor="start">{L("target (½ full)")}</text>
+        <text class="t-fld el-fee" x="206" y="126" text-anchor="start">{L("base fee climbing ↑")}</text>
+        <text class="t-cap" x="240" y="170">{L("spike bursts to 2× · the base fee then climbs back to target")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-1559: the base fee is burned, the tip pays the proposer ── */}
+    {name === "fee-burn" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="The base fee is burned; the priority tip goes to the proposer">
+        <text class="t-cap" x="167" y="24">{L("fee per gas = base fee + tip")}</text>
+        <rect class="fb-base" x="20" y="34" width="220" height="30" rx="4" /><text class="t-fld" x="130" y="53" text-anchor="middle">{L("base fee (burned)")}</text>
+        <rect class="fb-tip" x="244" y="34" width="70" height="30" rx="4" /><text class="t-fld" x="279" y="53" text-anchor="middle">{L("tip")}</text>
+        <path class="fb-a1" d="M130 64 V112" />
+        <text class="fb-fire" x="130" y="134">🔥</text>
+        <text class="t-x fb-burnlbl" x="130" y="156">{L("burned — gone for good")}</text>
+        <path class="fb-a2" d="M279 64 L360 112" />
+        <rect class="fb-prop" x="344" y="110" width="120" height="34" rx="6" /><text class="t-ok fb-proplbl" x="404" y="131">{L("→ proposer")}</text>
+        <text class="t-cap" x="240" y="178">{L("base fee burned → no one to bribe, ETH gets scarcer · the tip buys ordering")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1168,4 +1216,41 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .vl-slash { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
   .vl-slashgrp { opacity: 0; animation: vlslash 7s ease-in-out infinite; }
   @keyframes vlslash { 0%,40% { opacity: 0 } 48%,62% { opacity: 1 } 70%,100% { opacity: 0 } }
+
+  /* EIP-1559 — fee-auction: top bids fill the block, you overpay, lows stall */
+  .fa-rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .fa-block { fill: color-mix(in oklab, var(--color-accent) 6%, transparent); stroke: var(--color-accent-dim); }
+  .fa-blbl { fill: var(--color-accent); }
+  .fa-stall { fill: var(--color-ink-faint); }
+  .fa-in .fa-rect { animation: fa-in 5s ease-in-out infinite; }
+  .fa-out .fa-rect { animation: fa-out 5s ease-in-out infinite; }
+  .fa-out { animation: fa-dim 5s ease-in-out infinite; }
+  .fa-you .fa-rect { fill: color-mix(in oklab, var(--color-hash) 14%, var(--color-surface)); stroke: var(--color-hash); animation: fa-you 5s ease-in-out infinite; }
+  @keyframes fa-in { 0%,30% { stroke: var(--color-border-strong) } 45%,100% { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)) } }
+  @keyframes fa-out { 0%,30% { stroke: var(--color-border-strong) } 45%,100% { stroke: var(--color-changed) } }
+  @keyframes fa-dim { 0%,40% { opacity: 1 } 55%,100% { opacity: 0.5 } }
+  @keyframes fa-you { 0%,60% { filter: none } 72% { filter: drop-shadow(0 0 7px var(--color-hash)) } 100% { filter: none } }
+
+  /* EIP-1559 — fee-elastic: the block fill bursts then recedes as the fee climbs */
+  .el-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .el-fill { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); transform-box: fill-box; transform-origin: bottom; animation: el-fill 6s ease-in-out infinite; }
+  @keyframes el-fill { 0%,12% { transform: scaleY(0.5) } 32% { transform: scaleY(0.95) } 80%,100% { transform: scaleY(0.5) } }
+  .el-target { stroke: var(--color-node-leaf); stroke-width: 1.4; stroke-dasharray: 5 3; }
+  .el-fee { fill: var(--color-hash); opacity: 0; animation: el-fee 6s ease-in-out infinite; }
+  @keyframes el-fee { 0%,30% { opacity: 0 } 42%,72% { opacity: 1 } 86%,100% { opacity: 0 } }
+
+  /* EIP-1559 — fee-burn: base flies to the fire, tip flies to the proposer */
+  .fb-base { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); }
+  .fb-tip { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .fb-a1, .fb-a2 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 60; stroke-dashoffset: 60; }
+  .fb-a1 { animation: fb-draw 5s ease-in-out infinite; }
+  .fb-a2 { animation: fb-draw 5s ease-in-out 0.4s infinite; }
+  @keyframes fb-draw { 0%,14% { stroke-dashoffset: 60 } 34%,100% { stroke-dashoffset: 0 } }
+  .fb-fire { font-size: 16px; text-anchor: middle; opacity: 0; transform-box: fill-box; transform-origin: center; animation: fb-fire 5s ease-in-out infinite; }
+  @keyframes fb-fire { 0%,34% { opacity: 0; transform: scale(0.5) } 46% { opacity: 1; transform: scale(1.15) } 58%,90% { opacity: 1; transform: scale(1) } 100% { opacity: 0 } }
+  .fb-burnlbl { animation: fb-late 5s ease-in-out infinite; }
+  .fb-prop { fill: var(--color-surface); stroke: var(--color-border-strong); animation: fb-prop 5s ease-in-out infinite; }
+  .fb-proplbl { animation: fb-late 5s ease-in-out 0.4s infinite; }
+  @keyframes fb-prop { 0%,38% { stroke: var(--color-border-strong) } 50%,100% { stroke: var(--color-node-leaf) } }
+  @keyframes fb-late { 0%,40% { opacity: 0.2 } 54%,100% { opacity: 1 } }
 </style>

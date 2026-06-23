@@ -83,7 +83,11 @@ interface Props {
     | "ga-flat"
     | "ga-raise"
     | "ga-coldwarm"
-    | "ga-acl";
+    | "ga-acl"
+    | "mb-shard"
+    | "mb-raise"
+    | "mb-consolidate"
+    | "mb-payoff";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1468,6 +1472,74 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="178">{L("EIP-2930 — the first user of the EIP-2718 typed envelope (type 0x01)")}</text>
       </svg>
     )}
+
+    {/* ── EIP-7251: the 32 ETH cap shards big stakers into many validators ── */}
+    {name === "mb-shard" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="The 32 ETH effective-balance cap forces large stakers into many validators">
+        <text class="t-cap" x="240" y="18">{L("the 32 ETH cap shards big stakers")}</text>
+        <rect class="mb-staker" x="20" y="56" width="120" height="48" rx="8" />
+        <text class="t-cap" x="80" y="76">{L("3200 ETH staker")}</text>
+        <text class="t-fld mb-c" x="80" y="94">must split into…</text>
+        <path class="sarrow mb-sa" d="M140 80 H176" />
+        {Array.from({ length: 21 }).map((_, i) => (
+          <g>
+            <rect class="mb-vcell" style={`animation-delay:${(i * 0.05).toFixed(2)}s`} x={180 + (i % 7) * 42} y={44 + Math.floor(i / 7) * 30} width="36" height="22" rx="4" />
+            <text class="t-fld mb-vt" x={180 + (i % 7) * 42 + 18} y={44 + Math.floor(i / 7) * 30 + 15}>32</text>
+          </g>
+        ))}
+        <text class="t-x mb-load" x="330" y="148">{L("100s of validators · CL message load")}</text>
+        <text class="t-cap" x="240" y="186">{L("rewards cap at 32 ETH each, so one stake becomes dozens of validators")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7251: raise the cap 32 → 2048 ── */}
+    {name === "mb-raise" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="EIP-7251 raises the maximum effective balance from 32 to 2048 ETH">
+        <text class="t-cap" x="240" y="24">{L("raise the cap: 32 ETH → 2048 ETH")}</text>
+        <text class="t-cap" x="80" y="62">{L("old cap")}</text>
+        <rect class="mb-bar mb-old" x="58" y="72" width="44" height="44" rx="6" />
+        <text class="t-fld mb-c" x="80" y="98">32</text>
+        <text class="t-cap" x="310" y="62">{L("new cap")}</text>
+        <rect class="mb-bar mb-new" x="160" y="72" width="290" height="44" rx="6" />
+        <text class="t-ok mb-newt" x="305" y="98">2048 ETH — all earning</text>
+        <text class="t-cap" x="240" y="160">{L("one validator can now hold up to 2048 ETH of earning balance — up to 64-in-1")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7251: consolidate many small validators into one ── */}
+    {name === "mb-consolidate" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="A consolidation request merges many small validators into one large validator">
+        <text class="t-cap" x="240" y="18">{L("consolidate many small validators into one")}</text>
+        {[44, 76, 108, 140].map((y, i) => (
+          <g>
+            <rect class="mb-small" x="24" y={y} width="120" height="26" rx="6" />
+            <text class="t-cap" x="84" y={y + 17}>32 ETH</text>
+            <path class="sarrow mb-ca" d={`M144 ${y + 13} L300 96`} />
+          </g>
+        ))}
+        <text class="t-cap mb-req" x="222" y="38">{L("consolidation request")}</text>
+        <rect class="mb-big" x="300" y="64" width="156" height="64" rx="8" />
+        <text class="t-cap" x="378" y="90">{L("one validator")}</text>
+        <text class="t-ok" x="378" y="110">2048 ETH</text>
+        <text class="t-cap" x="240" y="182">{L("merge via a consolidation request + a new 0x02 credential; the 32 floor stays")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7251: the payoff — fewer validators, compounding ── */}
+    {name === "mb-payoff" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="The payoff: fewer validators, compounding rewards, and an opt-in 32 ETH floor">
+        <text class="t-cap" x="240" y="18">{L("fewer validators, compounding rewards")}</text>
+        {[["fewer validators", "lighter consensus", "room to scale", 24, "mbb0"], ["auto-compounding", "earn up to 2048", "not skimmed at 32", 171, "mbb1"], ["opt-in floor", "32 ETH still allowed", "same security", 318, "mbb2"]].map(([t1, t2, t3, x, cls], i) => (
+          <g>
+            <rect class={`mb-ben ${cls}`} x={x} y="40" width="138" height="100" rx="8" />
+            <text class="t-cap" x={Number(x) + 69} y="68">{L(t1)}</text>
+            <text class="t-ok" x={Number(x) + 69} y="92">{L(t2)}</text>
+            <text class="t-cap" x={Number(x) + 69} y="114">{L(t3)}</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="178">{L("vote weight scales with balance, so security is unchanged — Pectra (2025)")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2380,4 +2452,37 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ga-aal { fill: var(--color-ink-faint); }
   .ga-warmset { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ga-wsin 5s ease-in-out infinite; }
   @keyframes ga-wsin { 0%,46% { opacity: 0 } 60%,100% { opacity: 1 } }
+
+  /* EIP-7251 — mb-shard: the 32 ETH cap forces many validators */
+  .mb-staker { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .mb-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .mb-sa { stroke-dasharray: 36; stroke-dashoffset: 36; animation: mb-sadraw 4s ease-in-out infinite; }
+  @keyframes mb-sadraw { 0%,30% { stroke-dashoffset: 36 } 56%,100% { stroke-dashoffset: 0 } }
+  .mb-vcell { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); animation: mb-vc 3.5s ease-in-out infinite; }
+  @keyframes mb-vc { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
+  .mb-vt { text-anchor: middle; fill: var(--color-ink-faint); }
+  .mb-load { animation: mb-en 4s ease-in-out infinite; }
+  @keyframes mb-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+
+  /* EIP-7251 — mb-raise: 32 → 2048 */
+  .mb-bar { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .mb-old { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .mb-new { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mb-newin 5s ease-in-out infinite; }
+  .mb-newt { opacity: 0; animation: mb-newin 5s ease-in-out infinite; }
+  @keyframes mb-newin { 0%,20% { opacity: 0 } 40%,100% { opacity: 1 } }
+
+  /* EIP-7251 — mb-consolidate: merge small validators into one */
+  .mb-small { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .mb-ca { stroke-dasharray: 200; stroke-dashoffset: 200; animation: mb-cadraw 5s ease-in-out infinite; }
+  @keyframes mb-cadraw { 0%,24% { stroke-dashoffset: 200 } 46%,100% { stroke-dashoffset: 0 } }
+  .mb-req { fill: var(--color-ink-faint); }
+  .mb-big { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mb-bigin 5s ease-in-out infinite; }
+  @keyframes mb-bigin { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
+
+  /* EIP-7251 — mb-payoff: fewer validators, compounding, opt-in floor */
+  .mb-ben { fill: color-mix(in oklab, var(--color-accent) 6%, var(--color-surface)); stroke: var(--color-accent-dim); opacity: 0; }
+  .mbb0 { animation: mb-benin 5s ease-out infinite; }
+  .mbb1 { animation: mb-benin 5s ease-out 0.3s infinite; }
+  .mbb2 { animation: mb-benin 5s ease-out 0.6s infinite; }
+  @keyframes mb-benin { 0%,10% { opacity: 0; transform: translateY(-4px) } 26%,94% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
 </style>

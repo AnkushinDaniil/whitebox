@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 After the Merge, the most interesting data on Ethereum — who's a validator, their balance, whether they've been slashed, their withdrawal credentials — lives on the **consensus layer**, and the **execution layer** (the EVM, where every smart contract runs) can't see a byte of it. Yet exactly that data is what liquid-staking (Lido), restaking (EigenLayer), and validator-proof protocols are built on. With no native access, they fell back on **trusted oracles**: a committee posting consensus facts on-chain, which you simply had to trust. **EIP-4788** removes the committee. Let's derive how.
 
@@ -81,6 +82,15 @@ from `SYSTEM_ADDRESS` (`0xfff…fffe`) stores `timestamp % 8191 → timestamp` a
 `(timestamp % 8191) + 8191 → root` in the contract at `0x000F3df6…beac02`. Callers query
 it by passing a 32-byte timestamp in calldata; it returns the corresponding root.
 </SpecExcerpt>
+
+<Formula
+  expr="slot = timestamp mod 8191"
+  terms={[
+    { t: "timestamp", note: "the block timestamp — the key you query the predeploy with" },
+    { t: "8191", note: "ring-buffer size: ~27 hours of roots (a prime, to spread writes)" },
+  ]}
+  caption="Roots live in a fixed-size ring, so old ones rotate out and on-chain storage stays bounded."
+/>
 
 <Callout type="warning" title="What breaks">
 The authentic root now sits in a contract anyone can call. How does a protocol actually use it end to end?

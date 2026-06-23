@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 The EVM gives a contract two places to keep data, and neither fits a common need. **Memory** is cheap but wiped at the end of every *call* — it can't carry anything across a sub-call. **Storage** survives across calls (and forever after), but it's the most expensive resource in the EVM because it's written to disk. Yet contracts constantly need a *third* thing: a place to stash data that survives across calls **but only for the current transaction** — a reentrancy lock, a transient approval, flash-accounting in an AMM. With only storage to reach for, they pay disk prices for a sticky note. **EIP-1153** adds exactly the missing tool. Let's derive it.
 
@@ -81,6 +82,16 @@ Transient storage gets two new opcodes that mirror the storage pair: <KeyTerm te
 zero at its start. Gas is `100` for each, with no refunds and no net-gas accounting.
 Transient storage is independent of persistent storage.
 </SpecExcerpt>
+
+<Formula
+  expr="gas(TSTORE) = gas(TLOAD) = 100"
+  terms={[
+    { t: "TSTORE", note: "write a word to transient storage" },
+    { t: "TLOAD", note: "read it back — across calls, within the same tx" },
+    { t: "100", note: "a flat warm price; no refunds, and it never touches disk" },
+  ]}
+  caption="Cheap because nothing is persisted — every transient slot is wiped when the transaction ends."
+/>
 
 <Callout type="warning" title="What breaks">
 If a sub-call writes transient storage and then *reverts*, does that write stick around to confuse the rest of the transaction? A reentrancy guard would be unsafe if it didn't unwind correctly.

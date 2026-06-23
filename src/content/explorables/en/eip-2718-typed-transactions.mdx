@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 For years Ethereum had exactly **one** kind of transaction: a single <KeyTerm term="RLP" def="Recursive Length Prefix — Ethereum's canonical serialization. It encodes nested lists and byte strings; a transaction was the RLP encoding of the 9-element list [nonce, gasPrice, gasLimit, to, value, data, v, r, s]." />-encoded list of nine fields. That was fine until people wanted to *change* what a transaction could be — add access lists, replace `gasPrice` with the [1559](/eip-1559-fee-market) base-fee/tip pair, carry [blob](/eip-4844-blobs) commitments, attach a [set-code](/eip-7702-set-eoa-code) authorization. Each new feature needs a new on-the-wire shape, and the moment there's more than one shape, every decoder faces a question it was never built to answer: *which kind of transaction is this?* **EIP-2718** is the small, unglamorous fix that made all the famous EIPs after it possible. Let's derive it.
 
@@ -84,6 +85,15 @@ whose meaning is defined by the type. Because a legacy transaction is an RLP lis
 byte `≥ 0xc0`), the two are unambiguous. The receipt for a typed transaction is likewise
 `TransactionType ‖ ReceiptPayload`.
 </SpecExcerpt>
+
+<Formula
+  expr="typed_tx = TransactionType ‖ TransactionPayload"
+  terms={[
+    { t: "TransactionType", note: "one byte, 0x00–0x7f — names the format" },
+    { t: "TransactionPayload", note: "opaque bytes only that type knows how to decode" },
+  ]}
+  caption="A single leading byte turns “the transaction format” into an extensible, versioned family."
+/>
 
 <Callout type="insight" title="Signatures move into the envelope too">
 A legacy transaction signed over its raw fields; a typed transaction signs over `keccak256(TransactionType ‖ rlp(payload-without-signature))`. The type byte is part of what you sign, so a transaction of one type can never be replayed as another — the envelope is authenticated, not just descriptive.

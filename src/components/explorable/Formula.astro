@@ -1,0 +1,255 @@
+---
+/**
+ * Formula — an animated, annotated visualization of a single formula.
+ *
+ * Renders the expression in large mono with a continuous "scan" sweep, marks
+ * the annotated tokens, and lists each one in a legend beneath. Annotated
+ * tokens must each appear in `expr`; the splitter tags them in reading order.
+ *
+ *   <Formula
+ *     expr="v = chainId · 2 + 35 + parity"
+ *     terms={[
+ *       { t: "chainId", note: "the network id — 1 for mainnet" },
+ *       { t: "35", note: "EIP-155 offset; keeps legacy v = 27/28 valid" },
+ *       { t: "parity", note: "the recovery bit, 0 or 1" },
+ *     ]}
+ *     caption="The chain is welded into v."
+ *   />
+ */
+import { useTranslations, type Lang } from "@/i18n/utils";
+
+interface Term {
+  /** exact substring of `expr` to annotate */
+  t: string;
+  /** short explanation shown in the legend */
+  note: string;
+}
+interface Props {
+  expr: string;
+  terms?: Term[];
+  caption?: string;
+  lang?: Lang;
+}
+
+const { expr, terms = [], caption, lang = "en" } = Astro.props;
+const label = useTranslations(lang).spec.formula;
+
+// Split expr into segments, tagging each annotated term in reading order.
+const marks = terms
+  .map((tm, i) => ({ i, t: tm.t, note: tm.note, pos: expr.indexOf(tm.t) }))
+  .filter((m) => m.pos >= 0)
+  .sort((a, b) => a.pos - b.pos);
+
+interface Seg {
+  text: string;
+  rank: number | null;
+}
+const segs: Seg[] = [];
+let cursor = 0;
+let rank = 0;
+const legend: { rank: number; note: string }[] = [];
+for (const m of marks) {
+  if (m.pos < cursor) continue; // overlapping match — skip
+  if (m.pos > cursor) segs.push({ text: expr.slice(cursor, m.pos), rank: null });
+  segs.push({ text: m.t, rank });
+  legend.push({ rank, note: m.note });
+  cursor = m.pos + m.t.length;
+  rank += 1;
+}
+if (cursor < expr.length) segs.push({ text: expr.slice(cursor), rank: null });
+---
+
+<figure class="formula" data-formula>
+  <div class="f-head"><span class="f-kind">{label}</span></div>
+  <div class="f-exprwrap">
+    <div class="f-expr">
+      {
+        segs.map((seg) =>
+          seg.rank === null ? (
+            <span class="f-plain">{seg.text}</span>
+          ) : (
+            <span class="f-term" style={`--i:${seg.rank}`} data-term={seg.rank}>
+              {seg.text}
+              <sup class="f-idx">{seg.rank + 1}</sup>
+            </span>
+          )
+        )
+      }
+    </div>
+    <span class="f-scan" aria-hidden="true"></span>
+  </div>
+  {
+    legend.length > 0 && (
+      <ol class="f-legend">
+        {legend.map((l) => (
+          <li style={`--i:${l.rank}`}>
+            <span class="f-badge">{l.rank + 1}</span>
+            <span class="f-note">{l.note}</span>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+  {caption && <figcaption class="f-cap">{caption}</figcaption>}
+</figure>
+
+<style>
+  .formula {
+    margin: 1.6rem 0;
+    border: 1px solid var(--color-border);
+    border-left: 2px solid var(--color-accent);
+    border-radius: var(--radius-lg, var(--radius));
+    background: radial-gradient(120% 140% at 50% 0%, var(--color-surface-2), var(--color-surface));
+    overflow: hidden;
+  }
+  .f-head {
+    padding: 0.5rem 0.9rem 0;
+  }
+  .f-kind {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .f-kind::before {
+    content: "ƒ";
+    margin-right: 0.4rem;
+    font-style: italic;
+    opacity: 0.8;
+  }
+  .f-exprwrap {
+    position: relative;
+    overflow: hidden;
+    padding: 0.5rem 0.9rem 0.7rem;
+  }
+  .f-expr {
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 1rem + 0.8vw, 1.5rem);
+    line-height: 1.5;
+    color: var(--color-ink-muted);
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .f-plain {
+    color: var(--color-ink-muted);
+  }
+  .f-term {
+    position: relative;
+    color: var(--color-accent-strong);
+    border-bottom: 1.5px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
+    padding: 0 1px;
+  }
+  .f-idx {
+    font-size: 0.5em;
+    color: var(--color-accent);
+    vertical-align: super;
+    margin-left: 1px;
+  }
+  .f-scan {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 38%;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-accent) 14%, transparent) 50%,
+      transparent 100%
+    );
+    transform: translateX(-120%);
+  }
+  .f-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0.55rem 0.9rem 0.2rem;
+    display: grid;
+    gap: 0.4rem 1.1rem;
+    grid-template-columns: 1fr;
+    border-top: 1px solid var(--color-border);
+    background: color-mix(in oklab, var(--color-surface-2) 60%, transparent);
+  }
+  @media (min-width: 30rem) {
+    .f-legend {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .f-legend li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--color-ink-muted);
+  }
+  .f-badge {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--color-accent-strong);
+    background: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface));
+    border: 1px solid color-mix(in oklab, var(--color-accent) 45%, transparent);
+  }
+  .f-note {
+    line-height: 1.35;
+  }
+  .f-cap {
+    margin: 0;
+    padding: 0.5rem 0.9rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--color-ink-faint);
+    line-height: 1.45;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .f-scan {
+      animation: f-sweep 4.6s cubic-bezier(0.4, 0, 0.5, 1) infinite;
+    }
+    .f-term {
+      animation: f-breathe 3.4s ease-in-out infinite;
+      animation-delay: calc(var(--i) * 0.45s);
+    }
+    .f-badge {
+      animation: f-pop 3.4s ease-in-out infinite;
+      animation-delay: calc(var(--i) * 0.45s);
+    }
+    @keyframes f-sweep {
+      0% {
+        transform: translateX(-120%);
+      }
+      55%,
+      100% {
+        transform: translateX(360%);
+      }
+    }
+    @keyframes f-breathe {
+      0%,
+      70%,
+      100% {
+        color: var(--color-accent-strong);
+        border-bottom-color: color-mix(in oklab, var(--color-accent) 55%, transparent);
+        text-shadow: none;
+      }
+      24% {
+        color: var(--color-accent);
+        border-bottom-color: var(--color-accent);
+        text-shadow: 0 0 12px color-mix(in oklab, var(--color-accent) 60%, transparent);
+      }
+    }
+    @keyframes f-pop {
+      0%,
+      70%,
+      100% {
+        background: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface));
+      }
+      24% {
+        background: color-mix(in oklab, var(--color-accent) 36%, var(--color-surface));
+      }
+    }
+  }
+</style>

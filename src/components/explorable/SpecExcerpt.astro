@@ -3,6 +3,10 @@
  * Renders a real quote from the spec or client source, with mandatory
  * attribution + link. This component enforces the brand promise: every claim
  * is grounded in the actual thing, never hand-waved.
+ *
+ * Visualization: a blinking terminal cursor + animated scanline on the header,
+ * a reveal-on-scroll, and staggered highlighting of spec tokens (hex, numeric
+ * constants, ALL_CAPS identifiers, opcodes) — wired up by the client script.
  */
 interface Props {
   /** where it's from, e.g. "Yellow Paper, Appendix D" or "go-ethereum" */
@@ -21,7 +25,7 @@ const { source, href, ref, kind = "spec", lang = "en" } = Astro.props;
 const t = useTranslations(lang).spec;
 ---
 
-<aside class="spec-excerpt" data-kind={kind}>
+<aside class="spec-excerpt" data-kind={kind} data-spec>
   <header class="excerpt-head">
     <span class="kind">{kind === "code" ? t.clientCode : t.fromSpec}</span>
     <a href={href} target="_blank" rel="noopener noreferrer" class="src">
@@ -44,6 +48,7 @@ const t = useTranslations(lang).spec;
     overflow: hidden;
   }
   .excerpt-head {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -51,6 +56,23 @@ const t = useTranslations(lang).spec;
     padding: 0.55rem 0.9rem;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface-2);
+    overflow: hidden;
+  }
+  /* animated scanline sweeping the header's bottom edge */
+  .excerpt-head::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 1px;
+    width: 40%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #82aaff 50%,
+      transparent
+    );
+    transform: translateX(-120%);
   }
   .kind {
     font-family: var(--font-mono);
@@ -58,6 +80,13 @@ const t = useTranslations(lang).spec;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #82aaff;
+  }
+  /* blinking terminal cursor after the label */
+  .kind::after {
+    content: "▍";
+    margin-left: 0.15rem;
+    color: #82aaff;
+    opacity: 0.85;
   }
   .src {
     font-family: var(--font-mono);
@@ -82,9 +111,163 @@ const t = useTranslations(lang).spec;
     font-size: 0.9rem;
   }
   .excerpt-body :global(pre) {
+    position: relative;
     margin: 0.7rem 0;
   }
   .excerpt-body :global(p) {
     color: var(--color-ink-muted);
   }
+
+  /* spec tokens — inline <code> plus JS-wrapped constants */
+  .excerpt-body :global(code),
+  .excerpt-body :global(.spec-tok) {
+    border-radius: 4px;
+    padding: 0 0.22em;
+    background: color-mix(in oklab, #82aaff 9%, var(--color-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, #82aaff 22%, transparent);
+    color: color-mix(in oklab, #82aaff 65%, var(--color-ink));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .excerpt-head::after {
+      animation: spec-scan 5s ease-in-out infinite;
+    }
+    .kind::after {
+      animation: spec-blink 1.1s steps(1) infinite;
+    }
+    /* on reveal, tokens flare once in reading order */
+    .spec-excerpt.in-view :global(code),
+    .spec-excerpt.in-view :global(.spec-tok) {
+      animation: spec-flare 0.9s ease-out both;
+      animation-delay: calc(var(--i, 0) * 70ms);
+    }
+    /* a one-time vertical scan over code blocks when revealed */
+    .spec-excerpt.in-view :global(pre)::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        transparent,
+        color-mix(in oklab, #82aaff 16%, transparent) 50%,
+        transparent
+      );
+      transform: translateY(-100%);
+      animation: spec-codescan 1.1s ease-out 0.2s both;
+    }
+    @keyframes spec-scan {
+      0% {
+        transform: translateX(-120%);
+      }
+      55%,
+      100% {
+        transform: translateX(360%);
+      }
+    }
+    @keyframes spec-blink {
+      0%,
+      50% {
+        opacity: 0.85;
+      }
+      51%,
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes spec-flare {
+      0% {
+        background: color-mix(in oklab, #82aaff 38%, var(--color-surface));
+        box-shadow: inset 0 0 0 1px color-mix(in oklab, #82aaff 60%, transparent);
+        color: color-mix(in oklab, #82aaff 90%, var(--color-ink));
+      }
+      100% {
+        background: color-mix(in oklab, #82aaff 9%, var(--color-surface));
+        box-shadow: inset 0 0 0 1px color-mix(in oklab, #82aaff 22%, transparent);
+        color: color-mix(in oklab, #82aaff 65%, var(--color-ink));
+      }
+    }
+    @keyframes spec-codescan {
+      to {
+        transform: translateY(100%);
+      }
+    }
+  }
 </style>
+
+<script>
+  // Highlight spec tokens and reveal blocks on scroll.
+  const TOKEN =
+    /(0x[0-9a-fA-F]+|\b\d[\d,]*\b|\b[A-Z][A-Z0-9_]{2,}\b|‖|→|↦)/g;
+  const SKIP = new Set(["A", "CODE", "PRE", "MARK"]);
+
+  function highlightTokens(body: Element) {
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || SKIP.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return TOKEN.test(node.nodeValue || "")
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT;
+      },
+    });
+    const targets: Text[] = [];
+    let n: Node | null;
+    while ((n = walker.nextNode())) targets.push(n as Text);
+
+    for (const text of targets) {
+      const value = text.nodeValue || "";
+      TOKEN.lastIndex = 0;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      let m: RegExpExecArray | null;
+      while ((m = TOKEN.exec(value))) {
+        if (m.index > last)
+          frag.appendChild(document.createTextNode(value.slice(last, m.index)));
+        const mark = document.createElement("mark");
+        mark.className = "spec-tok";
+        mark.textContent = m[0];
+        frag.appendChild(mark);
+        last = m.index + m[0].length;
+      }
+      if (last < value.length)
+        frag.appendChild(document.createTextNode(value.slice(last)));
+      text.parentNode?.replaceChild(frag, text);
+    }
+  }
+
+  function setup() {
+    const blocks = document.querySelectorAll<HTMLElement>("[data-spec]");
+    blocks.forEach((block) => {
+      const body = block.querySelector(".excerpt-body");
+      if (body) highlightTokens(body);
+      // index every token for the staggered reveal
+      block
+        .querySelectorAll<HTMLElement>(".excerpt-body code, .excerpt-body .spec-tok")
+        .forEach((el, i) => el.style.setProperty("--i", String(i)));
+    });
+
+    if (!("IntersectionObserver" in window)) {
+      blocks.forEach((b) => b.classList.add("in-view"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add("in-view");
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.25 }
+    );
+    blocks.forEach((b) => io.observe(b));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setup);
+  } else {
+    setup();
+  }
+</script>

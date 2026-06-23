@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 A signature proves two things: *who* signed, and *what* they signed. Early Ethereum transactions signed over `[nonce, gasPrice, gasLimit, to, value, data]` — the action, but **not the network it was meant for**. That omission seems harmless until you remember that your private key derives the *same address on every Ethereum-like chain*. So a perfectly valid signed transaction on one network is a perfectly valid signed transaction on another — copy the bytes, submit them elsewhere, and they execute again. This turned catastrophic at the 2016 ETH/ETC split, when two chains suddenly shared addresses, balances, and nonces. **EIP-155** is the one-line idea that fixes it: put the chain *into the signature*. Let's derive it.
 
@@ -82,6 +83,16 @@ list. Then `v = chain_id · 2 + 35` or `chain_id · 2 + 36` (the two parities). 
 `chain_id = 1`, so `v ∈ {37, 38}`. Transactions still signed the old way (`v ∈ {27, 28}`)
 remain valid but offer no replay protection.
 </SpecExcerpt>
+
+<Formula
+  expr="v = chainId · 2 + 35 + parity"
+  terms={[
+    { t: "chainId", note: "the network's id — 1 for mainnet, 61 for Ethereum Classic" },
+    { t: "35", note: "the EIP-155 offset; keeps legacy v = 27/28 valid" },
+    { t: "parity", note: "the signature's recovery bit, 0 or 1" },
+  ]}
+  caption="The chain is welded into v, so the signature only recovers the right signer on its own chain."
+/>
 
 <Callout type="warning" title="What breaks">
 So the chainId is signed and carried. What actually *stops* a replay when someone submits a chainId-1 transaction on chainId 61?

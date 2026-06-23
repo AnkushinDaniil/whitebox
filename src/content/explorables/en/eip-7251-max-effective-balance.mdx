@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 A validator on Ethereum stakes 32 ETH — and, crucially, *only* 32 ETH ever earns rewards, no matter how much you actually have. That single constant, the <KeyTerm term="MAX_EFFECTIVE_BALANCE" def="The cap on how much of a validator's balance counts for rewards and voting weight. It was fixed at 32 ETH: anything above earned nothing and was skimmed out by partial withdrawals." />, quietly shaped the whole staking landscape. It meant a staker with 3200 ETH couldn't run one big validator — they had to run a hundred small ones. Multiply that across the network and you get a validator set in the hundreds of thousands, each one a separate voice the consensus layer must hear from every epoch. **EIP-7251** lifts the cap. Let's derive why, and what it takes.
 
@@ -81,6 +82,15 @@ withdrawal credentials, while `MIN_ACTIVATION_BALANCE` stays `32 ETH`. A new con
 request lets a source validator's stake be moved into a target validator. Rewards now
 accrue (compound) up to the higher ceiling instead of being skimmed at 32 ETH.
 </SpecExcerpt>
+
+<Formula
+  expr="MAX_EFFECTIVE_BALANCE: 32 → 2048 ETH"
+  terms={[
+    { t: "32", note: "the old cap — one validator pinned to a 32-ETH chunk" },
+    { t: "2048", note: "the new cap — one validator earns on up to 64× more" },
+  ]}
+  caption="Raising a single constant lets one validator do the work of up to 64 — same security, fewer moving parts."
+/>
 
 <Callout type="warning" title="What breaks">
 Nothing breaks here — but it's worth being precise about what's gained, since "fewer validators" could sound like "less decentralization."

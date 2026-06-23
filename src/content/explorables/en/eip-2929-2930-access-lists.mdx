@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 Gas is supposed to track the real cost of work, so the chain can't be cheaply overloaded. But for years the EVM mispriced its *most* expensive operation: reading state. An `SLOAD` or an account lookup forces a node to chase data through the Merkle-Patricia trie and off disk — slow, real work — yet it was billed a flat, tiny fee. That gap was more than inefficiency; it was an attack surface, and in 2016 it was used to bring Ethereum to a crawl. **EIP-2929** repriced state access, and **EIP-2930** softened the side effects with access lists. Let's derive both.
 
@@ -81,6 +82,15 @@ A transaction maintains `accessed_addresses` and `accessed_storage_keys`. The fi
 an account (via `CALL`, `BALANCE`, `EXT*`) costs `2600`; warm access costs `100`. Sets
 start seeded with the transaction's `tx.to`, `tx.origin`, and the precompiles.
 </SpecExcerpt>
+
+<Formula
+  expr="access = cold (2100 / 2600) → warm (100)"
+  terms={[
+    { t: "cold (2100 / 2600)", note: "first touch in the tx: a slot costs 2100, an account 2600 — the real disk cost" },
+    { t: "warm (100)", note: "every later touch: already cached, so nearly free" },
+  ]}
+  caption="Price by novelty: the expensive part is the first fetch, so that's where the gas goes."
+/>
 
 <Callout type="warning" title="What breaks">
 Now the *first* access is expensive and unavoidable — a transaction that legitimately must reach many accounts (a complex DeFi call) eats a lot of cold costs, and the repricing even broke a few contracts that assumed the old gas. Can a transaction do anything to prepare?

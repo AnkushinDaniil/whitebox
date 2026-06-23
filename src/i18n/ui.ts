@@ -86,7 +86,7 @@ export const ui = {
       success: "You're in. I'll send the next note when it ships.",
     },
     go: { spec: "SPEC", code: "CODE", eip: "EIP", post: "READ", tool: "TOOL" },
-    spec: { fromSpec: "From the spec", clientCode: "Client code" },
+    spec: { fromSpec: "From the spec", clientCode: "Client code", formula: "Formula" },
     widget: { interactive: "Interactive" },
     depth: {
       intuition: { label: "Intuition", n: "01", blurb: "The picture in your head" },
@@ -177,7 +177,7 @@ export const ui = {
       success: "Готово. Пришлю следующую заметку, когда она выйдет.",
     },
     go: { spec: "СПЕК", code: "КОД", eip: "EIP", post: "ЧИТАТЬ", tool: "ИНСТР" },
-    spec: { fromSpec: "Из спецификации", clientCode: "Код клиента" },
+    spec: { fromSpec: "Из спецификации", clientCode: "Код клиента", formula: "Формула" },
     widget: { interactive: "Интерактив" },
     depth: {
       intuition: { label: "Интуиция", n: "01", blurb: "Картинка в голове" },

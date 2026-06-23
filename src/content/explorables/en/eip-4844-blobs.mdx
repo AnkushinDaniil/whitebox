@@ -17,6 +17,7 @@ import KeyTerm from "@/components/explorable/KeyTerm.astro";
 import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 
 Ethereum scales by pushing execution onto **rollups** (L2s): they run thousands of transactions off-chain and post only the results to L1. But a rollup has to publish the *data* of those transactions somewhere public, or no one could check its work. For years it published that data as ordinary **calldata** — and that one choice made L2 fees painful and capped how cheap Ethereum could get. **EIP-4844** ("proto-danksharding") fixed it with a strange-looking new object called a **blob**. Strange until you build it: start from the calldata problem and fix exactly what's wrong, one step at a time.
 
@@ -65,6 +66,16 @@ commitment; the transaction carries `versioned_hash = 0x01 ++ sha256(commitment)
 The EVM never sees the blob bytes — only `BLOBHASH(i)` (the i-th versioned hash) and
 a point-evaluation precompile to verify an opening `(z, y)` against the commitment.
 </SpecExcerpt>
+
+<Formula
+  expr="versioned_hash = 0x01 ++ sha256(commitment)[1:]"
+  terms={[
+    { t: "0x01", note: "a version byte — lets the commitment scheme change later" },
+    { t: "sha256(commitment)", note: "hash of the KZG commitment that binds the blob" },
+    { t: "[1:]", note: "drop its first byte; the version byte takes that slot" },
+  ]}
+  caption="The EVM only ever sees this 32-byte versioned hash — the blob bytes never enter the execution layer."
+/>
 
 <Callout type="warning" title="What breaks">
 The blob is published and provable — but it's still 128 KB, and a block can carry several. Keeping all of that on every node forever is exactly the cost we set out to kill. The point was never to *store* it.

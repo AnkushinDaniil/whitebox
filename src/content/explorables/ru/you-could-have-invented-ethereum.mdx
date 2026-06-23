@@ -18,6 +18,7 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 import KeyLab from "@/components/sig/KeyLab.tsx";
 import TxSigner from "@/components/tx/TxSigner.tsx";
 import HashMachine from "@/components/trie/HashMachine.tsx";
@@ -102,6 +103,17 @@ import ReorgSim from "@/components/security/ReorgSim.tsx";
 >
   <KeyLab client:visible />
 </WidgetFrame>
+
+<Formula
+  lang="ru"
+  expr="private key → public key → address"
+  terms={[
+    { t: "private key", note: "случайный 256-битный секрет — единственное, что вы храните" },
+    { t: "public key", note: "secp256k1 умножает его на точку кривой (в одну сторону)" },
+    { t: "address", note: "последние 20 байт keccak256(публичного ключа)" },
+  ]}
+  caption="Каждая стрелка ведёт только вправо, никогда влево. На этой асимметрии и держится подпись."
+/>
 
 Одно уточнение, потому что оно следует прямо из «сообщение публично» и почти все понимают его наоборот: подписание — это **не** шифрование. Та же пара ключей *могла бы* шифровать, но с поменянными ролями — а Ethereum L1 вообще не прячет ваши правки.
 

@@ -18,6 +18,7 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
 import KeyLab from "@/components/sig/KeyLab.tsx";
 import TxSigner from "@/components/tx/TxSigner.tsx";
 import HashMachine from "@/components/trie/HashMachine.tsx";
@@ -102,6 +103,16 @@ Now the whole pipeline at once, for real. The seal is an **ECDSA signature over 
 >
   <KeyLab client:visible />
 </WidgetFrame>
+
+<Formula
+  expr="private key → public key → address"
+  terms={[
+    { t: "private key", note: "a random 256-bit secret — the only thing you keep" },
+    { t: "public key", note: "secp256k1 scalar-multiplies it onto the curve (one-way)" },
+    { t: "address", note: "the last 20 bytes of keccak256(public key)" },
+  ]}
+  caption="Each arrow goes one way only — right, never left. That asymmetry is exactly what a signature proves."
+/>
 
 One clarification, because it follows straight from "the message is public" and almost everyone gets it backwards: signing is **not** encryption. The same keypair *could* encrypt, but with the roles flipped — and Ethereum L1 doesn't hide your edits at all.
 

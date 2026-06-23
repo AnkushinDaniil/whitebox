@@ -1,0 +1,121 @@
+---
+title: "EIP-1153: a scratchpad that lasts exactly one transaction"
+dek: "Contracts often need to pass data between calls inside one transaction — reentrancy locks, transient approvals, flash-accounting. The only shared mutable store was persistent storage: ~20,000 gas a slot, written to disk forever, even though you throw the value away when the transaction ends. EIP-1153 adds transient storage — same idea, but it vanishes at tx end."
+summary: "A step-by-step derivation of EIP-1153 (transient storage) — why passing mutable data between calls within a single transaction forced contracts to abuse persistent SSTORE/SLOAD (≈20,000 gas to set a slot, written to the state trie forever, then reset to zero leaning on capped gas refunds), and how transient storage fixes it with two opcodes, TSTORE and TLOAD: a per-contract slot→word store that is cheap and fixed-gas, never written to disk, shared across calls and sub-calls within the transaction, rolled back when a frame reverts, and automatically discarded (cleared to zero) when the transaction ends — making reentrancy guards, transient approvals, and flash-accounting cheap and clean with no state bloat."
+topic: EIPs
+order: 12
+spine: true
+prerequisites: ["storage vs memory", "the EVM call model"]
+updated: 2026-06-23
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+The EVM gives a contract two places to keep data, and neither fits a common need. **Memory** is cheap but wiped at the end of every *call* — it can't carry anything across a sub-call. **Storage** survives across calls (and forever after), but it's the most expensive resource in the EVM because it's written to disk. Yet contracts constantly need a *third* thing: a place to stash data that survives across calls **but only for the current transaction** — a reentrancy lock, a transient approval, flash-accounting in an AMM. With only storage to reach for, they pay disk prices for a sticky note. **EIP-1153** adds exactly the missing tool. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Paying disk prices for a note" },
+  { id: "step-2", label: "A per-tx scratchpad" },
+  { id: "step-3", label: "TSTORE & TLOAD" },
+  { id: "step-4", label: "Revert & auto-clear" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Paying disk prices for a note">
+
+## The problem: storage is the only shared mutable store
+
+Take the classic **reentrancy guard**: set a `locked` flag before making an external call, clear it after, and refuse to re-enter while it's set. The flag has to be visible to the *re-entrant* call, so it can't live in memory — it must go in <KeyTerm term="persistent storage" def="The contract's permanent key→value store, read/written with SLOAD/SSTORE. It's committed to the state trie and lives on every node's disk forever, which is why writing it is the most expensive common EVM operation." />. So you `SSTORE` the flag (≈20,000 gas to set from zero, ≈5,000 to update), do the work, then `SSTORE` it back to zero — every single call. You're writing to every node's disk, *permanently*, to hold a value whose entire useful life is a few microseconds inside one transaction.
+
+<Scene name="ts-persist" caption="A reentrancy guard sets a storage slot to 1, runs the protected body, then resets it to 0 — paying SSTORE's 20k/5k gas and writing the state trie on disk, for a flag that's meaningless the moment the transaction ends." />
+
+It gets worse: the "reset to zero" half leans on **gas refunds** to claw back some cost, but [EIP-3529](https://eips.ethereum.org/EIPS/eip-3529) sharply capped and reduced those refunds (they'd been gamed as gas tokens). So the pattern is expensive, indirect, and it permanently bloats state with values nobody ever needs again.
+
+<Callout type="warning" title="What breaks">
+We're using a permanent, disk-backed store for data that should evaporate at the end of the transaction. What we actually want is a store with the *sharing* of storage but the *lifetime* of a single transaction.
+</Callout>
+
+**→ Step 2: give contracts a scratchpad.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A per-tx scratchpad">
+
+## Add a second store that lives for one transaction
+
+The fix is to stop overloading storage and add a parallel store with a different lifetime. <KeyTerm term="transient storage" def="A second per-contract key→word store introduced by EIP-1153. It behaves like storage within a transaction but is discarded (reset to all-zero) when the transaction ends and is never written to the state trie or disk." /> is a contract-keyed `slot → 32-byte word` map, exactly like storage — except it is **never written to the state trie or to disk**, and it is **wiped back to all-zero when the transaction ends**. Because nothing is persisted, there's no disk write to pay for and no permanent footprint: it's a scratchpad the protocol hands each contract for the duration of one transaction and then shreds.
+
+<Scene name="ts-scratch" caption="Persistent storage (SSTORE/SLOAD) is committed to disk and kept forever; transient storage (TSTORE/TLOAD) lives only inside the transaction and is discarded at its end. Same per-contract slot model, completely different lifetime." />
+
+That single change — *don't persist it* — is what makes it cheap. The cost of `SSTORE` is dominated by the disk and state-growth it causes; remove those and the operation becomes a flat, warm-priced write.
+
+<Callout type="warning" title="What breaks">
+We need to actually expose this to contracts: how do they read and write it, what does it cost, and — crucially — can a sub-call see what the outer call wrote?
+</Callout>
+
+**→ Step 3: two opcodes, shared across the call stack.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="TSTORE & TLOAD">
+
+## Two opcodes — and they're shared across calls
+
+Transient storage gets two new opcodes that mirror the storage pair: <KeyTerm term="TSTORE / TLOAD" def="TSTORE(key, value) writes a word to transient storage; TLOAD(key) reads it. Both are fixed-cost (100 gas, like a warm storage access) with no refund machinery, and operate on the calling contract's own transient namespace." /> — `TSTORE(key, value)` and `TLOAD(key)`. Each costs a flat **100 gas** (the warm-access price), with no refund accounting to reason about. And like persistent storage, transient storage **persists across the call frames of a transaction**: if the caller does `TSTORE(k, v)` and then makes a sub-call, the callee's `TLOAD(k)` reads back `v`. That cross-call visibility is the whole point — it's what lets a guard set by the outer frame be seen by a re-entrant inner one, or a router stash context a callback will read.
+
+<Scene name="ts-opcodes" caption="The caller writes with TSTORE(k, v); a sub-call reads the same value back with TLOAD(k). Each op is a flat ~100 gas on the contract's own namespace, with no refunds — and the value is cleared automatically when the transaction ends." />
+
+<SpecExcerpt
+  source="EIP-1153: Transient storage opcodes"
+  href="https://eips.ethereum.org/EIPS/eip-1153"
+  ref="semantics & gas"
+>
+`TLOAD` (0x5C) and `TSTORE` (0x5D) act on transient storage, addressed like storage by
+`(address, key)`. Values are discarded at the end of the transaction, behaving as if
+zero at its start. Gas is `100` for each, with no refunds and no net-gas accounting.
+Transient storage is independent of persistent storage.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+If a sub-call writes transient storage and then *reverts*, does that write stick around to confuse the rest of the transaction? A reentrancy guard would be unsafe if it didn't unwind correctly.
+</Callout>
+
+**→ Step 4: make it follow revert and tx-end rules.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Revert & auto-clear">
+
+## It rolls back on revert, and clears itself at tx end
+
+Two clean-up rules make it safe. First, transient storage obeys **revert** exactly like persistent storage: if a call frame reverts, every `TSTORE` it made is rolled back as if it never happened. (This rule was added during standardization precisely so reentrancy guards stay correct — a guard set in a frame that then reverts must not leave the lock stuck on.) Second, when the **transaction ends**, all transient storage is reset to zero automatically. So the reentrancy guard no longer needs its trailing `SSTORE(slot, 0)` reset at all — the cleanup is free and automatic.
+
+<Scene name="ts-revert" caption="A TSTORE in a frame that reverts is undone, just like storage; and at the end of the transaction every transient slot resets to zero on its own — so a guard needs no explicit reset, and nothing leaks into the next transaction." />
+
+<Callout type="insight" title="And that is EIP-1153">
+Contracts needed data shared across calls but only for one transaction → the sole shared mutable store was persistent **storage**, so they paid ≈20k/5k gas and permanent disk writes for a throwaway flag, leaning on nerfed refunds → add a parallel **transient storage**: same per-contract slot model, but never persisted and wiped at tx end → exposed via **TSTORE/TLOAD** at a flat 100 gas, shared across the call stack so a callee sees the caller's writes → and made safe by **rolling back on revert** and **auto-clearing at tx end**. The result: reentrancy guards, transient ERC-20 approvals, and AMM flash-accounting (Uniswap v4) become cheap and clean, with no state bloat and no refund games. The lesson is that *lifetime* is a design axis: memory lasts a call, storage lasts forever — transient storage fills in the obviously-missing middle, "lasts a transaction."
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-1153: Transient storage opcodes", note: "The spec — TSTORE/TLOAD semantics & gas", href: "https://eips.ethereum.org/EIPS/eip-1153" },
+    { kind: "eip", label: "EIP-3529: Reduction in refunds", note: "Why the SSTORE reset trick stopped paying off", href: "https://eips.ethereum.org/EIPS/eip-3529" },
+    { kind: "post", label: "EIP-2929/2930, derived", note: "Warm vs cold access — the gas model TSTORE borrows", href: "/eip-2929-2930-access-lists" },
+    { kind: "code", label: "Uniswap v4 — flash accounting", note: "A flagship transient-storage use case", href: "https://github.com/Uniswap/v4-core" },
+    { kind: "tool", label: "evm.codes", note: "TSTORE (0x5D) / TLOAD (0x5C) in the opcode reference", href: "https://www.evm.codes/" },
+  ]}
+/>
+
+</DepthLayer>

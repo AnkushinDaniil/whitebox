@@ -1,0 +1,123 @@
+---
+title: "EIP-4844: blobs, cheap data for rollups"
+dek: "Rollups must publish their data on L1 so anyone can verify them — but as permanent calldata it was ruinously expensive. Derive blobs one fix at a time: a separate data lane, a commitment to bind it, pruning after ~18 days, and its own fee market."
+summary: "A step-by-step derivation of EIP-4844 (proto-danksharding) — why rollups must post data for availability, why calldata was the wrong place (permanent and priced against execution), and how blobs fix it: a separate EVM-invisible data lane, a 48-byte KZG commitment that binds each blob, pruning after ~18 days (availability, not storage), and a separate blob-gas fee market. The change that dropped L2 fees by 10–100×."
+topic: EIPs
+order: 5
+spine: true
+prerequisites: ["rollups", "gas & EIP-1559"]
+updated: 2026-06-23
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+Ethereum scales by pushing execution onto **rollups** (L2s): they run thousands of transactions off-chain and post only the results to L1. But a rollup has to publish the *data* of those transactions somewhere public, or no one could check its work. For years it published that data as ordinary **calldata** — and that one choice made L2 fees painful and capped how cheap Ethereum could get. **EIP-4844** ("proto-danksharding") fixed it with a strange-looking new object called a **blob**. Strange until you build it: start from the calldata problem and fix exactly what's wrong, one step at a time.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The data problem" },
+  { id: "step-2", label: "A separate lane" },
+  { id: "step-3", label: "Drop it after" },
+  { id: "step-4", label: "Its own fee market" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The data problem">
+
+## Why rollups must publish data — and why calldata hurt
+
+A rollup compresses a batch of L2 transactions and posts it to L1. It *must* publish the underlying data so that anyone — a user, a challenger, a competing node — can reconstruct the L2 state and verify (or disprove) the rollup's claimed result. That's <KeyTerm term="data availability" def="The guarantee that the data behind a block or batch was actually published, so anyone can download it and independently check or challenge the state. Distinct from storing it forever." />: not "store it forever," but "make sure everyone *can* get it." The obvious place to put it was a transaction's **calldata**.
+
+<Scene name="blob-calldata" caption="Rollup data as calldata: 16 gas/byte, kept by every node forever, and priced in the very same gas market as your swaps — so L1 congestion and rollup data fight over one block." />
+
+Three things hurt at once. Calldata costs **16 gas per byte** — expensive. It is stored by **every full node forever** — you're paying for permanent storage. And it shares the **same gas market** as execution, so a busy L1 directly spikes rollup costs, and rollup data competes with everyone's transactions for the same space. Rollup fees were dominated by this single line item.
+
+<Callout type="warning" title="What breaks">
+We're paying to keep something *permanently* that's only needed *temporarily* — rollups need their data available long enough to download and verify, not until the end of time — and we're pricing it in a market it should never have shared. Both are wrong.
+</Callout>
+
+**→ Step 2: give data its own lane.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A separate lane">
+
+## A separate, EVM-invisible lane — bound by a commitment
+
+Add a new place to put data, beside calldata, not inside it: a **blob** — a big (~128 KB) chunk attached to a new transaction type (`0x03`) in a "sidecar." The crucial property: the **EVM cannot read a blob's contents**. It isn't state that contracts operate on; it's just data the network agrees was *published*. So blobs carry rollup data without bloating the state the EVM has to touch.
+
+But if the EVM can't read the blob, and (next step) nodes are going to *delete* it, how does anyone later prove a block really included the right data and not garbage? Bind each blob with a <KeyTerm term="KZG commitment" def="A 48-byte cryptographic commitment to a blob (treated as a polynomial). It uniquely fixes the blob's contents, and lets anyone verify a specific piece against it with a tiny proof — without holding the whole blob." />: a 48-byte value placed in the block. The EVM gets a `BLOBHASH` opcode (the versioned hash of that commitment) and a **point-evaluation precompile**, so a rollup contract can check a specific piece of a blob against its commitment — without ever holding the full blob.
+
+<Scene name="blob-sidecar" caption="A type-0x03 transaction carries the blob in a sidecar the EVM can't read. A 48-byte KZG commitment goes in the header and binds the blob, so any piece can be verified without the full data." />
+
+<SpecExcerpt
+  source="EIP-4844: Shard Blob Transactions"
+  href="https://eips.ethereum.org/EIPS/eip-4844"
+  ref="blob commitments"
+>
+A blob is `4096` field elements (~128 KB). Each blob is committed to with a KZG
+commitment; the transaction carries `versioned_hash = 0x01 ++ sha256(commitment)[1:]`.
+The EVM never sees the blob bytes — only `BLOBHASH(i)` (the i-th versioned hash) and
+a point-evaluation precompile to verify an opening `(z, y)` against the commitment.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+The blob is published and provable — but it's still 128 KB, and a block can carry several. Keeping all of that on every node forever is exactly the cost we set out to kill. The point was never to *store* it.
+</Callout>
+
+**→ Step 3: throw the data away (on purpose).**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Drop it after">
+
+## Availability, not storage: prune after ~18 days
+
+Here's the leap that makes it cheap. Nodes keep the raw blob bytes for only a **window — about 18 days** (4096 epochs) — then **delete them**. That window is plenty: long enough for any rollup, challenger, or user to download the data and for any fraud or validity proof to settle. After it passes, the data has done its only job. The chain keeps the tiny **commitment** in history forever, but not the 128 KB behind it.
+
+<Scene name="blob-prune" caption="Blob data is kept ~18 days — long enough to download and prove — then pruned. Only the 48-byte commitment stays in history. Availability, not permanent storage." />
+
+That's the whole conceptual shift: rollups never needed *permanent storage*, they needed *temporary availability*. Decoupling the two is what turns "expensive forever" into "cheap and disposable."
+
+<Callout type="warning" title="What breaks">
+One thing still leaks. If blobs are paid for in the same gas as execution, a surge of rollup data would spike *your* swap's fee, and a busy L1 would spike blob costs — the markets would still bleed into each other. Blobs need their own price.
+</Callout>
+
+**→ Step 4: price them separately.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Its own fee market">
+
+## A separate fee market: blob gas
+
+Price blobs in their own unit — **blob gas** — with their own [EIP-1559-style base fee](/eip-1559-fee-market), fully separate from execution. Each block **targets 3 blobs** and allows up to **6**; the blob base fee moves up or down per block toward that target, and is **burned** just like the execution base fee. A flood of rollup data now raises the *blob* base fee without touching your swap's gas price — and a busy execution layer doesn't make blobs more expensive. Two independent congestion signals, two independent prices.
+
+<Scene name="blob-fee" caption="Blobs are metered in their own unit with their own base fee — target 3, max 6 per block, burned — so blob demand and execution demand never push on each other's price." />
+
+<Callout type="insight" title="And that is EIP-4844">
+Rollups must publish data → calldata was permanent and shared-priced → blobs give a separate, EVM-invisible lane → a KZG commitment binds each blob so it's verifiable without being stored → prune after ~18 days (availability, not storage) → a separate blob-gas market so it never competes with execution. Each fix is forced by the last one's flaw, and the net effect was dramatic: L2 fees fell **10–100×** overnight. The "proto" in proto-danksharding is the tell — this is the scaffolding for full **danksharding**: many more blobs, with *data availability sampling* so nodes can confirm a blob was published by checking a few random pieces instead of downloading the whole thing.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-4844: Shard Blob Transactions", note: "The spec — blobs, commitments, blob-gas market", href: "https://eips.ethereum.org/EIPS/eip-4844" },
+    { kind: "post", label: "Vitalik — proto-danksharding FAQ", note: "The clearest deep explainer", href: "https://notes.ethereum.org/@vbuterin/proto_danksharding_faq" },
+    { kind: "post", label: "EIP-1559, derived", note: "The base-fee controller blob gas reuses", href: "/eip-1559-fee-market" },
+    { kind: "post", label: "You could have invented Ethereum — state", note: "Why keeping data forever is the cost to beat", href: "/you-could-have-invented-ethereum#step-9" },
+    { kind: "tool", label: "l2fees.info", note: "Watch what blobs did to L2 fees", href: "https://l2fees.info/" },
+  ]}
+/>
+
+</DepthLayer>

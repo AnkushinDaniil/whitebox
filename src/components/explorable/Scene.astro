@@ -55,7 +55,11 @@ interface Props {
     | "se-migrate"
     | "se-delegate"
     | "se-run"
-    | "se-powers";
+    | "se-powers"
+    | "tx-onefmt"
+    | "tx-typebyte"
+    | "tx-disambig"
+    | "tx-family";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -918,6 +922,69 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="166">{L("your existing address gains smart powers — and your key still works")}</text>
       </svg>
     )}
+
+    {/* ── EIP-2718: one rigid format, decoders must guess the kind ── */}
+    {name === "tx-onefmt" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="One rigid transaction format that decoders must guess at">
+        <text class="t-cap" x="240" y="22">{L("one shape for every transaction")}</text>
+        <rect class="to-rlp" x="64" y="36" width="352" height="34" rx="6" />
+        <text class="t-fld to-rlptext" x="240" y="57">rlp[nonce, gasPrice, gas, to, value, data, v, r, s]</text>
+        <g class="to-feat tf0"><rect class="to-chip" x="74" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="139" y="108">{L("+ access list?")}</text></g>
+        <g class="to-feat tf1"><rect class="to-chip" x="276" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="341" y="108">{L("+ new fee fields?")}</text></g>
+        <rect class="to-parser" x="150" y="142" width="180" height="34" rx="8" />
+        <text class="t-x" x="240" y="163">{L("decoder: which kind? — guess")}</text>
+        <text class="t-cap" x="240" y="194">{L("add a feature and decoders must sniff the bytes to guess the kind")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2718: a type byte prefixes the payload and picks the decoder ── */}
+    {name === "tx-typebyte" && (
+      <svg viewBox="0 0 480 192" role="img" aria-label="A type byte prefixes the payload and selects the decoder">
+        <text class="t-cap" x="102" y="38">{L("type byte")}</text>
+        <text class="t-cap" x="282" y="38">{L("payload")}</text>
+        <rect class="tt-byte" x="62" y="48" width="80" height="46" rx="6" />
+        <text class="tx-byte" x="102" y="78">0x02</text>
+        <rect class="tt-pay" x="150" y="48" width="228" height="46" rx="6" />
+        <text class="t-fld tt-paytext" x="264" y="75">{L("format-specific bytes")}</text>
+        <path class="sarrow tt-a" d="M102 94 V124 H240 V134" />
+        <rect class="tt-dec" x="150" y="140" width="180" height="34" rx="8" />
+        <text class="t-ok" x="240" y="161">{L("decode as EIP-1559 tx")}</text>
+        <text class="t-cap" x="240" y="188">{L("a typed tx = type byte ++ payload; the byte says how to read the rest")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2718: the first byte routes legacy vs typed, no collision ── */}
+    {name === "tx-disambig" && (
+      <svg viewBox="0 0 480 208" role="img" aria-label="The first byte disambiguates legacy from typed transactions">
+        <rect class="td-byte" x="184" y="24" width="112" height="34" rx="8" />
+        <text class="t-cap" x="240" y="45">{L("first byte = ?")}</text>
+        <path class="sarrow td-l1" d="M208 58 L120 102" />
+        <path class="sarrow td-l2" d="M272 58 L360 102" />
+        <rect class="td-legacy" x="28" y="106" width="184" height="64" rx="8" />
+        <text class="tx-byte2" x="120" y="134">≥ 0xc0</text>
+        <text class="t-cap" x="120" y="154">{L("RLP list → legacy tx")}</text>
+        <rect class="td-typed" x="268" y="106" width="184" height="64" rx="8" />
+        <text class="tx-byte2" x="360" y="134">0x00–0x7f</text>
+        <text class="t-cap" x="360" y="154">{L("type byte → typed tx")}</text>
+        <text class="t-cap" x="240" y="198">{L("an RLP list starts ≥ 0xc0, so type bytes 0x00–0x7f never collide")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2718: the versioned family, one byte per format ── */}
+    {name === "tx-family" && (
+      <svg viewBox="0 0 480 226" role="img" aria-label="The typed-transaction family — one byte per format">
+        <text class="t-cap" x="240" y="20">{L("a versioned family — each feature claims a byte")}</text>
+        {[["0x00", "legacy (pre-2718)"], ["0x01", "access lists — EIP-2930"], ["0x02", "base fee + tip — EIP-1559"], ["0x03", "blobs — EIP-4844"], ["0x04", "set EOA code — EIP-7702"], ["0x05", "… the next type slots in"]].map(([byte, label], i) => (
+          <g class={`tx-row txr${i}`}>
+            <rect class="tx-chip" x="64" y={32 + i * 30} width="62" height="22" rx="6" />
+            <text class="tx-byte3" x="95" y={47 + i * 30}>{byte}</text>
+            <rect class="tx-name" x="134" y={32 + i * 30} width="282" height="22" rx="6" />
+            <text class="t-fld tx-namelbl" x="146" y={47 + i * 30}>{L(label)}</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="220">{L("old clients cleanly reject an unknown type byte")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1538,4 +1605,55 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sp-power { opacity: 0; }
   .spw0 { animation: sp-on 5s ease-out infinite; } .spw1 { animation: sp-on 5s ease-out 0.5s infinite; } .spw2 { animation: sp-on 5s ease-out 1s infinite; }
   @keyframes sp-on { 0%,6% { opacity: 0; transform: translateY(-4px) } 20%,90% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
+
+  /* EIP-2718 — tx-onefmt: one rigid format, decoders must guess */
+  .to-rlp { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .to-rlptext { text-anchor: middle; }
+  .to-feat { opacity: 0; }
+  .tf0 { animation: to-nudge 5s ease-in-out infinite; }
+  .tf1 { animation: to-nudge 5s ease-in-out 0.4s infinite; }
+  @keyframes to-nudge { 0%,8% { opacity: 0; transform: translateY(-6px) } 24%,70% { opacity: 1; transform: translateY(0) } 100% { opacity: 0.5; transform: translateY(0) } }
+  .to-chip { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .to-parser { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; animation: to-guess 5s ease-in-out infinite; }
+  @keyframes to-guess { 0%,60% { opacity: 0 } 74% { opacity: 1; transform: translateX(2px) } 78% { transform: translateX(-2px) } 82% { transform: translateX(0) } 100% { opacity: 1 } }
+  .tx-byte { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 16px; text-anchor: middle; font-weight: 600; }
+
+  /* EIP-2718 — tx-typebyte: the byte selects a decoder */
+  .tt-byte { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
+  @keyframes tt-pulse { 0%,20% { filter: none } 34% { filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 50%,100% { filter: none } }
+  .tt-pay { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tt-paytext { text-anchor: middle; }
+  .tt-a { stroke-dasharray: 80; stroke-dashoffset: 80; animation: tt-draw 5s ease-in-out infinite; }
+  @keyframes tt-draw { 0%,36% { stroke-dashoffset: 80 } 56%,100% { stroke-dashoffset: 0 } }
+  .tt-dec { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: tt-dec 5s ease-in-out infinite; }
+  @keyframes tt-dec { 0%,56% { opacity: 0 } 70%,100% { opacity: 1 } }
+
+  /* EIP-2718 — tx-disambig: the first byte routes to a lane */
+  .td-byte { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
+  .td-l1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: td-d1 6s ease-in-out infinite; }
+  .td-l2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: td-d2 6s ease-in-out infinite; }
+  @keyframes td-d1 { 0%,8% { stroke-dashoffset: 100 } 26%,46% { stroke-dashoffset: 0 } 56%,100% { stroke-dashoffset: 100 } }
+  @keyframes td-d2 { 0%,52% { stroke-dashoffset: 100 } 70%,90% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: 100 } }
+  .td-legacy { fill: color-mix(in oklab, var(--color-ink-faint) 6%, var(--color-surface)); stroke: var(--color-border-strong); animation: td-hl1 6s ease-in-out infinite; }
+  .td-typed { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); animation: td-hl2 6s ease-in-out infinite; }
+  @keyframes td-hl1 { 0%,20% { filter: none } 34%,44% { filter: drop-shadow(0 0 6px var(--color-border-strong)) } 56%,100% { filter: none } }
+  @keyframes td-hl2 { 0%,60% { filter: none } 74%,86% { filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { filter: none } }
+  .tx-byte2 { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; }
+
+  /* EIP-2718 — tx-family: the registry, one byte per format */
+  .tx-row { opacity: 0; }
+  .txr0 { animation: tx-in 6s ease-out infinite; }
+  .txr1 { animation: tx-in 6s ease-out 0.3s infinite; }
+  .txr2 { animation: tx-in 6s ease-out 0.6s infinite; }
+  .txr3 { animation: tx-in 6s ease-out 0.9s infinite; }
+  .txr4 { animation: tx-in 6s ease-out 1.2s infinite; }
+  .txr5 { animation: tx-future 6s ease-out 1.5s infinite; }
+  @keyframes tx-in { 0%,4% { opacity: 0; transform: translateX(-10px) } 18%,94% { opacity: 1; transform: translateX(0) } 100% { opacity: 1 } }
+  @keyframes tx-future { 0%,24% { opacity: 0 } 38% { opacity: 1 } 62% { opacity: 0.55 } 82% { opacity: 1 } 100% { opacity: 0.7 } }
+  .tx-chip { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .tx-name { fill: var(--color-surface); stroke: var(--color-border); }
+  .tx-byte3 { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .tx-namelbl { fill: var(--color-ink-muted); }
+  .txr5 .tx-chip { stroke-dasharray: 3 2; }
+  .txr5 .tx-name { stroke-dasharray: 3 2; }
 </style>

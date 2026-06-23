@@ -1,0 +1,124 @@
+---
+title: "EIP-2718: the envelope that let Ethereum add transaction types"
+dek: "Ethereum had exactly one transaction format — an RLP list. Every new feature (access lists, the 1559 fee market, blobs, set-code) needed a new shape, and decoders had to guess which one they were looking at. EIP-2718 prefixes every transaction with a single type byte, turning one rigid format into an extensible, versioned family."
+summary: "A step-by-step derivation of EIP-2718 (typed transaction envelope) — why one RLP format made every new transaction feature a backward-incompatible guessing game, and how a single leading type byte fixes it: a typed transaction is TransactionType ‖ TransactionPayload, the type byte 0x00–0x7f can never collide with a legacy RLP list (which starts ≥ 0xc0), so one look at the first byte disambiguates legacy from typed — and each later EIP (2930, 1559, 4844, 7702) just claims the next number."
+topic: EIPs
+order: 8
+spine: true
+prerequisites: ["RLP encoding", "what a transaction is"]
+updated: 2026-06-23
+readingMinutes: 11
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+For years Ethereum had exactly **one** kind of transaction: a single <KeyTerm term="RLP" def="Recursive Length Prefix — Ethereum's canonical serialization. It encodes nested lists and byte strings; a transaction was the RLP encoding of the 9-element list [nonce, gasPrice, gasLimit, to, value, data, v, r, s]." />-encoded list of nine fields. That was fine until people wanted to *change* what a transaction could be — add access lists, replace `gasPrice` with the [1559](/eip-1559-fee-market) base-fee/tip pair, carry [blob](/eip-4844-blobs) commitments, attach a [set-code](/eip-7702-set-eoa-code) authorization. Each new feature needs a new on-the-wire shape, and the moment there's more than one shape, every decoder faces a question it was never built to answer: *which kind of transaction is this?* **EIP-2718** is the small, unglamorous fix that made all the famous EIPs after it possible. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "One format, many wishes" },
+  { id: "step-2", label: "Prefix a type byte" },
+  { id: "step-3", label: "Never collide with legacy" },
+  { id: "step-4", label: "A versioned family" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="One format, many wishes">
+
+## The problem: a single shape that everyone must guess at
+
+The original transaction *is* `rlp([nonce, gasPrice, gasLimit, to, value, data, v, r, s])` — nothing more. There's no version field, no tag, no marker. To add a feature you have to change that list: add an `accessList`, swap in new fee fields. But now two different transactions are floating around the network, and the only way to tell them apart is to **sniff** the RLP — count the fields, inspect the structure, and *guess*. Guesses are fragile: two formats can look alarmingly alike, and every wallet, node, and explorer needs the same brittle heuristic, kept in sync forever.
+
+<Scene name="tx-onefmt" caption="One RLP shape for every transaction, with no version tag. Add a feature and the bytes change, so every decoder must sniff the structure and guess which kind it's holding — fragile, and it gets worse with each new format." />
+
+There's no clean way to say *"this is a new kind of transaction, decode it with these rules."* The format has no room to announce itself.
+
+<Callout type="warning" title="What breaks">
+We need to add transaction formats over time without breaking the ones that exist — and without forcing decoders to guess. What's the smallest thing we can add that makes a transaction *declare* its own format up front?
+</Callout>
+
+**→ Step 2: put a label on the envelope.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Prefix a type byte">
+
+## Wrap it in an envelope: one type byte, then the payload
+
+Stop trying to encode the format *inside* the data. Instead, put a label on the outside. Define a <KeyTerm term="typed transaction" def="EIP-2718's envelope: a transaction encoded as a single type byte followed by an opaque, type-specific payload — TransactionType ‖ TransactionPayload. The type byte names the format; the payload is whatever that format defines." /> as exactly two parts concatenated: `TransactionType ‖ TransactionPayload`. The first byte is a small number naming the format; everything after it is an opaque payload that *only that type's rules* know how to read. A decoder reads one byte, looks up the matching ruleset, and decodes the rest with certainty — no sniffing, no guessing.
+
+<Scene name="tx-typebyte" caption="A typed transaction is a type byte followed by a type-specific payload. The leading byte tells every decoder exactly which ruleset to apply — read one byte, then decode the rest with certainty." />
+
+This is just a **versioned envelope**. The type byte is a version/format selector; the payload's meaning is defined per type. Adding a new format no longer means mutating an existing shape — it means claiming a new number and writing down what its payload looks like.
+
+<Callout type="warning" title="What breaks">
+Clever — but the network is *full* of the old, untyped transactions, and they have no type byte at all. If a new transaction now starts with a byte like `0x02`, how does a decoder avoid mistaking an old transaction for a typed one (or vice-versa)?
+</Callout>
+
+**→ Step 3: make the two kinds impossible to confuse.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Never collide with legacy">
+
+## Backward compatibility for free: pick bytes RLP can't produce
+
+Here's the elegant part. A **legacy** transaction is an RLP *list*, and RLP encodes a list with a first byte in the range `0xc0`–`0xff`. A typed transaction is defined to use a type byte in `0x00`–`0x7f`. Those ranges **cannot overlap** — an RLP list never starts below `0xc0`, and a type byte never reaches it. So a decoder needs only to glance at the very first byte: if it's `≥ 0xc0`, it's a legacy RLP transaction; if it's `≤ 0x7f`, it's typed, and the byte's value says which type. One comparison, zero ambiguity, both kinds coexisting forever.
+
+<Scene name="tx-disambig" caption="The first byte alone disambiguates. A legacy RLP list always starts ≥ 0xc0; typed transactions are assigned 0x00–0x7f, a range RLP can never produce. So old and new transactions coexist with no collisions and no sniffing." />
+
+The values `0xc0` and above are reserved precisely to keep legacy transactions valid, and `0xff` is left aside (reserved). The design didn't *add* a marker to old transactions — it chose the new marker's range so the old encoding already disambiguates itself.
+
+<SpecExcerpt
+  source="EIP-2718: Typed Transaction Envelope"
+  href="https://eips.ethereum.org/EIPS/eip-2718"
+  ref="the envelope & ranges"
+>
+A transaction is either `TransactionType ‖ TransactionPayload` or `LegacyTransactionRlp`.
+`TransactionType` is a number in `0 ≤ type ≤ 0x7f`; `TransactionPayload` is opaque bytes
+whose meaning is defined by the type. Because a legacy transaction is an RLP list (first
+byte `≥ 0xc0`), the two are unambiguous. The receipt for a typed transaction is likewise
+`TransactionType ‖ ReceiptPayload`.
+</SpecExcerpt>
+
+<Callout type="insight" title="Signatures move into the envelope too">
+A legacy transaction signed over its raw fields; a typed transaction signs over `keccak256(TransactionType ‖ rlp(payload-without-signature))`. The type byte is part of what you sign, so a transaction of one type can never be replayed as another — the envelope is authenticated, not just descriptive.
+</Callout>
+
+**→ Step 4: watch the family grow.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="A versioned family">
+
+## The payoff: every later EIP just claims a byte
+
+Once the envelope exists, adding a transaction format becomes routine. [EIP-2930](https://eips.ethereum.org/EIPS/eip-2930) took `0x01` for access lists; [EIP-1559](/eip-1559-fee-market) took `0x02` for the base-fee/tip market; [EIP-4844](/eip-4844-blobs) took `0x03` for blob-carrying transactions; [EIP-7702](/eip-7702-set-eoa-code) took `0x04` for set-code authorizations. Each is just a number plus a payload definition. And crucially, an old client that doesn't recognize a type byte **cleanly rejects** the transaction instead of misreading it — unknown means unknown, not "guess."
+
+<Scene name="tx-family" caption="With a versioned envelope, each new feature simply claims the next type byte and defines its payload — 0x01 access lists, 0x02 the 1559 fee market, 0x03 blobs, 0x04 set-code. Old clients cleanly reject an unknown type rather than misdecoding it." />
+
+<Callout type="insight" title="And that is EIP-2718">
+One RLP shape made every new feature a backward-incompatible guessing game → so wrap each transaction in an envelope: a single **type byte** then an opaque **payload** → choose the type range `0x00–0x7f`, which an RLP list (first byte `≥ 0xc0`) can never collide with, so legacy and typed coexist by inspecting one byte → and now every later EIP just claims the next number. EIP-2718 ships *no* new transaction type itself; it's pure infrastructure — the format for formats. It's the reason 2930, 1559, 4844, and 7702 could each arrive without ever asking the network to re-learn how to tell transactions apart. The cost was almost nothing: one byte. The payoff was a decade of painless extensibility.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2718: Typed Transaction Envelope", note: "The spec — the envelope and type ranges", href: "https://eips.ethereum.org/EIPS/eip-2718" },
+    { kind: "eip", label: "EIP-2930: Optional access lists", note: "Type 0x01 — the first envelope user", href: "https://eips.ethereum.org/EIPS/eip-2930" },
+    { kind: "post", label: "EIP-1559, derived", note: "Type 0x02 — the fee market this enabled", href: "/eip-1559-fee-market" },
+    { kind: "post", label: "EIP-4844, derived", note: "Type 0x03 — blob transactions", href: "/eip-4844-blobs" },
+    { kind: "tool", label: "RLP, visually", note: "How a legacy list's first byte lands ≥ 0xc0", href: "https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/" },
+  ]}
+/>
+
+</DepthLayer>

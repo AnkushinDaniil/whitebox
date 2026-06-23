@@ -51,7 +51,11 @@ interface Props {
     | "aa-eoa"
     | "aa-userop"
     | "aa-bundler"
-    | "aa-paymaster";
+    | "aa-paymaster"
+    | "se-migrate"
+    | "se-delegate"
+    | "se-run"
+    | "se-powers";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -865,6 +869,55 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="186">{L("a paymaster sponsors gas or takes any token — bundler reimbursed")}</text>
       </svg>
     )}
+
+    {/* ── EIP-7702: 4337 means migrating to a new address ── */}
+    {name === "se-migrate" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="To get smart-account powers you had to migrate to a new address">
+        <rect class="sm-eoa" x="18" y="52" width="156" height="62" rx="8" /><text class="t-cap" x="96" y="74">{L("your EOA · 0xYou")}</text><text class="t-cap" x="96" y="90">{L("funds · history · key")}</text>
+        <text class="t-x" x="96" y="130">{L("✗ rigid, no smart powers")}</text>
+        <path class="sarrow sm-mig" d="M174 84 H300" /><text class="t-cap sm-miglbl" x="237" y="74">{L("migrate?")}</text>
+        <rect class="sm-new" x="300" y="50" width="162" height="60" rx="8" /><text class="t-cap" x="381" y="74">{L("smart account")}</text><text class="t-cap" x="381" y="90">{L("0xNew — new address")}</text>
+        <text class="t-cap" x="240" y="170">{L("4337 powers need a new address — your EOA is left behind, still rigid")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7702: the EOA signs a delegation; its code becomes a pointer ── */}
+    {name === "se-delegate" && (
+      <svg viewBox="0 0 480 198" role="img" aria-label="The EOA signs an authorization; its code becomes a delegation pointer">
+        <rect class="sd-auth" x="18" y="30" width="200" height="46" rx="6" /><text class="t-cap" x="118" y="50">{L("signed authorization")}</text><text class="t-cap" x="118" y="66">(chainId, delegate, nonce)</text>
+        <path class="sarrow sd-a1" d="M118 76 V104" />
+        <rect class="sd-eoa" x="38" y="108" width="208" height="60" rx="8" /><text class="t-cap" x="142" y="128">{L("EOA 0xYou")}</text>
+        <text class="t-fld sd-code0" x="52" y="150">code: (empty)</text>
+        <text class="t-fld sd-code1" x="52" y="150">code: 0xef0100 → delegate</text>
+        <path class="sarrow sd-a2" d="M246 138 H300" />
+        <rect class="sd-deleg" x="300" y="116" width="156" height="44" rx="8" /><text class="t-cap" x="378" y="142">{L("delegate contract")}</text>
+        <text class="t-cap" x="240" y="188">{L("sign a delegation → the EOA’s code becomes a pointer, not a copy")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7702: a call runs the delegate's code in the EOA's context ── */}
+    {name === "se-run" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="A call loads the delegate's code and runs it as the EOA">
+        <rect class="sr-caller" x="14" y="64" width="86" height="40" rx="6" /><text class="t-cap" x="57" y="88">{L("a call")}</text>
+        <path class="sarrow sr-a1" d="M100 84 H150" />
+        <rect class="sr-eoa" x="150" y="50" width="150" height="76" rx="8" /><text class="t-cap" x="225" y="70">{L("EOA 0xYou")}</text><text class="t-cap" x="225" y="86">code: → delegate</text><text class="t-cap" x="225" y="102">{L("storage · balance")}</text>
+        <path class="sarrow sr-a2" d="M300 88 H348" /><text class="t-cap sr-load" x="324" y="78">{L("loads code")}</text>
+        <rect class="sr-deleg" x="348" y="68" width="118" height="40" rx="6" /><text class="t-cap" x="407" y="92">{L("delegate code")}</text>
+        <text class="t-ok sr-as" x="225" y="148">{L("runs AS 0xYou — its storage, balance, address")}</text>
+        <text class="t-cap" x="240" y="172">{L("the call loads the delegate’s code and runs it in the EOA’s own context")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7702: powers on the same address; the key still works ── */}
+    {name === "se-powers" && (
+      <svg viewBox="0 0 480 180" role="img" aria-label="Smart-account powers on your existing EOA">
+        <rect class="sp-eoa" x="170" y="38" width="140" height="48" rx="8" /><text class="t-cap" x="240" y="58">0xYou</text><text class="t-cap" x="240" y="74">{L("same address")}</text>
+        {[["batch approve+swap", 96, 116, 0], ["sponsored gas", 240, 130, 1], ["session keys", 384, 116, 2]].map(([label, x, y, i]) => (
+          <g class={`sp-power spw${i}`}><rect class="sp-chip" x={Number(x) - 66} y={Number(y) - 13} width="132" height="24" rx="12" /><text class="t-ok" x={x} y={Number(y) + 3}>{label}</text></g>
+        ))}
+        <text class="t-cap" x="240" y="166">{L("your existing address gains smart powers — and your key still works")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1447,4 +1500,42 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ap-a1 { animation: ap-draw 5.5s ease-out infinite; } .ap-a2 { animation: ap-draw 5.5s ease-out 0.5s infinite; } .ap-a3 { animation: ap-draw 5.5s ease-out 1.4s infinite; }
   @keyframes ap-draw { 0%,10% { stroke-dashoffset: 80 } 30%,100% { stroke-dashoffset: 0 } }
   @keyframes ap-late { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
+
+  /* EIP-7702 — se-migrate: the EOA is abandoned for a new smart account */
+  .sm-eoa { fill: var(--color-surface); stroke: var(--color-border-strong); animation: sm-leave 5s ease-in-out infinite; }
+  @keyframes sm-leave { 0%,50% { opacity: 1 } 66%,100% { opacity: 0.5 } }
+  .sm-mig { stroke-dasharray: 130; stroke-dashoffset: 130; animation: sm-draw 5s ease-in-out infinite; }
+  @keyframes sm-draw { 0%,16% { stroke-dashoffset: 130 } 40%,100% { stroke-dashoffset: 0 } }
+  .sm-miglbl { fill: var(--color-ink-faint); }
+  .sm-new { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-node-extension); animation: sm-new 5s ease-in-out infinite; }
+  @keyframes sm-new { 0%,52% { filter: none } 66% { filter: drop-shadow(0 0 7px var(--color-node-extension)) } 100% { filter: none } }
+
+  /* EIP-7702 — se-delegate: the code field morphs into a pointer */
+  .sd-auth { fill: color-mix(in oklab, var(--color-hash) 8%, var(--color-surface)); stroke: var(--color-hash); }
+  .sd-eoa { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sd-deleg { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .sd-a1 { stroke-dasharray: 32; stroke-dashoffset: 32; animation: sd-draw 5s ease-in-out infinite; }
+  .sd-a2 { stroke-dasharray: 60; stroke-dashoffset: 60; animation: sd-draw 5s ease-in-out 0.5s infinite; }
+  @keyframes sd-draw { 0%,12% { stroke-dashoffset: 60 } 34%,100% { stroke-dashoffset: 0 } }
+  .sd-code0 { fill: var(--color-ink-faint); animation: sd-out 5s ease-in-out infinite; }
+  .sd-code1 { fill: var(--color-accent-strong); opacity: 0; animation: sd-in 5s ease-in-out infinite; }
+  @keyframes sd-out { 0%,38% { opacity: 1 } 50%,100% { opacity: 0 } }
+  @keyframes sd-in { 0%,40% { opacity: 0 } 52%,100% { opacity: 1 } }
+
+  /* EIP-7702 — se-run: the call loads delegate code, runs as the EOA */
+  .sr-caller, .sr-eoa { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sr-deleg { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .sr-load { fill: var(--color-ink-faint); }
+  .sr-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: sr-draw 5s ease-out infinite; }
+  .sr-a2 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: sr-draw 5s ease-out 0.5s infinite; }
+  @keyframes sr-draw { 0%,12% { stroke-dashoffset: 52 } 34%,100% { stroke-dashoffset: 0 } }
+  .sr-as { opacity: 0; animation: sr-as 5s ease-in-out infinite; }
+  @keyframes sr-as { 0%,52% { opacity: 0 } 66%,100% { opacity: 1 } }
+
+  /* EIP-7702 — se-powers: the powers light up on the same address */
+  .sp-eoa { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .sp-chip { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .sp-power { opacity: 0; }
+  .spw0 { animation: sp-on 5s ease-out infinite; } .spw1 { animation: sp-on 5s ease-out 0.5s infinite; } .spw2 { animation: sp-on 5s ease-out 1s infinite; }
+  @keyframes sp-on { 0%,6% { opacity: 0; transform: translateY(-4px) } 20%,90% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
 </style>

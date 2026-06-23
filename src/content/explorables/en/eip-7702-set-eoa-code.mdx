@@ -1,0 +1,122 @@
+---
+title: "EIP-7702: giving your EOA superpowers, in place"
+dek: "Account abstraction (4337) made smart accounts — but you had to move to a new address to use them. EIP-7702 upgrades your existing EOA where it sits: sign a delegation, your account points at a contract, and a call runs that contract's code as you — same address, same key."
+summary: "A step-by-step derivation of EIP-7702 (set EOA code) — why 4337 forced a migration to a new address, and how 7702 lets an existing EOA delegate to a contract instead: a type-0x04 transaction with a signed authorization sets the account's code to a 0xef0100 delegation pointer, and any call then loads the delegate's code and runs it in the EOA's own context — unlocking batching, sponsored gas, and session keys on the address you already have."
+topic: EIPs
+order: 7
+spine: true
+prerequisites: ["EOAs vs contracts", "account abstraction (4337)"]
+updated: 2026-06-23
+readingMinutes: 12
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+[EIP-4337](/eip-4337-account-abstraction) gave Ethereum **smart accounts** — programmable validation, batching, sponsored gas — but with a catch: a smart account is a *contract*, at a *new address*. To use one you have to migrate: move your funds, re-establish your identity, and abandon the address (and key) everyone knows you by. The hundreds of millions of plain **EOAs** that almost everyone actually uses were left out. **EIP-7702** (shipped in Pectra, 2025) fixes that by letting an EOA *temporarily become* a smart account while keeping its address and key. The trick is one small idea; let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Migrate or stay rigid" },
+  { id: "step-2", label: "Delegate your code" },
+  { id: "step-3", label: "Run it as the EOA" },
+  { id: "step-4", label: "Powers in place" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Migrate or stay rigid">
+
+## The problem: 4337 leaves your EOA behind
+
+A 4337 smart account is a contract deployed at its own address. So to get its powers, you *move*: send your assets to the new account, switch every integration, and live behind a different address. Your <KeyTerm term="EOA" def="Externally-owned account — the plain account derived from a private key. It can start transactions, but its rules are fixed: one ECDSA signature, ETH-only gas, one action." />, with all its history and the key people recognize, is left behind — and still rigid.
+
+<Scene name="se-migrate" caption="To use 4337's powers you migrate to a new contract account at a new address. Your existing EOA — funds, history, key — is left behind, still unable to batch or be sponsored." />
+
+That migration is friction almost no one wants. And notice the one and only difference between your EOA and a smart account: a smart account *has code*, and an EOA *doesn't*. So the question writes itself.
+
+<Callout type="warning" title="What breaks">
+We don't want a new address — we want to upgrade the one we already have. The only thing missing from an EOA is code. Can we just... give the EOA some code, on its existing address, without moving anything?
+</Callout>
+
+**→ Step 2: point the EOA at a contract.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Delegate your code">
+
+## Sign a delegation; the code becomes a pointer
+
+Add a new transaction type, `0x04`, that carries an **authorization list**: signed tuples of `(chainId, delegate_address, nonce)`. The EOA's own key signs one — *"set my code to delegate to this contract"* — and when it's applied, the account's code field is set to a tiny <KeyTerm term="delegation designator" def="The 23-byte value 0xef0100 ++ address that EIP-7702 writes into an EOA's code field. It isn't the contract's bytecode — it's a pointer telling the EVM to run that contract's code in this account's context." />: `0xef0100 ++ delegate_address`. Crucially this is a **redirect, not a copy** — the EOA doesn't store the contract's bytecode, just a 23-byte pointer to it.
+
+<Scene name="se-delegate" caption="A type-0x04 transaction carries a signed authorization. Applying it sets the EOA's code to 0xef0100 ++ delegate — a small pointer at the contract, not a copy of its bytecode." />
+
+<SpecExcerpt
+  source="EIP-7702: Set EOA account code"
+  href="https://eips.ethereum.org/EIPS/eip-7702"
+  ref="authorization & designator"
+>
+A `SET_CODE_TX_TYPE` (0x04) transaction carries `authorization_list` entries
+`[chain_id, address, nonce, y_parity, r, s]`. Each valid entry sets the authority's
+code to `0xef0100 ‖ address` (a "delegation designator"). `chain_id = 0` means valid
+on any chain; the `nonce` makes the authorization single-use. Clearing it (delegate to
+the zero address) turns the account back into a plain EOA.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+A pointer by itself does nothing. How does that 23-byte designator actually make the account *behave* like the contract it points at?
+</Callout>
+
+**→ Step 3: run the code it points to.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Run it as the EOA">
+
+## Run the delegate's code — in the EOA's own context
+
+Here's the payoff. Whenever the account is called (or acts as the transaction's sender), the EVM sees the `0xef0100` designator, follows it, loads the **delegate contract's code**, and executes it — but **in the EOA's context**: the EOA's storage, the EOA's balance, the EOA's address. Inside that code, `address(this)` *is* `0xYou`. It's as if your account borrowed the contract's behaviour while remaining entirely itself.
+
+<Scene name="se-run" caption="A call to the EOA follows the pointer, loads the delegate's code, and runs it as 0xYou — using the EOA's own storage, balance, and address. The account behaves like a smart account, in place." />
+
+So a single contract implementation can serve any number of EOAs that delegate to it, and each one runs that logic over its *own* state. The account is now programmable without ever having moved.
+
+<Callout type="warning" title="What breaks">
+Powerful — but what exactly does this unlock, and what's the sharp edge of an EOA that can suddenly run arbitrary code?
+</Callout>
+
+**→ Step 4: the powers, and the catch.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Powers in place">
+
+## What you get — on the address you already have
+
+Your existing account can now do the smart-account things, without abandoning your key: **batch** an `approve` and a `swap` into one atomic call; be **sponsored**, so a relayer sends the type-`0x04` transaction and pays the gas (even your account's very first transaction); use **session keys** and scoped permissions; and plug straight into the 4337 ecosystem by delegating to a 4337-style account implementation.
+
+<Scene name="se-powers" caption="Batching, sponsored gas, session keys — all on the address you already have, by delegating it to a contract. And your key still works as before." />
+
+<Callout type="insight" title="And that is EIP-7702 — with one caveat">
+4337 needed a new address → the only difference from a smart account is code → so let the EOA *delegate* its code via a signed authorization (the `0xef0100` pointer) → a call then runs the delegate's code in the EOA's own context → batching, sponsorship, and session keys arrive on your existing address. Unlike 4337, this *is* a protocol change (a new transaction type and the designator) — and it composes with 4337 rather than replacing it. **The caveat:** the EOA's private key still works — it can still send plain transactions and re-delegate, so the key remains the ultimate authority (7702 makes your account more *capable*, not your key safer), and switching delegates can collide on storage layout. A pointer, not a personality transplant.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-7702: Set EOA account code", note: "The spec — authorizations & the designator", href: "https://eips.ethereum.org/EIPS/eip-7702" },
+    { kind: "post", label: "EIP-4337, derived", note: "The smart-account model 7702 plugs into", href: "/eip-4337-account-abstraction" },
+    { kind: "post", label: "Keys, signatures & addresses", note: "The EOA whose key still rules", href: "/you-could-have-invented-ethereum#step-2" },
+    { kind: "post", label: "Pectra — what changed", note: "The hardfork that shipped 7702", href: "https://ethereum.org/en/roadmap/pectra/" },
+    { kind: "tool", label: "rollup.codes / 7702 explorers", note: "See delegations live on accounts", href: "https://www.evm.codes/" },
+  ]}
+/>
+
+</DepthLayer>

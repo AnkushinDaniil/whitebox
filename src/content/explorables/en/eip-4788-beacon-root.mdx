@@ -1,0 +1,121 @@
+---
+title: "EIP-4788: teaching the EVM to trust the beacon chain"
+dek: "Post-Merge, the consensus layer holds exactly the data staking and restaking contracts need — validator balances, statuses, slashings — but the EVM can't see any of it, so projects leaned on trusted oracles. EIP-4788 exposes the parent beacon block root inside the EVM, so a contract can verify any consensus fact with a Merkle proof and no oracle."
+summary: "A step-by-step derivation of EIP-4788 (beacon block root in the EVM) — why the execution layer had no trust-minimized access to consensus-layer state (validator balances, statuses, slashings, withdrawal credentials, RANDAO), forcing liquid-staking and restaking protocols onto trusted oracles, and how the fix works: you don't need the whole state, only an authentic commitment to it — the beacon block root is a hash-tree-root over all beacon state — so the protocol stamps the parent beacon block root into the EVM every block via a new parentBeaconBlockRoot header field and a system call that writes a (timestamp → root) pair into a predeployed ring-buffer 'beacon roots' contract (~8191 slots, ~27 hours); a contract then calls that predeploy with a timestamp to get an authentic root and verifies a Merkle proof of any validator fact against it."
+topic: EIPs
+order: 13
+spine: true
+prerequisites: ["the Merge (two layers)", "Merkle proofs"]
+updated: 2026-06-23
+readingMinutes: 11
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+After the Merge, the most interesting data on Ethereum — who's a validator, their balance, whether they've been slashed, their withdrawal credentials — lives on the **consensus layer**, and the **execution layer** (the EVM, where every smart contract runs) can't see a byte of it. Yet exactly that data is what liquid-staking (Lido), restaking (EigenLayer), and validator-proof protocols are built on. With no native access, they fell back on **trusted oracles**: a committee posting consensus facts on-chain, which you simply had to trust. **EIP-4788** removes the committee. Let's derive how.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The EVM is blind to the CL" },
+  { id: "step-2", label: "Commit, don't copy" },
+  { id: "step-3", label: "Stamp the root each block" },
+  { id: "step-4", label: "Read it, prove anything" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The EVM is blind to the CL">
+
+## The problem: consensus state is right there, and unreachable
+
+A post-Merge node runs two layers, but a smart contract executes entirely within the execution layer's world state. The <KeyTerm term="beacon state" def="The consensus layer's state: the full validator registry — each validator's balance, activation/exit status, slashing flag, withdrawal credentials — plus the RANDAO and more. It's what proof-of-stake operates on, and it's invisible to the EVM." /> sits in the other layer, with no opcode, precompile, or field to reach it. So a staking contract that wants to know *"does validator N still hold 32 ETH and is it un-slashed?"* has no trustless way to find out. The only option was an <KeyTerm term="oracle" def="An off-chain committee (often a multisig) that reads consensus state and posts it into an execution-layer contract. Users must trust it to be honest and live — a central point of failure layered on top of a decentralized chain." />: some trusted party watches the beacon chain and writes the answer into a contract.
+
+<Scene name="br-blind" caption="Validator balances, statuses, slashings, and credentials live on the consensus layer; an execution-layer contract can't read any of it. The only bridge was a trusted oracle posting the data — a central point of failure on an otherwise trustless system." />
+
+That trust assumption is exactly what you don't want underneath billions in staked ETH. If the oracle lies or goes offline, the protocol built on it breaks.
+
+<Callout type="warning" title="What breaks">
+We need contracts to learn consensus facts *without* trusting a committee. But copying the entire beacon state into the EVM every block is absurdly expensive. Is there something small the protocol could expose that still lets you verify anything?
+</Callout>
+
+**→ Step 2: expose a commitment, not the data.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Commit, don't copy">
+
+## You don't need the state — you need its root
+
+The beacon chain already hashes its entire state into a single 32-byte commitment: the <KeyTerm term="beacon block root" def="The hash-tree-root of a beacon block, which recursively commits (via SSZ Merkleization) to the whole beacon state. Any single fact — a specific validator's balance — is a leaf under this root, provable with a Merkle branch." />. Because that root is a Merkle root over all of beacon state, any individual fact — one validator's balance, its slashing status — is a leaf you can prove with a Merkle branch. So a contract that holds an *authentic* recent beacon root doesn't need the state copied in: anyone can hand it a Merkle proof, and the contract checks the proof against the root it trusts. The expensive global state collapses to one hash plus a short proof per query.
+
+<Scene name="br-commit" caption="The beacon block root is a Merkle root over all beacon state, so each fact is a leaf beneath it. Given an authentic root, a short Merkle proof verifies any single value — a validator's balance, status, or credentials — without copying the state." />
+
+This reframes the whole problem. The protocol doesn't have to *serve* beacon state to the EVM; it only has to make one thing available and trustworthy: a recent, genuine beacon block root.
+
+<Callout type="warning" title="What breaks">
+A Merkle proof is only as trustworthy as the root you check it against. If a *user* supplies the root, they can lie. Who places an authentic root into the EVM, and how does a contract know it's real?
+</Callout>
+
+**→ Step 3: have the protocol itself write the root.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Stamp the root each block">
+
+## The protocol stamps the parent beacon root every block
+
+The root has to be placed by the protocol, not a user. So EIP-4788 adds a `parentBeaconBlockRoot` field to the **execution** block header (each execution block already corresponds to a beacon block, so it knows its parent's root), and at the very start of processing every block, a **system call** — from the special system address `0xfff…ffe`, which no one can impersonate — writes the pair `(timestamp → parentBeaconBlockRoot)` into a predeployed <KeyTerm term="beacon roots contract" def="A predeployed system contract at 0x000F3df6…beac02 holding a ring buffer of recent (timestamp → beacon root) pairs (~8191 slots, about 27 hours). The protocol writes it each block; contracts read it by calling with a timestamp." />. That contract is a ring buffer of ~8191 recent slots (about 27 hours), so the most recent roots are always queryable and old ones rotate out.
+
+<Scene name="br-stamp" caption="Each block adds parentBeaconBlockRoot to the header, and a system call (from 0xff…fe, unforgeable) writes a (timestamp → root) entry into the beacon-roots predeploy — a ring buffer of ~8191 slots (~27h). No user and no oracle places the root; the protocol does." />
+
+<SpecExcerpt
+  source="EIP-4788: Beacon block root in the EVM"
+  href="https://eips.ethereum.org/EIPS/eip-4788"
+  ref="header field & system write"
+>
+The execution header gains `parent_beacon_block_root`. At the start of each block, a call
+from `SYSTEM_ADDRESS` (`0xfff…fffe`) stores `timestamp % 8191 → timestamp` and
+`(timestamp % 8191) + 8191 → root` in the contract at `0x000F3df6…beac02`. Callers query
+it by passing a 32-byte timestamp in calldata; it returns the corresponding root.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+The authentic root now sits in a contract anyone can call. How does a protocol actually use it end to end?
+</Callout>
+
+**→ Step 4: read the root, prove the fact.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Read it, prove anything">
+
+## The payoff: an authentic root, then a proof
+
+Now any contract can do, fully on-chain, what previously needed an oracle. It **calls** the beacon-roots predeploy with a timestamp and gets back the authentic beacon root for that slot. Then it accepts a **Merkle proof** — supplied by whoever wants to prove something — that a particular validator's balance (or status, or withdrawal credential) is a leaf under that root, and verifies the proof. If it checks out, the fact is proven; if not, it's rejected. No committee, no trust beyond the protocol itself.
+
+<Scene name="br-prove" caption="A contract calls the beacon-roots predeploy with a timestamp to get an authentic root, then verifies a Merkle proof that a validator's balance sits beneath it. The fact is proven trustlessly — the oracle is gone." />
+
+<Callout type="insight" title="And that is EIP-4788">
+The EVM couldn't see consensus state, so staking and restaking leaned on trusted oracles → you don't need the state, only an authentic **commitment** to it, and the beacon block root is a Merkle root over all of it → so the protocol itself stamps the **parent beacon block root** into the EVM each block (a header field plus a system write into a ring-buffer predeploy) → and any contract reads that authentic root and verifies a **Merkle proof** of any validator fact against it. The trust assumption under liquid staking, restaking, and validator-proof systems collapses from "trust this committee" to "trust the Ethereum protocol you're already trusting." The general move is elegant: to make one layer's state usable by another, don't ship the state — ship a commitment, and let proofs do the rest.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-4788: Beacon block root in the EVM", note: "The spec — header field, predeploy, ring buffer", href: "https://eips.ethereum.org/EIPS/eip-4788" },
+    { kind: "post", label: "The Merge, derived", note: "Why consensus and execution are separate layers", href: "/eip-3675-the-merge" },
+    { kind: "post", label: "EIP-4895, derived", note: "The other CL→EL bridge: withdrawals", href: "/eip-4895-withdrawals" },
+    { kind: "code", label: "EigenLayer — beacon proofs", note: "Restaking that consumes the beacon root", href: "https://github.com/Layr-Labs/eigenlayer-contracts" },
+    { kind: "tool", label: "SSZ & Merkleization", note: "How beacon state hashes into one root", href: "https://ethereum.org/en/developers/docs/data-structures-and-encoding/ssz/" },
+  ]}
+/>
+
+</DepthLayer>

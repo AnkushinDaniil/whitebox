@@ -75,7 +75,11 @@ interface Props {
     | "ts-persist"
     | "ts-scratch"
     | "ts-opcodes"
-    | "ts-revert";
+    | "ts-revert"
+    | "br-blind"
+    | "br-commit"
+    | "br-stamp"
+    | "br-prove";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1295,6 +1299,95 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="190">{L("writes roll back on revert and auto-clear at tx end")}</text>
       </svg>
     )}
+
+    {/* ── EIP-4788: the EVM can't see CL state — only a trusted oracle ── */}
+    {name === "br-blind" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The EVM cannot see consensus-layer state without a trusted oracle">
+        <text class="t-cap" x="240" y="18">{L("the EVM can't see consensus-layer state")}</text>
+        <rect class="br-cl" x="20" y="40" width="150" height="118" rx="8" />
+        <text class="t-cap" x="95" y="60">{L("consensus layer")}</text>
+        <text class="t-fld br-fl" x="95" y="82">validator balances</text>
+        <text class="t-fld br-fl" x="95" y="100">statuses · slashings</text>
+        <text class="t-fld br-fl" x="95" y="118">withdrawal creds</text>
+        <text class="t-fld br-fl" x="95" y="136">RANDAO</text>
+        <line class="br-wall" x1="240" y1="34" x2="240" y2="160" />
+        <rect class="br-el" x="310" y="58" width="150" height="80" rx="8" />
+        <text class="t-cap" x="385" y="82">{L("EL contract")}</text>
+        <text class="t-cap" x="385" y="100">{L("staking · restaking")}</text>
+        <text class="t-x br-want" x="385" y="120">{L("needs a beacon fact")}</text>
+        <path class="sarrow br-oa1" d="M170 107 H184" />
+        <path class="sarrow br-oa2" d="M296 107 H310" />
+        <rect class="br-oracle" x="184" y="92" width="112" height="30" rx="15" />
+        <text class="t-x" x="240" y="111">{L("trusted oracle ✗")}</text>
+        <text class="t-cap" x="240" y="192">{L("the only bridge was a trusted oracle — a central point of failure")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4788: the beacon root commits to all beacon state ── */}
+    {name === "br-commit" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The beacon block root is a Merkle root committing to all beacon state">
+        <text class="t-cap" x="240" y="18">{L("the beacon root commits to all beacon state")}</text>
+        <path class="br-edge" d="M240 60 L185 82" />
+        <path class="br-edge" d="M240 60 L295 82" />
+        <path class="br-edge" d="M185 106 L70 126" />
+        <path class="br-edge" d="M185 106 L182 126" />
+        <path class="br-edge" d="M295 106 L294 126" />
+        <path class="br-edge" d="M295 106 L406 126" />
+        <path class="br-path" d="M70 126 L185 106 L240 60" />
+        <rect class="br-root" x="200" y="34" width="80" height="26" rx="6" />
+        <text class="t-addr" x="240" y="52">root</text>
+        <rect class="br-n" x="150" y="82" width="70" height="24" rx="5" />
+        <rect class="br-n" x="260" y="82" width="70" height="24" rx="5" />
+        <rect class="br-leafhi" x="28" y="126" width="84" height="28" rx="6" />
+        <text class="t-ok" x="70" y="144">balance</text>
+        <rect class="br-leaf" x="140" y="126" width="84" height="28" rx="6" />
+        <text class="t-cap" x="182" y="144">status</text>
+        <rect class="br-leaf" x="252" y="126" width="84" height="28" rx="6" />
+        <text class="t-cap" x="294" y="144">creds</text>
+        <rect class="br-leaf" x="364" y="126" width="84" height="28" rx="6" />
+        <text class="t-cap" x="406" y="144">randao</text>
+        <text class="t-ok br-verok" x="240" y="174">{L("✓ proof checks against the root")}</text>
+        <text class="t-cap" x="240" y="194">{L("a Merkle proof of any leaf — a balance, a status — checks against the root")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4788: the protocol stamps the parent beacon root each block ── */}
+    {name === "br-stamp" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Each block, a system call writes the parent beacon block root into a ring-buffer predeploy">
+        <text class="t-cap" x="240" y="18">{L("the protocol stamps the parent beacon root each block")}</text>
+        <rect class="br-hdr" x="40" y="36" width="220" height="32" rx="6" />
+        <text class="t-fld br-hdrt" x="52" y="56">header.parentBeaconBlockRoot</text>
+        <text class="t-cap br-salbl" x="320" y="50">{L("system call · 0xff…fe")}</text>
+        <path class="sarrow br-sa" d="M150 68 V92" />
+        <rect class="br-ring" x="50" y="92" width="380" height="74" rx="8" />
+        <text class="t-cap" x="240" y="110">{L("beacon-roots predeploy · 0x000F3df6…beac02")}</text>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <rect class={i === 5 ? "br-cell br-cnew" : "br-cell"} x={78 + i * 52} y="122" width="44" height="24" rx="5" />
+        ))}
+        <text class="t-fld br-ringt" x="240" y="160">ring buffer · timestamp → root · ~8191 slots (~27h)</text>
+        <text class="t-cap" x="240" y="192">{L("a system call writes (timestamp → root) every block — no user, no oracle")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4788: a contract reads the root and Merkle-proves a fact ── */}
+    {name === "br-prove" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A contract calls the beacon-roots predeploy then verifies a Merkle proof of a validator's balance">
+        <text class="t-cap" x="240" y="18">{L("any contract verifies beacon facts — no oracle")}</text>
+        <rect class="br-ctr" x="24" y="48" width="150" height="60" rx="8" />
+        <text class="t-cap" x="99" y="72">{L("your contract")}</text>
+        <text class="t-fld br-c" x="99" y="92">CALL(roots, ts)</text>
+        <text class="t-cap br-pa1l" x="212" y="66">{L("→ timestamp")}</text>
+        <path class="sarrow br-pa1" d="M174 78 H250" />
+        <rect class="br-roots" x="250" y="48" width="180" height="60" rx="8" />
+        <text class="t-cap" x="340" y="72">{L("beacon-roots predeploy")}</text>
+        <text class="t-ok br-c2" x="340" y="92">→ beacon root</text>
+        <path class="sarrow br-pa2" d="M340 108 V134" />
+        <rect class="br-verify" x="140" y="138" width="200" height="42" rx="8" />
+        <text class="t-cap" x="240" y="156">{L("Merkle-prove validator balance")}</text>
+        <text class="t-ok br-ok" x="240" y="173">{L("✓ verified against the root")}</text>
+        <text class="t-cap" x="240" y="196">{L("read the root from the predeploy, then check a Merkle proof — trustless")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2125,4 +2218,52 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ts-frame2 { fill: color-mix(in oklab, var(--color-node-leaf) 6%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .ts-undo { opacity: 0; animation: ts-c2in 5s ease-in-out infinite; }
   .ts-cleared { opacity: 0; animation: ts-c2in 5s ease-in-out 0.3s infinite; }
+
+  /* EIP-4788 — br-blind: the EVM is walled off from CL state */
+  .br-cl { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .br-fl { text-anchor: middle; fill: var(--color-ink-muted); }
+  .br-wall { stroke: var(--color-border-strong); stroke-width: 2.4; stroke-dasharray: 4 4; }
+  .br-el { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .br-want { animation: br-pulse 5s ease-in-out infinite; }
+  @keyframes br-pulse { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+  .br-oracle { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); animation: br-opulse 5s ease-in-out infinite; }
+  @keyframes br-opulse { 0%,30% { filter: none } 46% { filter: drop-shadow(0 0 6px var(--color-changed)) } 62%,100% { filter: none } }
+
+  /* EIP-4788 — br-commit: the beacon root is a Merkle root over state */
+  .br-root { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); }
+  .br-n { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .br-leaf { fill: var(--color-surface); stroke: var(--color-border); }
+  .br-leafhi { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .br-edge { stroke: var(--color-border); stroke-width: 1.2; fill: none; }
+  .br-path { stroke: var(--color-node-leaf); stroke-width: 1.8; fill: none; stroke-dasharray: 200; stroke-dashoffset: 200; animation: br-pdraw 5s ease-in-out infinite; }
+  @keyframes br-pdraw { 0%,24% { stroke-dashoffset: 200 } 46%,100% { stroke-dashoffset: 0 } }
+  .br-verok { opacity: 0; animation: br-okin 5s ease-in-out infinite; }
+  @keyframes br-okin { 0%,52% { opacity: 0 } 66%,100% { opacity: 1 } }
+
+  /* EIP-4788 — br-stamp: per-block system write into the ring buffer */
+  .br-hdr { fill: color-mix(in oklab, var(--color-hash) 8%, var(--color-surface)); stroke: var(--color-hash); }
+  .br-hdrt { fill: var(--color-ink-muted); }
+  .br-sa { stroke-dasharray: 26; stroke-dashoffset: 26; animation: br-sadraw 5s ease-in-out infinite; }
+  @keyframes br-sadraw { 0%,20% { stroke-dashoffset: 26 } 40%,100% { stroke-dashoffset: 0 } }
+  .br-salbl { fill: var(--color-ink-faint); }
+  .br-ring { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .br-ringt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .br-cell { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-border); }
+  .br-cnew { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); animation: br-cnewglow 5s ease-in-out infinite; }
+  @keyframes br-cnewglow { 0%,40% { filter: none } 56% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 72%,100% { filter: none } }
+
+  /* EIP-4788 — br-prove: read the root, verify a Merkle proof */
+  .br-ctr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .br-c { text-anchor: middle; fill: var(--color-accent-strong); }
+  .br-pa1 { stroke-dasharray: 80; stroke-dashoffset: 80; animation: br-pa1draw 5s ease-in-out infinite; }
+  @keyframes br-pa1draw { 0%,14% { stroke-dashoffset: 80 } 32%,100% { stroke-dashoffset: 0 } }
+  .br-pa1l { fill: var(--color-ink-faint); }
+  .br-roots { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .br-c2 { opacity: 0; animation: br-c2in 5s ease-in-out infinite; }
+  @keyframes br-c2in { 0%,38% { opacity: 0 } 52%,100% { opacity: 1 } }
+  .br-pa2 { stroke-dasharray: 28; stroke-dashoffset: 28; animation: br-pa2draw 5s ease-in-out infinite; }
+  @keyframes br-pa2draw { 0%,52% { stroke-dashoffset: 28 } 66%,100% { stroke-dashoffset: 0 } }
+  .br-verify { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: br-vin 5s ease-in-out infinite; }
+  .br-ok { opacity: 0; animation: br-vin 5s ease-in-out infinite; }
+  @keyframes br-vin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
 </style>

@@ -1,0 +1,121 @@
+---
+title: "EIP-2929 & 2930: pricing state access by what it really costs"
+dek: "Reading state is the most disk-expensive thing a node does, but the EVM charged a flat, far-too-cheap price for it — so an attacker could touch thousands of slots for almost nothing and grind every node to a halt. The fix prices the first touch at its real cost and makes repeats cheap; access lists let a transaction pre-declare what it will touch."
+summary: "A step-by-step derivation of EIP-2929 (gas cost increases for state access) and EIP-2930 (optional access lists) — why a flat, underpriced cost for SLOAD and account access enabled the 2016 Shanghai denial-of-service attacks, why simply raising the flat price would overcharge the common case of touching the same slot repeatedly, and how cold/warm pricing fixes both: the first access to an address or storage slot in a transaction is 'cold' and pays the real cost (2600 for an account, 2100 for a slot) while every repeat is 'warm' at 100 gas, tracked in a per-transaction access set — and how EIP-2930's type-0x01 access-list transaction (the first user of the EIP-2718 envelope) lets a transaction pre-declare the addresses and slots it will touch so their first access is charged the warm price, for a small upfront fee."
+topic: EIPs
+order: 14
+spine: true
+prerequisites: ["the gas model", "storage & SLOAD"]
+updated: 2026-06-23
+readingMinutes: 11
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+Gas is supposed to track the real cost of work, so the chain can't be cheaply overloaded. But for years the EVM mispriced its *most* expensive operation: reading state. An `SLOAD` or an account lookup forces a node to chase data through the Merkle-Patricia trie and off disk — slow, real work — yet it was billed a flat, tiny fee. That gap was more than inefficiency; it was an attack surface, and in 2016 it was used to bring Ethereum to a crawl. **EIP-2929** repriced state access, and **EIP-2930** softened the side effects with access lists. Let's derive both.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Underpriced, and dangerous" },
+  { id: "step-2", label: "Don't just raise it" },
+  { id: "step-3", label: "Cold vs warm" },
+  { id: "step-4", label: "Access lists" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Underpriced, and dangerous">
+
+## The problem: a flat price far below the real cost
+
+Accessing state is the most expensive thing a node does per unit of gas, because it means a <KeyTerm term="trie lookup" def="To read a storage slot or account, a node walks the Merkle-Patricia trie, fetching nodes from disk along the path. It's I/O-bound and far slower than in-memory EVM computation — the real bottleneck in block validation." /> and disk I/O. But the original gas schedule charged a flat ~200 gas for `SLOAD` and ~700 for touching an account — far below the true cost. That underpricing is a denial-of-service waiting to happen: craft a transaction that touches thousands of *distinct* slots or accounts, pay almost nothing per touch, and force every node on Earth to do enormous disk work to validate your block.
+
+<Scene name="ga-flat" caption="A flat ~200 gas for SLOAD and cheap account access sat far below the real disk cost. So a transaction could touch thousands of distinct slots for almost nothing, forcing every node into huge I/O — exactly the 2016 Shanghai DoS attacks." />
+
+That's not hypothetical: the 2016 "Shanghai" attacks did exactly this, spamming cheap state-touching opcodes to slow block processing dramatically.
+
+<Callout type="warning" title="What breaks">
+The price has to go up to match the real cost. But if we just raise the flat fee, we punish every honest contract too — and especially the ones that touch the *same* slot many times.
+</Callout>
+
+**→ Step 2: notice that repeats aren't expensive.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Don't just raise it">
+
+## Why a flat increase is the wrong fix
+
+The obvious move — make `SLOAD` cost, say, 2100 gas across the board — overcharges the most common honest pattern. The first time you read slot X, the node really does pay for the trie lookup. But the *second* and *third* reads of the same slot in the same transaction are nearly free: the data is already loaded into the node's memory. A flat high price bills all three at full cost, making ordinary contracts that re-read a slot in a loop dramatically more expensive for work the node isn't actually redoing.
+
+<Scene name="ga-raise" caption="Just raising the flat price overcharges the common case: a contract that reads the same slot three times pays full cost each time, even though after the first load the slot is already cached in memory and the repeats are essentially free." />
+
+So a single number can't be right. The cost depends on *whether you've already touched this thing in this transaction*. That's the insight the real fix is built on.
+
+<Callout type="warning" title="What breaks">
+We need the price to reflect first-touch-vs-repeat. How do we make the EVM charge a lot for the genuinely-expensive first access and almost nothing for cheap repeats?
+</Callout>
+
+**→ Step 3: split the price in two.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Cold vs warm">
+
+## EIP-2929: cold the first time, warm after that
+
+Price by novelty. The EVM keeps a per-transaction <KeyTerm term="access set" def="Two sets the EVM tracks during a transaction — accessed_addresses and accessed_storage_keys. Touching an address or slot adds it to the set; the set determines whether the next access is cold (first) or warm (repeat)." /> of every address and slot you've touched. The **first** access to a given address or slot is <KeyTerm term="cold access" def="The first touch of an address or storage slot in a transaction. It pays the real, high cost — 2600 gas for an account, 2100 for a storage slot — reflecting the trie/disk lookup." /> and pays the real cost — **2600 gas** for an account, **2100** for a storage slot. Every **subsequent** access in the same transaction is *warm* and costs just **100 gas**. The dangerous case (touch thousands of distinct slots) now pays full freight each time and is priced out of being a DoS; the common case (re-read the same slot) stays cheap. One distinction fixes both.
+
+<Scene name="ga-coldwarm" caption="EIP-2929 charges the first touch of an address or slot the real cold cost (2600 / 2100), then 100 gas for every warm repeat. A per-transaction access set remembers what's been touched — so DoS spam pays full price while honest re-reads stay nearly free." />
+
+<SpecExcerpt
+  source="EIP-2929: Gas cost increases for state access opcodes"
+  href="https://eips.ethereum.org/EIPS/eip-2929"
+  ref="cold/warm costs"
+>
+A transaction maintains `accessed_addresses` and `accessed_storage_keys`. The first
+(cold) `SLOAD` of a slot costs `2100`; later (warm) reads cost `100`. The first access to
+an account (via `CALL`, `BALANCE`, `EXT*`) costs `2600`; warm access costs `100`. Sets
+start seeded with the transaction's `tx.to`, `tx.origin`, and the precompiles.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Now the *first* access is expensive and unavoidable — a transaction that legitimately must reach many accounts (a complex DeFi call) eats a lot of cold costs, and the repricing even broke a few contracts that assumed the old gas. Can a transaction do anything to prepare?
+</Callout>
+
+**→ Step 4: let the transaction warm things up in advance.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Access lists">
+
+## EIP-2930: declare what you'll touch, and pre-warm it
+
+Give transactions a way to pre-pay and pre-warm. An <KeyTerm term="access list" def="An optional list of (address, storage keys) a transaction declares it will access. Listed entries start the transaction already warm, so their first in-execution access is charged the warm price. Carried by the type-0x01 transaction." /> is a list of `(address, storage keys)` the transaction states up front. Everything declared is added to the access set **before** execution, so its first in-contract access is charged the *warm* price instead of cold. You pay a modest upfront fee for declaring — 2400 gas per address and 1900 per slot, slightly below the cold costs — so it's a small discount, but more importantly it removes the cold-access surprise and was the escape hatch for contracts the repricing would otherwise have broken. And this is delivered by a brand-new transaction type, `0x01` — the **very first** user of the [EIP-2718](/eip-2718-typed-transactions) typed-transaction envelope.
+
+<Scene name="ga-acl" caption="An access-list transaction (type 0x01) pre-declares the addresses and storage keys it will use. They enter the access set already warm, so their first access is charged 100 gas, for a small upfront fee (2400 per address, 1900 per slot)." />
+
+<Callout type="insight" title="And that is EIP-2929 + EIP-2930">
+A flat price far below state access's real disk cost let cheap transactions DoS the network → but just raising it would overcharge honest **repeat** access, which is nearly free after the first load → so price by novelty: the **first** (cold) touch of an address/slot pays the real cost (2600 / 2100), every **repeat** (warm) pays 100, tracked in a per-transaction **access set** → and because the first touch is now costly, **EIP-2930** lets a transaction pre-declare an **access list** to warm entries ahead of time (the first user of the 2718 envelope, type 0x01). The deeper idea is that gas should track *marginal* cost, not a flat average: the expensive part of state access is the first fetch, so that's where the price belongs. It's also why transient storage and other later EIPs quietly reuse this warm/cold vocabulary.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2929: Gas cost increases for state access", note: "The spec — cold/warm costs & the access set", href: "https://eips.ethereum.org/EIPS/eip-2929" },
+    { kind: "eip", label: "EIP-2930: Optional access lists", note: "The type-0x01 access-list transaction", href: "https://eips.ethereum.org/EIPS/eip-2930" },
+    { kind: "post", label: "EIP-2718, derived", note: "The typed envelope 2930 was the first to use", href: "/eip-2718-typed-transactions" },
+    { kind: "post", label: "EIP-1153, derived", note: "Transient storage borrows the warm/cold pricing", href: "/eip-1153-transient-storage" },
+    { kind: "tool", label: "evm.codes — gas reference", note: "Cold vs warm costs per opcode", href: "https://www.evm.codes/" },
+  ]}
+/>
+
+</DepthLayer>

@@ -79,7 +79,11 @@ interface Props {
     | "br-blind"
     | "br-commit"
     | "br-stamp"
-    | "br-prove";
+    | "br-prove"
+    | "ga-flat"
+    | "ga-raise"
+    | "ga-coldwarm"
+    | "ga-acl";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1388,6 +1392,82 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="196">{L("read the root from the predeploy, then check a Merkle proof — trustless")}</text>
       </svg>
     )}
+
+    {/* ── EIP-2929: flat, underpriced state access enables DoS ── */}
+    {name === "ga-flat" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="A flat, underpriced state access cost let cheap transactions hammer node disks">
+        <text class="t-cap" x="240" y="18">{L("flat, underpriced state access")}</text>
+        <rect class="ga-tx" x="18" y="58" width="116" height="52" rx="8" />
+        <text class="t-cap" x="76" y="80">{L("attacker tx")}</text>
+        <text class="t-fld ga-c" x="76" y="98">cheap per touch</text>
+        <path class="sarrow ga-fa" d="M134 84 H150" />
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+          <g class="ga-cell" style={`animation-delay:${(i * 0.12).toFixed(2)}s`}>
+            <rect class="ga-cellr" x={150 + (i % 5) * 64} y={44 + Math.floor(i / 5) * 36} width="56" height="26" rx="5" />
+            <text class="t-fld ga-cn" x={150 + (i % 5) * 64 + 28} y={44 + Math.floor(i / 5) * 36 + 17}>200</text>
+          </g>
+        ))}
+        <text class="t-x ga-dos" x="300" y="132">{L("each ~200 gas → nodes do huge disk I/O")}</text>
+        <text class="t-cap" x="240" y="162">{L("a flat low price let cheap txs touch thousands of slots")}</text>
+        <text class="t-cap" x="240" y="186">{L("forcing every node into enormous disk work — the 2016 Shanghai DoS")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2929: just raising the flat price overcharges repeats ── */}
+    {name === "ga-raise" && (
+      <svg viewBox="0 0 480 180" role="img" aria-label="Raising the flat access price overcharges repeated access to the same slot">
+        <text class="t-cap" x="240" y="20">{L("just raise the flat price? it overcharges repeats")}</text>
+        {[["access #1", 60], ["access #2", 96], ["access #3", 132]].map(([lbl, y], i) => (
+          <g>
+            <rect class="ga-acc" x="40" y={Number(y) - 13} width="130" height="24" rx="6" />
+            <text class="t-x" x="105" y={Number(y) + 3}>{`${lbl} · 2100`}</text>
+            <path class="sarrow ga-ra" d={`M170 ${y} L300 92`} />
+          </g>
+        ))}
+        <rect class="ga-slot" x="300" y="64" width="130" height="56" rx="8" />
+        <text class="t-cap" x="365" y="86">{L("slot X")}</text>
+        <text class="t-fld ga-c" x="365" y="104">cached after #1</text>
+        <text class="t-cap" x="240" y="166">{L("after the first load the slot sits in memory — repeats should be near-free")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2929: first touch cold, repeats warm; an access set grows ── */}
+    {name === "ga-coldwarm" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="The first access to a slot is cold and costly; repeats are warm and cheap">
+        <text class="t-cap" x="240" y="20">{L("price the first touch cold, repeats warm")}</text>
+        <rect class="ga-first" x="30" y="48" width="130" height="48" rx="8" />
+        <text class="t-cap" x="95" y="70">{L("1st touch · cold")}</text>
+        <text class="t-x" x="95" y="88">2100 gas</text>
+        <rect class="ga-warm" x="178" y="48" width="124" height="48" rx="8" />
+        <text class="t-cap" x="240" y="70">{L("2nd · warm")}</text>
+        <text class="t-ok" x="240" y="88">100 gas</text>
+        <rect class="ga-warm gw2" x="320" y="48" width="130" height="48" rx="8" />
+        <text class="t-cap" x="385" y="70">{L("3rd · warm")}</text>
+        <text class="t-ok" x="385" y="88">100 gas</text>
+        <rect class="ga-set" x="90" y="120" width="300" height="38" rx="8" />
+        <text class="t-fld ga-c" x="240" y="143">{"access set: { slot X, addr A, … }"}</text>
+        <text class="t-cap" x="240" y="186">{L("the first touch is cold (real cost); every repeat is warm — 100 gas")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2930: an access list pre-warms declared addresses/slots ── */}
+    {name === "ga-acl" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="An access-list transaction pre-declares addresses and slots to warm them">
+        <text class="t-cap" x="240" y="18">{L("declare accesses up front to pre-warm them")}</text>
+        <rect class="ga-acltx" x="24" y="40" width="190" height="86" rx="8" />
+        <text class="t-cap" x="119" y="60">{L("type 0x01 · access-list tx")}</text>
+        <text class="t-fld" x="36" y="80">accessList:</text>
+        <text class="t-fld" x="36" y="96">[addr A, keys k1 k2]</text>
+        <text class="t-fld" x="36" y="112">[addr B, key k3]</text>
+        <text class="t-cap ga-aal" x="247" y="74">{L("pre-warm")}</text>
+        <path class="sarrow ga-aa" d="M214 84 H280" />
+        <rect class="ga-warmset" x="280" y="56" width="176" height="56" rx="8" />
+        <text class="t-ok" x="368" y="80">{L("declared = warm")}</text>
+        <text class="t-fld ga-c" x="368" y="98">first access: 100</text>
+        <text class="t-cap" x="240" y="150">{L("a small upfront fee (2400 / 1900) buys warm first-access")}</text>
+        <text class="t-cap" x="240" y="178">{L("EIP-2930 — the first user of the EIP-2718 typed envelope (type 0x01)")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2266,4 +2346,38 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .br-verify { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: br-vin 5s ease-in-out infinite; }
   .br-ok { opacity: 0; animation: br-vin 5s ease-in-out infinite; }
   @keyframes br-vin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
+
+  /* EIP-2929 — ga-flat: flat underpriced access enables a DoS */
+  .ga-tx { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
+  .ga-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ga-fa { stroke-dasharray: 30; stroke-dashoffset: 30; animation: ga-fadraw 3s ease-in-out infinite; }
+  @keyframes ga-fadraw { 0%,30% { stroke-dashoffset: 30 } 60%,100% { stroke-dashoffset: 0 } }
+  .ga-cellr { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-border); }
+  .ga-cn { text-anchor: middle; fill: var(--color-ink-faint); }
+  .ga-cell { animation: ga-touch 3s ease-in-out infinite; }
+  @keyframes ga-touch { 0%,100% { opacity: 0.5 } 50% { opacity: 1 } }
+  .ga-dos { animation: ga-en 4s ease-in-out infinite; }
+  @keyframes ga-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+
+  /* EIP-2929 — ga-raise: a flat-high price overcharges repeats */
+  .ga-acc { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); animation: ga-accp 4s ease-in-out infinite; }
+  @keyframes ga-accp { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
+  .ga-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ga-ra { opacity: 0.5; }
+
+  /* EIP-2929 — ga-coldwarm: cold first touch, warm repeats, access set */
+  .ga-first { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); animation: ga-firstp 5s ease-in-out infinite; }
+  @keyframes ga-firstp { 0%,24% { filter: none } 36% { filter: drop-shadow(0 0 6px var(--color-changed)) } 50%,100% { filter: none } }
+  .ga-warm { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ga-warmin 5s ease-in-out infinite; }
+  .ga-warm.gw2 { animation-delay: 0.3s; }
+  @keyframes ga-warmin { 0%,36% { opacity: 0 } 52%,100% { opacity: 1 } }
+  .ga-set { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+
+  /* EIP-2930 — ga-acl: an access list pre-warms declared entries */
+  .ga-acltx { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .ga-aa { stroke-dasharray: 66; stroke-dashoffset: 66; animation: ga-aadraw 5s ease-in-out infinite; }
+  @keyframes ga-aadraw { 0%,24% { stroke-dashoffset: 66 } 44%,100% { stroke-dashoffset: 0 } }
+  .ga-aal { fill: var(--color-ink-faint); }
+  .ga-warmset { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ga-wsin 5s ease-in-out infinite; }
+  @keyframes ga-wsin { 0%,46% { opacity: 0 } 60%,100% { opacity: 1 } }
 </style>

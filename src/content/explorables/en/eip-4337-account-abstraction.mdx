@@ -1,0 +1,127 @@
+---
+title: "EIP-4337: account abstraction without touching the protocol"
+dek: "EOAs are rigid: one key, gas only in ETH, one action at a time. Account abstraction makes accounts programmable — and EIP-4337 pulls it off with zero consensus changes, using a higher-layer transaction, a separate mempool, bundlers, and a singleton EntryPoint."
+summary: "A step-by-step derivation of ERC/EIP-4337 — why EOAs are limiting, why native account abstraction would need a hard fork, and how 4337 gets smart accounts (multisig, passkeys, recovery, batching, sponsored or token gas) entirely in the application layer: UserOperations in a separate mempool, bundlers that wrap them into one transaction, a singleton EntryPoint that validates and executes each, and paymasters that pay the gas."
+topic: EIPs
+order: 6
+spine: true
+prerequisites: ["EOAs vs contracts", "the mempool"]
+updated: 2026-06-23
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+There are two kinds of Ethereum account: a **contract** (programmable, but it can't *start* anything — it only runs when called) and an **externally-owned account** (an EOA — it can start transactions, but it's rigid). Everything you do begins from an EOA, and an EOA is stuck with one signing key, gas paid only in ETH, and one action per transaction. People wanted accounts that are *programmable* — multisig, passkeys, social recovery, batching, letting someone else pay your gas. That's **account abstraction**. The obvious way to get it is to change the protocol so accounts can be contracts with their own rules — a hard fork, years of coordination. **EIP-4337** asks a sharper question: can we get *all* of it with **zero** consensus changes? Let's derive how.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The rigid EOA" },
+  { id: "step-2", label: "A UserOperation" },
+  { id: "step-3", label: "Bundlers & EntryPoint" },
+  { id: "step-4", label: "Paymasters" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The rigid EOA">
+
+## The problem: the EOA is a straitjacket
+
+Every transaction originates from an EOA, and an EOA can only do exactly what the protocol hard-codes. Its validity rule is fixed: *one valid secp256k1 signature over the transaction, the right nonce, and enough ETH.* That single rule rules out almost everything people want.
+
+<Scene name="aa-eoa" caption="An EOA's rules are fixed: one ECDSA key, gas in ETH, one action per transaction. Multisig, passkeys, paying gas in USDC, batching, social recovery — every wish bounces off." />
+
+One key means losing it loses everything — no multisig, no hardware passkeys, no social recovery. Gas only in ETH means you must pre-hold ETH to do anything — no sponsor, no paying in USDC. One action per transaction means `approve` then `swap` is two signatures, two fees. A *contract* account could encode any rule you like (<KeyTerm term="account abstraction" def="Letting an account's validity be defined by its own code — any signature scheme, any gas policy, batching — instead of the protocol's one fixed ECDSA-and-ETH rule." />) — but a contract can't *initiate* a transaction; it only executes when something calls it.
+
+<Callout type="warning" title="What breaks">
+We want the account to be a contract with custom validation. But contracts can't start transactions, and making them able to *natively* is a deep consensus change — a hard fork. The question becomes: can we route around the protocol entirely and get this with no changes to a single client's consensus rules?
+</Callout>
+
+**→ Step 2: invent a transaction that lives one layer up.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A UserOperation">
+
+## A higher-layer transaction: the UserOperation
+
+Don't touch what a *transaction* is. Add a new object one layer above it: a <KeyTerm term="UserOperation" def="A 4337 struct describing what a smart account wants to do — the account, the calldata, gas limits, and a signature the account itself will verify with whatever scheme it likes. Not an Ethereum transaction; it travels in a separate mempool." />. It describes what a smart account wants done — the account address, the `callData` (the action, which may be a *batch*), gas limits, and a `signature` the **account itself** will check however it likes. The user signs it with whatever scheme their account uses — an ECDSA key, a phone's passkey, a 2-of-3 multisig — and broadcasts it to a **separate, alternative mempool** just for UserOperations, distinct from the regular transaction mempool.
+
+<Scene name="aa-userop" caption="A smart account can't send a transaction itself, so you sign a UserOperation — a higher-layer object — and broadcast it to its own mempool, separate from the regular transaction mempool. No consensus change: just a new data shape and a new gossip network." />
+
+Nothing about consensus changed here. A UserOperation isn't a transaction the protocol understands — it's an application-layer message in a new peer-to-peer network. Which raises the obvious problem:
+
+<Callout type="warning" title="What breaks">
+The chain has never heard of a UserOperation. Something has to actually turn it into a real on-chain transaction — and *pay* for it.
+</Callout>
+
+**→ Step 3: have someone wrap it and run it.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Bundlers & EntryPoint">
+
+## Bundlers wrap them; the EntryPoint runs them
+
+Enter the <KeyTerm term="bundler" def="An ordinary node (an EOA) that watches the UserOperation mempool, packs a batch of UserOps into one normal transaction to the EntryPoint, fronts the L1 gas, and is reimbursed from the accounts' deposits." />: an ordinary node — anyone can run one — that watches the UserOp mempool, picks a batch, and wraps them into **one** normal Ethereum transaction. It sends that transaction to a singleton **<KeyTerm term="EntryPoint" def="A single audited contract (one per network) that 4337 routes everything through. Its handleOps loops over each UserOp doing validation then execution, and accounts/paymasters trust only it." />** contract, which loops over each UserOp in two strictly-separated phases:
+
+1. **Validation** — the EntryPoint calls the account's `validateUserOp(...)`, which runs *whatever custom logic the account defines* (verify a passkey signature, a multisig threshold, a session key) and must agree to pay.
+2. **Execution** — the EntryPoint calls the account with the UserOp's `callData` — the actual action, which can bundle several calls into one.
+
+<Scene name="aa-bundler" caption="A bundler (an EOA) collects UserOps and wraps them into a single transaction to the singleton EntryPoint, which validates (running each account's own logic) then executes each — fronting the gas and getting reimbursed by the accounts." />
+
+The bundler fronts the L1 gas and is reimbursed by the EntryPoint out of each account's prefunded deposit. So why doesn't it get cheated into including a UserOp that fails to pay? It **simulates** each UserOp's validation off-chain first, and the rules forbid validation from reading *other* accounts' storage — so a UserOp can't change its own validity based on state a different transaction might move, and the simulation stays truthful right up to inclusion.
+
+<SpecExcerpt
+  source="ERC-4337: Account Abstraction Using Alt Mempool"
+  href="https://eips.ethereum.org/EIPS/eip-4337"
+  ref="the UserOperation"
+>
+A UserOperation carries `sender, nonce, callData, callGasLimit, verificationGasLimit,
+preVerificationGas, maxFeePerGas, maxPriorityFeePerGas, paymasterAndData, signature`
+(plus optional `factory`/`initCode` to deploy the account on first use). The EntryPoint's
+`handleOps([...], beneficiary)` runs a validation loop then an execution loop, and pays
+`beneficiary` (the bundler) from each sender's deposit.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+This already gives smart accounts — but the account still needs ETH on deposit to pay. We promised sponsored gas and paying in other tokens. Where does *that* come from?
+</Callout>
+
+**→ Step 4: let a third party pick up the bill.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Paymasters">
+
+## Paymasters: someone else pays, or pay in any token
+
+Add one optional party: a **paymaster** contract. A UserOperation can name a paymaster that agrees to cover its gas. That unlocks two things people really wanted. A dapp can **sponsor** your transactions — you hold *no* ETH at all and it just works. Or a paymaster can let you **pay gas in an ERC-20** like USDC: it pulls the token from you and pays the ETH gas on your behalf. The EntryPoint settles up at the end and reimburses the bundler from the paymaster's (or the account's) deposit.
+
+<Scene name="aa-paymaster" caption="A paymaster can sponsor your gas entirely, or accept payment in any token and cover the ETH itself. The EntryPoint settles accounts and reimburses the bundler — so you can transact with no ETH." />
+
+<Callout type="insight" title="And that is EIP-4337">
+EOAs are rigid → make the account a *contract* with custom validation → but contracts can't self-send → so a **UserOperation** lives one layer up in its own mempool → **bundlers** wrap a batch into one transaction to a singleton **EntryPoint** that validates (any logic the account wants) then executes (even batched) each → **paymasters** pay the gas or accept tokens. Every piece is forced by the last one's flaw, and the whole thing runs in the **application layer** — contracts plus off-chain infrastructure, *zero* consensus changes. The price is the extra plumbing: a separate mempool, bundlers, the EntryPoint. The reward is multisig, passkeys, social recovery, batching, and sponsored or token-denominated gas — without ever asking every client team for a hard fork. (And the natural next question — can we give plain EOAs a slice of this *without* the extra layer? — is exactly what EIP-7702 answers.)
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "ERC-4337: Account Abstraction", note: "The spec — UserOps, EntryPoint, paymasters", href: "https://eips.ethereum.org/EIPS/eip-4337" },
+    { kind: "code", label: "eth-infinitism — account-abstraction", note: "The reference EntryPoint & bundler", href: "https://github.com/eth-infinitism/account-abstraction" },
+    { kind: "post", label: "Keys, signatures & addresses", note: "The fixed ECDSA rule 4337 escapes", href: "/you-could-have-invented-ethereum#step-2" },
+    { kind: "eip", label: "EIP-7702 (next)", note: "Bringing a slice of this to plain EOAs", href: "https://eips.ethereum.org/EIPS/eip-7702" },
+    { kind: "tool", label: "erc4337.io", note: "The ecosystem of accounts, bundlers & paymasters", href: "https://www.erc4337.io/" },
+  ]}
+/>
+
+</DepthLayer>

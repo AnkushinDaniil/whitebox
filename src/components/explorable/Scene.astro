@@ -47,7 +47,11 @@ interface Props {
     | "blob-calldata"
     | "blob-sidecar"
     | "blob-prune"
-    | "blob-fee";
+    | "blob-fee"
+    | "aa-eoa"
+    | "aa-userop"
+    | "aa-bundler"
+    | "aa-paymaster";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -808,6 +812,59 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="172">{L("priced in blob gas with its own base fee · doesn’t compete with execution")}</text>
       </svg>
     )}
+
+    {/* ── EIP-4337: the rigid EOA — every wish bounces off ── */}
+    {name === "aa-eoa" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A rigid EOA: smart-account wishes bounce off">
+        <rect class="ae-eoa" x="184" y="78" width="112" height="50" rx="8" /><text class="t-cap" x="240" y="98">EOA</text><text class="t-cap" x="240" y="114">{L("1 key · ETH gas · 1 action")}</text>
+        {[["multisig", 56, 36], ["passkey", 360, 36], ["pay in USDC", 64, 150], ["batch", 380, 150], ["social recovery", 200, 178]].map(([label, x, y], i) => (
+          <g class={`ae-wish aw${i}`}>
+            <rect class="ae-chip" x={Number(x) - 38} y={Number(y) - 12} width="76" height="22" rx="11" />
+            <text class="t-cap" x={x} y={Number(y) + 3}>{label}</text>
+            <text class="t-x ae-x" x={Number(x) + 44} y={Number(y) + 3}>✗</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="60">{L("everything else bounces off ✗")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4337: a UserOperation in its own mempool ── */}
+    {name === "aa-userop" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A UserOperation in a separate mempool">
+        <rect class="au-acct" x="18" y="34" width="170" height="52" rx="8" /><text class="t-cap" x="103" y="54">{L("smart account (contract)")}</text><text class="t-cap" x="103" y="70">validateUserOp() · {L("any logic")}</text>
+        <path class="au-self" d="M150 30 q24 -16 36 8" /><text class="t-x" x="150" y="20">{L("✗ a contract can’t start a tx")}</text>
+        <rect class="au-op" x="18" y="118" width="170" height="44" rx="6" /><text class="t-cap" x="103" y="138">{L("UserOperation (signed)")}</text><text class="t-cap" x="103" y="153">{L("what you want done")}</text>
+        <path class="sarrow au-a" d="M188 140 H250" />
+        <rect class="au-mem" x="260" y="44" width="200" height="56" rx="8" /><text class="t-cap" x="360" y="68">{L("UserOp mempool")}</text><text class="t-cap" x="360" y="84">{L("a separate, alt lane")}</text>
+        <rect class="au-tmem" x="260" y="120" width="200" height="44" rx="8" /><text class="t-cap" x="360" y="146">{L("regular tx mempool")}</text>
+        <text class="t-cap" x="240" y="190">{L("you sign a UserOperation and broadcast it to its own mempool")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4337: a bundler wraps UserOps into one tx to the EntryPoint ── */}
+    {name === "aa-bundler" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A bundler wraps UserOps into one transaction to the EntryPoint">
+        {[0, 1, 2].map((i) => (<g class={`ab-op ao${i}`}><rect class="au-op" x="14" y={36 + i * 42} width="92" height="32" rx="5" /><text class="t-cap" x="60" y={56 + i * 42}>UserOp</text></g>))}
+        <path class="sarrow ab-a1" d="M106 94 H150" />
+        <rect class="ab-bundler" x="150" y="70" width="96" height="48" rx="7" /><text class="t-cap" x="198" y="90">{L("bundler (EOA)")}</text><text class="t-cap" x="198" y="105">{L("→ 1 tx")}</text>
+        <path class="sarrow ab-a2" d="M246 94 H296" />
+        <rect class="ab-entry" x="296" y="50" width="170" height="88" rx="8" /><text class="t-cap" x="381" y="72">EntryPoint</text><text class="t-cap" x="381" y="90">{L("for each UserOp:")}</text><text class="t-ok" x="381" y="108">validate → execute</text>
+        <text class="t-cap" x="240" y="178">{L("bundler → one tx → EntryPoint validates & executes each UserOp")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4337: a paymaster sponsors gas or accepts tokens ── */}
+    {name === "aa-paymaster" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="A paymaster sponsors gas or accepts tokens">
+        <rect class="au-op" x="16" y="42" width="120" height="44" rx="6" /><text class="t-cap" x="76" y="62">{L("your UserOp")}</text><text class="t-cap" x="76" y="77">{L("pays in USDC?")}</text>
+        <path class="sarrow ap-a1" d="M136 64 H190" />
+        <rect class="ab-entry" x="190" y="44" width="110" height="44" rx="7" /><text class="t-cap" x="245" y="70">EntryPoint</text>
+        <path class="sarrow ap-a2" d="M300 64 H354" />
+        <rect class="ap-pm" x="354" y="40" width="112" height="52" rx="7" /><text class="t-cap" x="410" y="60">{L("paymaster")}</text><text class="t-ok" x="410" y="76">{L("pays ETH gas")}</text>
+        <path class="sarrow ap-a3" d="M245 120 V146 H198" /><rect class="ap-bundler" x="78" y="130" width="120" height="34" rx="6" /><text class="t-ok" x="138" y="151">{L("bundler reimbursed")}</text>
+        <text class="t-cap" x="240" y="186">{L("a paymaster sponsors gas or takes any token — bundler reimbursed")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1350,4 +1407,44 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bf-fill { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); transform-box: fill-box; transform-origin: left; animation: bf-fee 5s ease-in-out infinite; }
   @keyframes bf-fee { 0%,40% { transform: scaleX(0.4) } 60%,80% { transform: scaleX(0.72) } 100% { transform: scaleX(0.4) } }
   .bf-fee { fill: var(--color-ink-muted); }
+
+  /* shared smart-account op box */
+  .au-op { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .ab-entry { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+
+  /* EIP-4337 — aa-eoa: each wish gets rejected (✗) in turn */
+  .ae-eoa { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .ae-chip { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ae-x { fill: var(--color-changed); opacity: 0; }
+  .aw0 .ae-x { animation: ae-rej 5s ease-in-out infinite; } .aw1 .ae-x { animation: ae-rej 5s ease-in-out 0.4s infinite; }
+  .aw2 .ae-x { animation: ae-rej 5s ease-in-out 0.8s infinite; } .aw3 .ae-x { animation: ae-rej 5s ease-in-out 1.2s infinite; }
+  .aw4 .ae-x { animation: ae-rej 5s ease-in-out 1.6s infinite; }
+  @keyframes ae-rej { 0%,10% { opacity: 0 } 22%,88% { opacity: 1 } 100% { opacity: 0 } }
+
+  /* EIP-4337 — aa-userop: the op flows into its own mempool */
+  .au-acct { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .au-self { fill: none; stroke: var(--color-changed); stroke-width: 1.4; }
+  .au-a { stroke-dasharray: 70; stroke-dashoffset: 70; animation: au-draw 5s ease-in-out infinite; }
+  @keyframes au-draw { 0%,16% { stroke-dashoffset: 70 } 40%,100% { stroke-dashoffset: 0 } }
+  .au-mem { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); animation: au-mem 5s ease-in-out infinite; }
+  @keyframes au-mem { 0%,46% { filter: none } 60% { filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { filter: none } }
+  .au-tmem { fill: var(--color-surface); stroke: var(--color-border); opacity: 0.55; }
+
+  /* EIP-4337 — aa-bundler: ops fold into one tx, EntryPoint runs each */
+  .ab-op { opacity: 0; }
+  .ao0 { animation: ab-in 5s ease-out infinite; } .ao1 { animation: ab-in 5s ease-out 0.35s infinite; } .ao2 { animation: ab-in 5s ease-out 0.7s infinite; }
+  @keyframes ab-in { 0%,4% { opacity: 0; transform: translateX(-8px) } 16%,100% { opacity: 1; transform: translateX(0) } }
+  .ab-bundler { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .ab-a1 { stroke-dasharray: 60; stroke-dashoffset: 60; animation: ab-draw 5s ease-out infinite; }
+  .ab-a2 { stroke-dasharray: 60; stroke-dashoffset: 60; animation: ab-draw 5s ease-out 0.6s infinite; }
+  @keyframes ab-draw { 0%,22% { stroke-dashoffset: 60 } 42%,100% { stroke-dashoffset: 0 } }
+  .ab-entry { animation: au-mem 5s ease-in-out 0.6s infinite; }
+
+  /* EIP-4337 — aa-paymaster: arrows settle gas; bundler reimbursed */
+  .ap-pm { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ap-bundler { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ap-late 5.5s ease-in-out infinite; }
+  .ap-a1, .ap-a2, .ap-a3 { stroke-dasharray: 80; stroke-dashoffset: 80; }
+  .ap-a1 { animation: ap-draw 5.5s ease-out infinite; } .ap-a2 { animation: ap-draw 5.5s ease-out 0.5s infinite; } .ap-a3 { animation: ap-draw 5.5s ease-out 1.4s infinite; }
+  @keyframes ap-draw { 0%,10% { stroke-dashoffset: 80 } 30%,100% { stroke-dashoffset: 0 } }
+  @keyframes ap-late { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
 </style>

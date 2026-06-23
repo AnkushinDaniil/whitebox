@@ -1,0 +1,121 @@
+---
+title: "EIP-3675: swapping Ethereum's engine mid-flight"
+dek: "Proof of work secured Ethereum by burning energy — security was hashpower. The Merge replaced that engine with proof of stake while keeping the exact same EVM, accounts, and history. The trick: don't bootstrap PoS in place. Run it on a separate beacon chain first, then hand the steering wheel over at a fixed difficulty."
+summary: "A step-by-step derivation of EIP-3675 (the Merge / upgrade consensus to proof-of-stake) — why proof of work tied security to ever-growing hashpower and energy, and how Ethereum switched to proof of stake without touching the EVM, state, or history: the beacon chain was launched separately in 2020 and ran PoS in parallel with no execution payload, then at a Terminal Total Difficulty mining stopped deciding the head and the beacon-chain fork-choice took over, the PoW header fields were neutralized (difficulty and nonce to 0, ommers emptied, mixHash repurposed as prevRandao, block reward to 0), and the execution layer became an engine driven by the consensus layer over the Engine API (engine_newPayload to execute and validate, engine_forkchoiceUpdated to set the head)."
+topic: EIPs
+order: 11
+spine: true
+prerequisites: ["proof of work basics", "blocks & fork choice"]
+updated: 2026-06-23
+readingMinutes: 12
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+The Merge is often described as "Ethereum switched to proof of stake," which undersells how delicate it was. Imagine replacing a plane's engine *in flight*, without the passengers — the EVM, every account, the entire transaction history — noticing a bump. The hard constraint of **EIP-3675** is exactly that: change *how blocks are agreed* while keeping *everything blocks contain* byte-for-byte identical. You can't just flip proof of work to proof of stake in one fork and hope the new security holds. Let's derive how it was actually done.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Security as burned energy" },
+  { id: "step-2", label: "Run PoS in parallel" },
+  { id: "step-3", label: "The TTD handoff" },
+  { id: "step-4", label: "Engine API loop" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Security as burned energy">
+
+## The problem: paying for security in electricity
+
+Under <KeyTerm term="proof of work" def="A consensus rule where producing a valid block requires finding a nonce that makes the block hash fall below a target. The only way is to try enormous numbers of nonces, so block production costs real computation — and thus electricity." />, every miner races to guess a `nonce` that makes their block hash small enough. The only strategy is to try astronomically many guesses, so the chain's security is literally proportional to how much hashing — and therefore how much electricity — is being spent. To attack the chain you'd need to out-hash everyone, which is expensive; but honest security costs the same energy, paid forever, plus issuance to reward miners and a creeping centralization toward whoever has the cheapest power and hardware.
+
+<Scene name="mg-pow" caption="In proof of work, miners burn energy racing to guess a nonce; the first to a valid hash wins the block. Security scales with total hashpower — which means continuous electricity, issuance to pay miners, and centralization toward cheap power." />
+
+We want to keep the chain's *contents* — the EVM, accounts, balances, contract code, the whole history — and replace only the **engine** that decides which block comes next, swapping "burn energy to win" for "stake ETH and get slashed if you cheat."
+
+<Callout type="warning" title="What breaks">
+You can't just turn off mining one block and turn on staking the next — where does the new chain's security come from at block one? A freshly-bootstrapped PoS system on a live chain worth hundreds of billions is a terrifying cold start.
+</Callout>
+
+**→ Step 2: build the new engine off to the side first.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Run PoS in parallel">
+
+## Don't bootstrap in place — run a beacon chain alongside
+
+The cold-start problem is solved by *not* starting cold. Launch the proof-of-stake system as a **separate chain** — the <KeyTerm term="beacon chain" def="A standalone proof-of-stake chain launched in December 2020. It ran validators, attestations, and finality with no user transactions and no EVM — purely to grow a staked validator set and prove the consensus worked before it took over." /> — well ahead of time. Starting in December 2020, it ran proof of stake for real: validators deposited 32 ETH, produced and attested to beacon blocks, and exercised finality — but those blocks carried **no execution payload**. No EVM, no user transactions, just consensus, accruing a large, battle-tested validator set and stake while the PoW chain kept doing the actual work.
+
+<Scene name="mg-parallel" caption="The beacon chain ran proof of stake in parallel from December 2020 — validators, attestations, and finality — but its blocks had no execution payload. Meanwhile the original chain kept producing blocks under proof of work. Two chains, side by side." />
+
+By the time of the Merge, proof of stake wasn't an experiment switched on under load — it had nearly two years and millions of staked ETH behind it. All that remained was to connect the two: let the proven PoS chain start *choosing* the execution blocks.
+
+<Callout type="warning" title="What breaks">
+Two chains are running. How do you splice them — stop letting mining decide the head and let the beacon chain decide instead — at a single, unambiguous, un-gameable moment that every node agrees on?
+</Callout>
+
+**→ Step 3: pick a finish line miners can't fake.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="The TTD handoff">
+
+## Hand off at the Terminal Total Difficulty
+
+You need a switchover point no one can rush or stall. A block height could be skipped or contested; instead, use accumulated work. Every PoW block adds its difficulty to a running **total difficulty**, and the Merge fires at a pre-agreed <KeyTerm term="Terminal Total Difficulty" def="A fixed cumulative-difficulty threshold (the TTD). The first block whose total difficulty crosses it is the last PoW block; from there the beacon chain's fork-choice decides the head. Because it's based on accumulated work, it can't be skipped or faked." /> (the TTD). The first block to cross it is the *last* block mining ever decides. From the next block on, the beacon chain's fork-choice (LMD-GHOST for the head, Casper FFG for finality) picks the canonical chain. And the now-meaningless proof-of-work header fields are neutralized: `difficulty` and `nonce` go to `0`, the ommers/uncles list is emptied, the old `mixHash` slot is repurposed to carry **`prevRandao`** (the beacon chain's randomness), and the block mining reward becomes `0` — issuance moves entirely to the consensus layer.
+
+<Scene name="mg-ttd" caption="At the Terminal Total Difficulty the last mined block hands off: from there the beacon-chain fork-choice picks the head. The vestigial PoW header fields are zeroed — difficulty and nonce to 0, ommers emptied, block reward to 0 — and mixHash is reused to carry prevRandao." />
+
+<SpecExcerpt
+  source="EIP-3675: Upgrade consensus to Proof-of-Stake"
+  href="https://eips.ethereum.org/EIPS/eip-3675"
+  ref="header changes at the transition"
+>
+From the first PoS block: `ommersHash = Keccak256(RLP([]))`, `difficulty = 0`,
+`nonce = 0x0000000000000000`, `ommers = []`, and the block reward is `0`. The `mixHash`
+field carries the beacon chain's `prevRandao`. Total difficulty stops increasing; the
+fork-choice rule is delegated to the consensus layer.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Mining is off and the beacon chain steers. But the beacon chain doesn't run the EVM — so who actually executes transactions, and how do the two layers talk?
+</Callout>
+
+**→ Step 4: wire the engine to the driver.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Engine API loop">
+
+## The execution layer becomes an engine the CL drives
+
+After the Merge, your node is really *two* programs: a consensus-layer client (the beacon node) and an execution-layer client (the old Geth/Nethermind/etc.), talking over a private, authenticated <KeyTerm term="Engine API" def="The internal JSON-RPC interface between the consensus and execution clients. The CL uses it to feed the EL blocks to execute and to tell it which head to build on; the EL replies VALID or INVALID. Users never call it." />. The consensus layer drives; the execution layer executes. The CL asks the EL to run a block with `engine_newPayload` — the EL executes the transactions, applies the state transition, and answers **VALID** or **INVALID** — and uses `engine_forkchoiceUpdated` to set the canonical head and, when this validator is the proposer, to start building the next payload. The CL then attests and finalizes. The EVM never changed; it just took a new boss.
+
+<Scene name="mg-loop" caption="The consensus layer drives the execution layer over the Engine API: engine_newPayload asks the EL to execute and validate a block (it replies VALID), engine_forkchoiceUpdated sets the head and triggers building. The CL proposes, attests, and finalizes; the EL just runs the EVM." />
+
+<Callout type="insight" title="And that is EIP-3675">
+Proof of work bought security with electricity and issuance → we want the same EVM, state, and history but a staking-based engine → you can't cold-start PoS on a live chain, so run the **beacon chain** in parallel for two years to grow proven stake → splice at the **Terminal Total Difficulty**, an accumulated-work finish line no one can fake, neutralizing the PoW header fields (difficulty/nonce → 0, ommers emptied, `mixHash` → `prevRandao`, reward → 0) → and afterward the **consensus layer drives the execution layer** over the Engine API, the EL executing payloads on command. Nothing in your wallet or a contract's storage moved an inch; only the rule for "which block is next" changed — from out-hashing everyone to out-staking them. The reward was ~99.95% less energy and security backed by slashed capital instead of burned power.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3675: Upgrade consensus to Proof-of-Stake", note: "The spec — the transition & header changes", href: "https://eips.ethereum.org/EIPS/eip-3675" },
+    { kind: "post", label: "How consensus runs", note: "LMD-GHOST, Casper FFG, attestations & finality", href: "/how-consensus-runs" },
+    { kind: "post", label: "EIP-4895, derived", note: "Getting staked ETH back out, post-Merge", href: "/eip-4895-withdrawals" },
+    { kind: "post", label: "EIP-4788, derived", note: "Exposing the beacon root inside the EVM", href: "/eip-4788-beacon-root" },
+    { kind: "tool", label: "The Merge — ethereum.org", note: "Timeline, energy savings, and FAQs", href: "https://ethereum.org/en/roadmap/merge/" },
+  ]}
+/>
+
+</DepthLayer>

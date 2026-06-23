@@ -67,7 +67,11 @@ interface Props {
     | "wd-stuck"
     | "wd-push"
     | "wd-credit"
-    | "wd-flavors";
+    | "wd-flavors"
+    | "mg-pow"
+    | "mg-parallel"
+    | "mg-ttd"
+    | "mg-loop";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1136,6 +1140,84 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="190">{L("both are swept by the CL on a rolling sweep — they simply arrive")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3675: proof of work burns energy to race for a nonce ── */}
+    {name === "mg-pow" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Proof of work: miners race to guess a nonce, burning energy">
+        <text class="t-cap" x="240" y="20">{L("proof of work — race to guess a nonce")}</text>
+        {[["miner A", "0x9c4…", 14], ["miner B", "0x3a1…", 170], ["miner C", "0x77e…", 326]].map(([who, nonce, x], i) => (
+          <g class={`mg-miner mgm${i}`}>
+            <rect class="mg-mrect" x={x} y="36" width="140" height="54" rx="8" />
+            <text class="t-cap" x={Number(x) + 70} y="58">{L(who)}</text>
+            <text class="t-fld mg-try" x={Number(x) + 70} y="78">{`nonce ${nonce}`}</text>
+          </g>
+        ))}
+        <text class="t-x mg-energy" x="240" y="120">{L("⚡ enormous energy burned ⚡")}</text>
+        <text class="t-ok mg-win" x="240" y="146">{L("first valid hash wins — security = hashpower")}</text>
+        <text class="t-cap" x="240" y="184">{L("more security = more hashpower: energy, centralization, issuance")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3675: the beacon chain runs PoS in parallel first ── */}
+    {name === "mg-parallel" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The beacon chain ran proof of stake in parallel before the Merge">
+        <text class="t-cap" x="240" y="20">{L("first, run PoS alongside — proving it works")}</text>
+        <text class="t-cap" x="74" y="52">{L("beacon chain")}</text>
+        <text class="t-cap" x="74" y="66">{L("PoS · no payload")}</text>
+        {[150, 230, 310].map((x, i) => (
+          <line class="mg-link" x1={x + 64} y1="58" x2={x + 80} y2="58" />
+        ))}
+        {[150, 230, 310, 390].map((x, i) => (
+          <rect class={i === 3 ? "mg-bb mgb3" : "mg-bb"} x={x} y="44" width="64" height="28" rx="5" />
+        ))}
+        <text class="t-cap" x="74" y="136">{L("execution chain")}</text>
+        <text class="t-cap" x="74" y="150">{L("PoW")}</text>
+        {[150, 230, 310].map((x, i) => (
+          <line class="mg-link" x1={x + 64} y1="142" x2={x + 80} y2="142" />
+        ))}
+        {[150, 230, 310, 390].map((x, i) => (
+          <rect class={i === 3 ? "mg-pb mgp3" : "mg-pb"} x={x} y="128" width="64" height="28" rx="5" />
+        ))}
+        <text class="t-cap" x="240" y="192">{L("the beacon chain (Dec 2020) ran PoS in parallel, accruing validators & finality")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3675: the Terminal Total Difficulty handoff ── */}
+    {name === "mg-ttd" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="At the Terminal Total Difficulty, mining stops and the beacon fork-choice picks the head">
+        <text class="t-cap" x="240" y="18">{L("at the Terminal Total Difficulty, mining stops")}</text>
+        <rect class="mg-last" x="24" y="40" width="150" height="60" rx="8" />
+        <text class="t-cap" x="99" y="62">{L("last PoW block")}</text>
+        <text class="t-cap" x="99" y="80">{L("TTD reached")}</text>
+        <path class="sarrow mg-ha" d="M174 70 H214" />
+        <rect class="mg-first" x="214" y="40" width="242" height="60" rx="8" />
+        <text class="t-cap" x="335" y="62">{L("first PoS block")}</text>
+        <text class="t-cap" x="335" y="80">{L("beacon fork-choice picks the head")}</text>
+        <text class="t-cap" x="240" y="128">{L("PoW header fields, neutralized:")}</text>
+        <text class="t-fld mg-fld mg-f0" x="240" y="152">difficulty → 0 · nonce → 0 · ommers → ∅</text>
+        <text class="t-fld mg-fld mg-f1" x="240" y="170">mixHash → prevRandao · block reward → 0</text>
+        <text class="t-cap" x="240" y="202">{L("same chain, same state — only how the head is chosen changes")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3675: the CL drives the EL over the Engine API ── */}
+    {name === "mg-loop" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The consensus layer drives the execution layer over the Engine API">
+        <text class="t-cap" x="240" y="18">{L("the CL drives the EL over the Engine API")}</text>
+        <rect class="mg-cl" x="36" y="44" width="172" height="64" rx="8" />
+        <text class="t-cap" x="122" y="68">{L("consensus layer")}</text>
+        <text class="t-cap" x="122" y="86">{L("propose · attest · finalize")}</text>
+        <rect class="mg-el" x="272" y="44" width="172" height="64" rx="8" />
+        <text class="t-cap" x="358" y="68">{L("execution layer")}</text>
+        <text class="t-cap" x="358" y="86">{L("execute & validate")}</text>
+        <path class="sarrow mg-a1" d="M208 64 H272" />
+        <path class="sarrow mg-a2" d="M272 90 H208" />
+        <text class="t-fld mg-leg mg-l1" x="240" y="136">engine_newPayload → execute &amp; validate</text>
+        <text class="t-fld mg-leg mg-l2" x="240" y="154">engine_forkchoiceUpdated → set head / build</text>
+        <text class="t-ok mg-leg mg-l3" x="240" y="172">← VALID, then the CL finalizes</text>
+        <text class="t-cap" x="240" y="194">{L("issuance & security now come from staking, not mining")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1887,4 +1969,49 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wd-full { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); animation: wd-hl2 7s ease-in-out infinite; }
   @keyframes wd-hl1 { 0%,20% { filter: none } 32%,42% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 54%,100% { filter: none } }
   @keyframes wd-hl2 { 0%,56% { filter: none } 68%,82% { filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { filter: none } }
+
+  /* EIP-3675 — mg-pow: miners race for a nonce, burning energy */
+  .mg-mrect { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .mgm0 { animation: mg-flick 1.1s ease-in-out infinite; }
+  .mgm1 { animation: mg-flick 1.3s ease-in-out infinite; }
+  .mgm2 { animation: mg-flick 0.9s ease-in-out infinite; }
+  @keyframes mg-flick { 0%,100% { opacity: 1 } 50% { opacity: 0.72 } }
+  .mgm1 .mg-mrect { animation: mg-winglow 5s ease-in-out infinite; }
+  @keyframes mg-winglow { 0%,60% { filter: none } 74% { filter: drop-shadow(0 0 7px var(--color-node-leaf)); stroke: var(--color-node-leaf) } 100% { filter: none } }
+  .mg-try { text-anchor: middle; fill: var(--color-ink-faint); }
+  .mg-energy { animation: mg-en 4s ease-in-out infinite; }
+  @keyframes mg-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+  .mg-win { opacity: 0; animation: mg-winin 5s ease-in-out infinite; }
+  @keyframes mg-winin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
+
+  /* EIP-3675 — mg-parallel: PoS beacon chain alongside the PoW chain */
+  .mg-bb { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .mg-pb { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .mg-link { stroke: var(--color-border-strong); stroke-width: 1.4; fill: none; }
+  .mgb3, .mgp3 { opacity: 0; animation: mg-grow 5s ease-in-out infinite; }
+  @keyframes mg-grow { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
+
+  /* EIP-3675 — mg-ttd: the TTD handoff, PoW fields neutralized */
+  .mg-last { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .mg-first { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mg-firstin 6s ease-in-out infinite; }
+  @keyframes mg-firstin { 0%,30% { opacity: 0 } 46%,100% { opacity: 1 } }
+  .mg-ha { stroke-dasharray: 44; stroke-dashoffset: 44; animation: mg-hadraw 6s ease-in-out infinite; }
+  @keyframes mg-hadraw { 0%,18% { stroke-dashoffset: 44 } 38%,100% { stroke-dashoffset: 0 } }
+  .mg-fld { text-anchor: middle; }
+  .mg-f0 { opacity: 0; animation: mg-fin 6s ease-in-out infinite; }
+  .mg-f1 { opacity: 0; animation: mg-fin 6s ease-in-out 0.3s infinite; }
+  @keyframes mg-fin { 0%,48% { opacity: 0 } 62%,100% { opacity: 1 } }
+
+  /* EIP-3675 — mg-loop: the CL drives the EL over the Engine API */
+  .mg-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .mg-el { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .mg-a1 { stroke-dasharray: 64; stroke-dashoffset: 64; animation: mg-a1draw 5s ease-in-out infinite; }
+  .mg-a2 { stroke-dasharray: 64; stroke-dashoffset: 64; animation: mg-a2draw 5s ease-in-out infinite; }
+  @keyframes mg-a1draw { 0%,10% { stroke-dashoffset: 64 } 28%,100% { stroke-dashoffset: 0 } }
+  @keyframes mg-a2draw { 0%,40% { stroke-dashoffset: 64 } 58%,100% { stroke-dashoffset: 0 } }
+  .mg-leg { text-anchor: middle; }
+  .mg-l1 { opacity: 0; animation: mg-legin 5s ease-out infinite; }
+  .mg-l2 { opacity: 0; animation: mg-legin 5s ease-out 0.3s infinite; }
+  .mg-l3 { opacity: 0; animation: mg-legin 5s ease-out 0.6s infinite; }
+  @keyframes mg-legin { 0%,30% { opacity: 0 } 46%,100% { opacity: 1 } }
 </style>

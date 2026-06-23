@@ -13,14 +13,17 @@ interface Props {
   ref?: string;
   /** "spec" | "code" — tunes the label */
   kind?: "spec" | "code";
+  lang?: Lang;
 }
 
-const { source, href, ref, kind = "spec" } = Astro.props;
+import { useTranslations, type Lang } from "@/i18n/utils";
+const { source, href, ref, kind = "spec", lang = "en" } = Astro.props;
+const t = useTranslations(lang).spec;
 ---
 
 <aside class="spec-excerpt" data-kind={kind}>
   <header class="excerpt-head">
-    <span class="kind">{kind === "code" ? "Client code" : "From the spec"}</span>
+    <span class="kind">{kind === "code" ? t.clientCode : t.fromSpec}</span>
     <a href={href} target="_blank" rel="noopener noreferrer" class="src">
       {source}{ref && <span class="ref">· {ref}</span>}
       <span class="ext" aria-hidden="true">↗</span>

@@ -1,0 +1,171 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  useTranslations,
+  localizePath,
+  entryLang,
+  entrySlug,
+  type Lang,
+} from "@/i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const explorables = (
+  await getCollection("explorables", ({ data }) => !data.draft && data.spine)
+)
+  .filter((e) => entryLang(e.id) === lang)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const byTopic = explorables.reduce<Record<string, typeof explorables>>(
+  (acc, e) => {
+    (acc[e.data.topic] ??= []).push(e);
+    return acc;
+  },
+  {},
+);
+---
+
+<BaseLayout title={t.hub.h1} description={t.hub.lede} lang={lang}>
+  <div class="wrap">
+    <header class="hub-head">
+      <p class="mono-label">{t.hub.eyebrow}</p>
+      <h1>{t.hub.h1}</h1>
+      <p class="lede">{t.hub.lede}</p>
+    </header>
+
+    {
+      Object.entries(byTopic).map(([topic, items]) => (
+        <section class="topic-group">
+          <h2 class="topic-title">{topic}</h2>
+          <ul>
+            {items.map((e) => (
+              <li>
+                <a href={localizePath(`/${entrySlug(e.id)}`, lang)}>
+                  <span class="meta">
+                    <span class="t">{e.data.title}</span>
+                    <span class="d">{e.data.dek}</span>
+                  </span>
+                  {e.data.readingMinutes && (
+                    <span class="time">{e.data.readingMinutes}{t.exp.min}</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+
+    <section class="roadmap">
+      <h2 class="topic-title">{t.hub.roadmapTitle}</h2>
+      <p class="rm-note">{t.hub.roadmapNote}</p>
+      <ul class="rm-list">
+        {t.hub.roadmapItems.map((i) => <li>{i}</li>)}
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 0;
+  }
+  .hub-head h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.03em;
+    margin: 0.6rem 0 0.8rem;
+    font-weight: 700;
+  }
+  .lede {
+    color: var(--color-ink-muted);
+    font-size: 1.08rem;
+    max-width: 58ch;
+    line-height: 1.6;
+  }
+  .topic-group {
+    margin-top: 2.5rem;
+  }
+  .topic-title {
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  ul {
+    list-style: none;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .topic-group a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .topic-group a:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+  }
+  .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .meta .t {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+  .meta .d {
+    color: var(--color-ink-faint);
+    font-size: 0.84rem;
+  }
+  .time {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-ink-faint);
+  }
+  .roadmap {
+    margin-top: 2.5rem;
+  }
+  .rm-note {
+    color: var(--color-ink-muted);
+    margin: 0.8rem 0 0.6rem;
+    font-size: 0.92rem;
+  }
+  .rm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .rm-list li {
+    color: var(--color-ink-faint);
+    font-size: 0.9rem;
+    padding-left: 1rem;
+    position: relative;
+  }
+  .rm-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--color-border-strong);
+  }
+</style>

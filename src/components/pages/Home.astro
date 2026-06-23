@@ -1,0 +1,369 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+import { SITE } from "@/consts";
+import {
+  useTranslations,
+  localizePath,
+  entryLang,
+  entrySlug,
+  type Lang,
+} from "@/i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const explorables = (
+  await getCollection(
+    "explorables",
+    ({ data }) => !data.draft,
+  )
+)
+  .filter((e) => entryLang(e.id) === lang)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const featured = explorables[0];
+const href = (e: (typeof explorables)[number]) =>
+  localizePath(`/${entrySlug(e.id)}`, lang);
+---
+
+<BaseLayout title={SITE.name} description={t.site.description} lang={lang}>
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">
+        <span class="dot" aria-hidden="true"></span>
+        {t.home.eyebrow}
+      </p>
+      <h1 class="headline">
+        {t.home.headline1}<br /><span class="grad">{t.home.headline2}</span>
+      </h1>
+      <p class="sub">{t.home.sub}</p>
+      <div class="cta-row">
+        {featured && (
+          <a class="cta primary" href={href(featured)}>
+            {t.home.ctaPrimary} {featured.data.title} →
+          </a>
+        )}
+        <a class="cta ghost" href={localizePath("/the-execution-layer", lang)}>
+          {t.home.ctaGhost}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="filter">
+    <div class="col is">
+      <p class="mono-label">{t.home.builtFor}</p>
+      <ul>
+        {t.home.builtForItems.map((i) => <li>{i}</li>)}
+      </ul>
+    </div>
+    <div class="col isnt">
+      <p class="mono-label">{t.home.notFor}</p>
+      <ul>
+        {t.home.notForItems.map((i) => <li>{i}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  {
+    featured && (
+      <section class="featured">
+        <a href={href(featured)} class="feat-card">
+          <div class="feat-meta">
+            <span class="feat-topic">{featured.data.topic}</span>
+            <span class="feat-tag">{t.home.featuredTag}</span>
+          </div>
+          <h2>{featured.data.title}</h2>
+          <p>{featured.data.dek}</p>
+          <span class="feat-go">{t.home.featuredGo}</span>
+        </a>
+      </section>
+    )
+  }
+
+  <section class="spine">
+    <div class="spine-head">
+      <h2>{t.home.spineTitle}</h2>
+      <p>{t.home.spineBlurb}</p>
+    </div>
+    <ol class="spine-list">
+      {
+        explorables.map((e, i) => (
+          <li>
+            <a href={href(e)}>
+              <span class="n">{String(i + 1).padStart(2, "0")}</span>
+              <span class="meta">
+                <span class="t">{e.data.title}</span>
+                <span class="d">{e.data.dek}</span>
+              </span>
+              <span class="topic">{e.data.topic}</span>
+            </a>
+          </li>
+        ))
+      }
+      <li class="upcoming">
+        <span class="n">··</span>
+        <span class="meta">
+          <span class="t">{t.home.upcomingTitle}</span>
+          <span class="d">{t.home.upcomingDesc}</span>
+        </span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="home-capture">
+    <EmailCapture client:visible source="home" lang={lang} />
+  </section>
+</BaseLayout>
+
+<style>
+  section {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .hero {
+    padding-top: 3.5rem;
+    padding-bottom: 2.5rem;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    background: var(--color-surface);
+  }
+  .eyebrow .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-accent);
+  }
+  .headline {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin: 1.2rem 0 1rem;
+  }
+  .grad {
+    background: linear-gradient(100deg, var(--color-accent-strong), #82aaff 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub {
+    font-size: 1.1rem;
+    color: var(--color-ink-muted);
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+  .cta-row {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 1.6rem;
+    flex-wrap: wrap;
+  }
+  .cta {
+    text-decoration: none;
+    border-radius: var(--radius);
+    padding: 0.7rem 1.1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .cta.primary {
+    background: var(--color-accent);
+    color: #04161b;
+  }
+  .cta.primary:hover {
+    background: var(--color-accent-strong);
+  }
+  .cta.ghost {
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-ink);
+  }
+  .cta.ghost:hover {
+    background: var(--color-surface-2);
+  }
+  .filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 3rem;
+  }
+  .filter .col {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    background: var(--color-surface);
+  }
+  .filter ul {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .filter li {
+    font-size: 0.9rem;
+    color: var(--color-ink-muted);
+    padding-left: 1.1rem;
+    position: relative;
+  }
+  .filter .is li::before {
+    content: "+";
+    position: absolute;
+    left: 0;
+    color: var(--color-node-leaf);
+  }
+  .filter .isnt li::before {
+    content: "−";
+    position: absolute;
+    left: 0;
+    color: var(--color-ink-faint);
+  }
+  @media (max-width: 560px) {
+    .filter {
+      grid-template-columns: 1fr;
+    }
+  }
+  .featured {
+    margin-bottom: 3.5rem;
+  }
+  .feat-card {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.6rem 1.6rem 1.4rem;
+    background:
+      radial-gradient(130% 120% at 0% 0%, var(--color-surface-2), var(--color-surface));
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feat-card:hover {
+    border-color: var(--color-accent-dim);
+    transform: translateY(-2px);
+  }
+  .feat-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.8rem;
+  }
+  .feat-topic {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .feat-tag {
+    font-size: 0.7rem;
+    color: var(--color-ink-faint);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+  }
+  .feat-card h2 {
+    font-size: 1.7rem;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+    color: var(--color-ink);
+  }
+  .feat-card p {
+    color: var(--color-ink-muted);
+    max-width: 54ch;
+    margin: 0 0 1rem;
+  }
+  .feat-go {
+    color: var(--color-accent-strong);
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+  .spine-head h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.4rem;
+  }
+  .spine-head p {
+    color: var(--color-ink-muted);
+    max-width: 56ch;
+    margin: 0 0 1.2rem;
+  }
+  .spine-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .spine-list a,
+  .spine-list .upcoming {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    background: var(--color-surface);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .spine-list a:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+  }
+  .spine-list .n {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-accent);
+  }
+  .spine-list .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .spine-list .t {
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+  .spine-list .d {
+    color: var(--color-ink-faint);
+    font-size: 0.82rem;
+  }
+  .spine-list .topic {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-ink-faint);
+  }
+  .spine-list .upcoming {
+    opacity: 0.7;
+    cursor: default;
+  }
+  .spine-list .upcoming .n {
+    color: var(--color-ink-faint);
+  }
+  .home-capture {
+    margin-top: 3rem;
+  }
+</style>

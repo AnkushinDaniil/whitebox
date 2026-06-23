@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 import EmailCapture from "@/components/EmailCapture.tsx";
+import { useTranslations, localizePath, dateLocale, type Lang } from "@/i18n/utils";
 
 interface Props {
   title: string;
@@ -11,6 +12,7 @@ interface Props {
   readingMinutes?: number;
   prerequisites?: string[];
   slug: string;
+  lang?: Lang;
 }
 
 const {
@@ -22,32 +24,34 @@ const {
   readingMinutes,
   prerequisites = [],
   slug,
+  lang = "en",
 } = Astro.props;
 
-const updatedLabel = updated.toLocaleDateString("en-US", {
+const t = useTranslations(lang);
+const updatedLabel = updated.toLocaleDateString(dateLocale[lang], {
   year: "numeric",
   month: "short",
   day: "numeric",
 });
 ---
 
-<BaseLayout title={title} description={summary} type="article" published={updated}>
+<BaseLayout title={title} description={summary} type="article" published={updated} lang={lang}>
   <article class="explorable">
     <header class="exp-header">
-      <a href="/the-execution-layer" class="exp-topic">{topic}</a>
+      <a href={localizePath("/the-execution-layer", lang)} class="exp-topic">{topic}</a>
       <h1 class="exp-title">{title}</h1>
       <p class="exp-dek">{dek}</p>
 
       <div class="exp-meta">
-        <span>Updated {updatedLabel}</span>
-        {readingMinutes && <span>· {readingMinutes} min</span>}
-        <span class="byline">· An authored explorable</span>
+        <span>{t.exp.updated} {updatedLabel}</span>
+        {readingMinutes && <span>· {readingMinutes} {t.exp.min}</span>}
+        <span class="byline">· {t.exp.byline}</span>
       </div>
 
       {
         prerequisites.length > 0 && (
           <div class="exp-prereqs">
-            <span class="mono-label">Assumed</span>
+            <span class="mono-label">{t.exp.assumed}</span>
             <ul>
               {prerequisites.map((p) => (
                 <li>{p}</li>
@@ -63,7 +67,7 @@ const updatedLabel = updated.toLocaleDateString("en-US", {
     </div>
 
     <div class="exp-capture">
-      <EmailCapture client:visible source={`explorable:${slug}`} />
+      <EmailCapture client:visible source={`explorable:${slug}`} lang={lang} />
     </div>
   </article>
 </BaseLayout>

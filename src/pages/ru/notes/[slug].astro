@@ -6,10 +6,10 @@ import { entryLang, entrySlug } from "@/i18n/utils";
 export async function getStaticPaths() {
   const notes = await getCollection("notes", ({ data }) => !data.draft);
   return notes
-    .filter((entry) => entryLang(entry.id) === "en")
+    .filter((entry) => entryLang(entry.id) === "ru")
     .map((entry) => ({ params: { slug: entrySlug(entry.id) }, props: { entry } }));
 }
 const { entry } = Astro.props;
 ---
 
-<NoteArticle entry={entry} lang="en" />
+<NoteArticle entry={entry} lang="ru" />

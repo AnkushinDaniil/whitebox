@@ -1,0 +1,172 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+import { useTranslations, localizePath, type Lang } from "@/i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const trieHref = localizePath("/you-could-have-invented-ethereum#step-5", lang);
+const hubHref = localizePath("/the-execution-layer", lang);
+const notesHref = localizePath("/notes", lang);
+
+const meta = {
+  en: {
+    title: "About",
+    description:
+      "Why Whitebox exists: turning Ethereum's execution layer from a black box into a white box, one explorable at a time.",
+    captureHeading: "Follow along",
+  },
+  ru: {
+    title: "О проекте",
+    description:
+      "Зачем существует Whitebox: как превратить исполнительный слой Ethereum из чёрного ящика в белый — по одному разбору за раз.",
+    captureHeading: "Следить за обновлениями",
+  },
+}[lang];
+---
+
+<BaseLayout title={meta.title} description={meta.description} lang={lang}>
+  <div class="wrap prose">
+    {
+      lang === "ru" ? (
+        <>
+          <p class="mono-label">О проекте</p>
+          <h1>Превращаем чёрный ящик в белый.</h1>
+
+          <p>
+            Исполнительный слой Ethereum — один из самых значимых программных
+            продуктов в мире, и почти никто за пределами нескольких команд
+            клиентов не может сказать, что по-настоящему его понимает. Не потому
+            что инженеры не способны — а потому что материал ставит перед плохим
+            выбором. С одной стороны: Yellow Paper и сырой исходный код клиентов,
+            точно, но беспощадно. С другой: курсы прикладного уровня, которые
+            останавливаются на <code>solidity</code> и не доходят до протокола.
+            Мост между интуицией и спецификацией попросту… отсутствует.
+          </p>
+
+          <p>
+            <strong>Whitebox — это и есть тот мост.</strong> Единица здесь — не
+            вики-страница, а <em>разбор</em>: один механизм в паре с живым
+            виджетом, который можно разобрать на части, со слоями, чтобы вы сами
+            выбирали глубину. Интуиция, когда нужна форма явления. Механизм, когда
+            хочется увидеть, как оно движется. Настоящая спецификация и код
+            клиента, когда нужна основа. И указатели дальше, когда вы готовы идти
+            глубже, чем я могу провести на одной странице.
+          </p>
+
+          <p>
+            Я пишу от первого лица намеренно. Именно так я, как инженер
+            исполнительного слоя, на самом деле держу эти системы в голове —
+            аналогии, к которым тянусь, детали, которые оказались важны, места,
+            где спецификация меня удивила. Это точка зрения, а не безличный
+            справочник.
+          </p>
+
+          <h2>Как это сделано</h2>
+          <p>
+            Виджеты — не иллюстрации, прикрученные к тексту: они запускают
+            настоящее. Trie в <a href={trieHref}>главном разборе</a> — это
+            настоящее Merkle-Patricia дерево: настоящий RLP, настоящее hex-prefix
+            кодирование, настоящий keccak256, дающий тот же <code>stateRoot</code>,
+            что и живой клиент, проверенный байт в байт против эталонной
+            реализации. Если виджет показывает вам хеш — этому хешу можно
+            доверять.
+          </p>
+
+          <h2>Два слоя</h2>
+          <p>
+            Есть вечнозелёная основа —
+            <a href={hubHref}>Исполнительный слой: объяснение</a> — написанная один
+            раз и надолго. И тонкий, редкий слой <a href={notesHref}>заметок</a>:
+            короткие тексты простым языком о том, что изменилось в протоколе,
+            когда выходит хардфорк. Если хотите узнавать, когда что-то из этого
+            пополняется, оставьте почту ниже. Только для этого я её и использую.
+          </p>
+        </>
+      ) : (
+        <>
+          <p class="mono-label">About</p>
+          <h1>Turning the black box into a white box.</h1>
+
+          <p>
+            Ethereum's execution layer is one of the most consequential pieces of
+            software running in the world, and almost nobody outside a few client
+            teams can say they truly understand it. Not because engineers can't —
+            because the material forces a bad choice. On one side: the Yellow Paper
+            and raw client source, precise but unforgiving. On the other: app-layer
+            courses that stop at <code>solidity</code> and never reach the protocol.
+            The bridge between intuition and spec is just… missing.
+          </p>
+
+          <p>
+            <strong>Whitebox is that bridge.</strong> The unit here isn't a wiki
+            page — it's an <em>explorable</em>: one mechanism paired with a live
+            widget you can take apart, layered so you choose your depth. Intuition
+            when you want the shape of the thing. Mechanism when you want to see it
+            move. Real spec and client code when you want the ground truth. And
+            pointers onward when you're ready to go deeper than I can take you in
+            one page.
+          </p>
+
+          <p>
+            I write in the first person on purpose. This is how I, as an
+            execution-layer engineer, actually hold these systems in my head — the
+            analogies I reach for, the details that turned out to matter, the places
+            where the spec surprised me. It's a point of view, not an anonymous
+            reference.
+          </p>
+
+          <h2>How it's built</h2>
+          <p>
+            The widgets aren't illustrations bolted onto prose — they run the real
+            thing. The trie in <a href={trieHref}>the main explorable</a> is a
+            genuine Merkle-Patricia Trie: real RLP, real hex-prefix encoding, real
+            keccak256, producing the same <code>stateRoot</code> a live client
+            would, verified byte-for-byte against a reference implementation. If a
+            widget shows you a hash, you can trust the hash.
+          </p>
+
+          <h2>The two layers</h2>
+          <p>
+            There's an evergreen spine —
+            <a href={hubHref}>The Execution Layer, explained</a> — written once and
+            meant to last. And a thin, low-frequency <a href={notesHref}>notes</a>
+            layer: short, plain-English reads on what changed in the protocol when a
+            hardfork ships. If you want to be told when either grows, leave your
+            email below. That's the only thing I'll use it for.
+          </p>
+        </>
+      )
+    }
+
+    <div class="about-capture not-prose">
+      <EmailCapture client:visible source="about" heading={meta.captureHeading} lang={lang} />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 0;
+  }
+  .wrap h1 {
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0.5rem 0 1.2rem;
+    color: var(--color-ink);
+    max-width: none;
+  }
+  .wrap h2 {
+    margin-top: 2.2rem;
+  }
+  .about-capture {
+    margin-top: 2rem;
+  }
+</style>

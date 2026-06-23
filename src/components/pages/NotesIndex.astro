@@ -1,0 +1,141 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+import {
+  useTranslations,
+  localizePath,
+  dateLocale,
+  entryLang,
+  entrySlug,
+  type Lang,
+} from "@/i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const notes = (await getCollection("notes", ({ data }) => !data.draft))
+  .filter((e) => entryLang(e.id) === lang)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title={t.nav.notes} description={t.notes.lede} lang={lang}>
+  <div class="wrap">
+    <header class="notes-head">
+      <p class="mono-label">{t.notes.eyebrow}</p>
+      <h1>{t.notes.h1}</h1>
+      <p class="lede">{t.notes.lede}</p>
+    </header>
+
+    <ul class="note-list">
+      {
+        notes.map((n) => (
+          <li>
+            <a href={localizePath(`/notes/${entrySlug(n.id)}`, lang)}>
+              <div class="nl-top">
+                {n.data.hardfork && <span class="fork">{n.data.hardfork}</span>}
+                <time datetime={n.data.date.toISOString()}>
+                  {n.data.date.toLocaleDateString(dateLocale[lang], {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </time>
+              </div>
+              <h2>{n.data.title}</h2>
+              <p>{n.data.dek}</p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="notes-capture">
+      <EmailCapture
+        client:visible
+        source="notes-index"
+        heading={t.notes.captureHeading}
+        lang={lang}
+      />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 0;
+  }
+  .notes-head h1 {
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    letter-spacing: -0.03em;
+    margin: 0.5rem 0 0.9rem;
+    font-weight: 700;
+  }
+  .lede {
+    color: var(--color-ink-muted);
+    font-size: 1.05rem;
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+  .note-list {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .note-list a {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+    background: var(--color-surface);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .note-list a:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+  }
+  .nl-top {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+  .fork {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent-dim);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+  }
+  .nl-top time {
+    font-size: 0.76rem;
+    color: var(--color-ink-faint);
+    font-family: var(--font-mono);
+  }
+  .note-list h2 {
+    font-size: 1.2rem;
+    margin: 0 0 0.3rem;
+    color: var(--color-ink);
+    letter-spacing: -0.01em;
+  }
+  .note-list p {
+    color: var(--color-ink-muted);
+    margin: 0;
+    font-size: 0.92rem;
+  }
+  .notes-capture {
+    margin-top: 2.5rem;
+  }
+</style>

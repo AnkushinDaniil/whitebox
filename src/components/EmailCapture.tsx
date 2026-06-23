@@ -1,5 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { activeAdapter, isValidEmail } from "@/lib/email/adapter";
+import { ui } from "@/i18n/ui";
+import type { Lang } from "@/i18n/ui";
 import "./EmailCapture.css";
 
 interface Props {
@@ -8,15 +10,13 @@ interface Props {
   /** override the default heading */
   heading?: string;
   blurb?: string;
+  lang?: Lang;
 }
 
 type Status = "idle" | "submitting" | "ok" | "error";
 
-export default function EmailCapture({
-  source,
-  heading = "Get the next explorable",
-  blurb = "One practitioner's note when something new ships — a new explorable, or a plain-English read on what changed in the protocol. No noise.",
-}: Props) {
+export default function EmailCapture({ source, heading, blurb, lang = "en" }: Props) {
+  const t = ui[lang].email;
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -26,13 +26,13 @@ export default function EmailCapture({
     e.preventDefault();
     if (!isValidEmail(email)) {
       setStatus("error");
-      setMessage("That doesn't look like a valid email.");
+      setMessage(t.invalid);
       return;
     }
     setStatus("submitting");
     const res = await activeAdapter.subscribe({ email, source });
     setStatus(res.ok ? "ok" : "error");
-    setMessage(res.message);
+    setMessage(res.ok ? t.success : res.message);
     if (res.ok) setEmail("");
   }
 
@@ -40,11 +40,11 @@ export default function EmailCapture({
     <aside className="email-capture" aria-labelledby={`${inputId}-h`}>
       <div className="ec-glow" aria-hidden="true" />
       <div className="ec-content">
-        <p className="ec-eyebrow">Whitebox · Notes</p>
+        <p className="ec-eyebrow">{t.eyebrow}</p>
         <h3 id={`${inputId}-h`} className="ec-heading">
-          {heading}
+          {heading ?? t.heading}
         </h3>
-        <p className="ec-blurb">{blurb}</p>
+        <p className="ec-blurb">{blurb ?? t.blurb}</p>
 
         {status === "ok" ? (
           <p className="ec-success" role="status">
@@ -56,14 +56,14 @@ export default function EmailCapture({
         ) : (
           <form className="ec-form" onSubmit={onSubmit} noValidate>
             <label htmlFor={inputId} className="sr-only">
-              Email address
+              {t.emailLabel}
             </label>
             <input
               id={inputId}
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="you@node.eth"
+              placeholder={t.placeholder}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -74,7 +74,7 @@ export default function EmailCapture({
               suppressHydrationWarning
             />
             <button type="submit" disabled={status === "submitting"}>
-              {status === "submitting" ? "…" : "Subscribe"}
+              {status === "submitting" ? "…" : t.subscribe}
             </button>
           </form>
         )}

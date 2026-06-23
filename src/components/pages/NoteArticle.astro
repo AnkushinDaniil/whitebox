@@ -1,0 +1,106 @@
+---
+import { render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import EmailCapture from "@/components/EmailCapture.tsx";
+import { useTranslations, localizePath, dateLocale, type Lang } from "@/i18n/utils";
+
+interface Props {
+  entry: CollectionEntry<"notes">;
+  lang: Lang;
+}
+const { entry, lang } = Astro.props;
+const t = useTranslations(lang);
+const { Content } = await render(entry);
+const dateLabel = entry.data.date.toLocaleDateString(dateLocale[lang], {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<BaseLayout
+  title={entry.data.title}
+  description={entry.data.summary}
+  type="article"
+  published={entry.data.date}
+  lang={lang}
+>
+  <article class="note">
+    <header>
+      <div class="n-top">
+        <a href={localizePath("/notes", lang)} class="back">← {t.nav.notes}</a>
+        {entry.data.hardfork && <span class="fork">{entry.data.hardfork}</span>}
+        <time datetime={entry.data.date.toISOString()}>{dateLabel}</time>
+      </div>
+      <h1>{entry.data.title}</h1>
+      <p class="dek">{entry.data.dek}</p>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <div class="n-capture not-prose">
+      <EmailCapture
+        client:visible
+        source={`note:${entry.id}`}
+        heading={t.notes.captureHeading}
+        lang={lang}
+      />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .note {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 0;
+  }
+  .n-top {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .back {
+    font-size: 0.82rem;
+    color: var(--color-ink-muted);
+    text-decoration: none;
+  }
+  .back:hover {
+    color: var(--color-accent-strong);
+  }
+  .fork {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent-dim);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+  }
+  .n-top time {
+    font-size: 0.76rem;
+    color: var(--color-ink-faint);
+    font-family: var(--font-mono);
+  }
+  .note h1 {
+    font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+    margin: 0 0 0.6rem;
+  }
+  .dek {
+    font-size: 1.1rem;
+    color: var(--color-ink-muted);
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .n-capture {
+    margin-top: 2.5rem;
+  }
+</style>

@@ -1,18 +1,30 @@
 ---
 import { SITE } from "@/consts";
+import { useTranslations, localizePath, altLangPath, type Lang } from "@/i18n/utils";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "en" } = Astro.props;
+const t = useTranslations(lang);
+
 const path = Astro.url.pathname;
 const isActive = (href: string) =>
-  href === "/" ? path === "/" : path.startsWith(href);
+  href === localizePath("/", lang) ? path === href : path.startsWith(href);
 
 const links = [
-  { href: "/the-execution-layer", label: "The Execution Layer" },
-  { href: "/notes", label: "Notes" },
-  { href: "/about", label: "About" },
+  { href: localizePath("/the-execution-layer", lang), label: t.nav.hub },
+  { href: localizePath("/notes", lang), label: t.nav.notes },
+  { href: localizePath("/about", lang), label: t.nav.about },
 ];
+
+const other: Lang = lang === "en" ? "ru" : "en";
+const switchHref = altLangPath(path, lang);
+const switchLabel = other.toUpperCase();
 ---
 
 <header class="site-header">
-  <a href="/" class="brand" aria-label={`${SITE.name} home`}>
+  <a href={localizePath("/", lang)} class="brand" aria-label={`${SITE.name} home`}>
     <span class="mark" aria-hidden="true"></span>
     <span class="wordmark">{SITE.name}</span>
   </a>
@@ -24,6 +36,9 @@ const links = [
         </a>
       ))
     }
+    <a class="lang-switch" href={switchHref} hreflang={other} aria-label={`Switch to ${other}`}>
+      {switchLabel}
+    </a>
   </nav>
 </header>
 
@@ -77,6 +92,23 @@ const links = [
   }
   .nav-link.active {
     color: var(--color-accent-strong);
+  }
+  .lang-switch {
+    margin-left: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .lang-switch:hover {
+    color: var(--color-accent-strong);
+    border-color: var(--color-accent-dim);
+    background: var(--color-surface-2);
   }
   @media (max-width: 560px) {
     .nav-link:not(.active) {

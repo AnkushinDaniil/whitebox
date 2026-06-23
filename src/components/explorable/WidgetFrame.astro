@@ -5,15 +5,18 @@ interface Props {
   caption?: string;
   /** optional source/credit line, e.g. a spec or client reference */
   source?: string;
+  lang?: Lang;
 }
 
-const { title, caption, source } = Astro.props;
+import { useTranslations, type Lang } from "@/i18n/utils";
+const { title, caption, source, lang = "en" } = Astro.props;
+const t = useTranslations(lang).widget;
 ---
 
 <figure class="widget-frame">
   <figcaption class="widget-head">
     <div class="titles">
-      <span class="mono-label">Interactive</span>
+      <span class="mono-label">{t.interactive}</span>
       <h4 class="widget-title">{title}</h4>
       {caption && <p class="widget-caption">{caption}</p>}
     </div>

@@ -1,5 +1,12 @@
 ---
 import { SITE } from "@/consts";
+import { useTranslations, localizePath, type Lang } from "@/i18n/utils";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "en" } = Astro.props;
+const t = useTranslations(lang);
 const year = new Date().getFullYear();
 ---
 
@@ -7,18 +14,15 @@ const year = new Date().getFullYear();
   <div class="inner">
     <div>
       <p class="line">
-        <strong>{SITE.name}</strong> — {SITE.tagline}
+        <strong>{SITE.name}</strong> — {t.site.tagline}
       </p>
-      <p class="fine">
-        An authored, practitioner's guide to how Ethereum's execution layer
-        really works. © {year}.
-      </p>
+      <p class="fine">{t.footer.fine} © {year}.</p>
     </div>
     <nav aria-label="Footer">
-      <a href="/the-execution-layer">The Execution Layer</a>
-      <a href="/notes">Notes</a>
-      <a href="/about">About</a>
-      <a href="/rss.xml">RSS</a>
+      <a href={localizePath("/the-execution-layer", lang)}>{t.nav.hub}</a>
+      <a href={localizePath("/notes", lang)}>{t.nav.notes}</a>
+      <a href={localizePath("/about", lang)}>{t.nav.about}</a>
+      <a href="/rss.xml">{t.footer.rss}</a>
     </nav>
   </div>
 </footer>

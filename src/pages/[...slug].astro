@@ -1,22 +1,27 @@
 ---
 import { getCollection, render } from "astro:content";
 import ExplorableLayout from "@/layouts/ExplorableLayout.astro";
+import { entryLang, entrySlug } from "@/i18n/utils";
 
 export async function getStaticPaths() {
   const explorables = await getCollection(
     "explorables",
     ({ data }) => import.meta.env.PROD === false || !data.draft,
   );
-  return explorables.map((entry) => ({
-    params: { slug: entry.id },
-    props: { entry },
-  }));
+  return explorables.map((entry) => {
+    const lang = entryLang(entry.id);
+    const slug = entrySlug(entry.id);
+    return {
+      params: { slug: lang === "en" ? slug : `ru/${slug}` },
+      props: { entry, lang },
+    };
+  });
 }
 
-const { entry } = Astro.props;
+const { entry, lang } = Astro.props;
 const { Content } = await render(entry);
 ---
 
-<ExplorableLayout {...entry.data} slug={entry.id}>
+<ExplorableLayout {...entry.data} slug={entrySlug(entry.id)} lang={lang}>
   <Content />
 </ExplorableLayout>

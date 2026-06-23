@@ -1,8 +1,9 @@
 ---
-import { DEPTH_META, type DepthTier } from "@/consts";
+import { useTranslations, type Lang } from "@/i18n/utils";
+import type { DepthTierKey } from "@/i18n/ui";
 
 interface Props {
-  tier: DepthTier;
+  tier: DepthTierKey;
   /** override the default heading for this layer */
   title?: string;
   /** optional anchor id (used by the journey nav) */
@@ -11,10 +12,11 @@ interface Props {
   num?: string;
   /** optional override for the badge label (e.g. "Step" in a journey) */
   badge?: string;
+  lang?: Lang;
 }
 
-const { tier, title, id, num, badge } = Astro.props;
-const meta = DEPTH_META[tier];
+const { tier, title, id, num, badge, lang = "en" } = Astro.props;
+const meta = useTranslations(lang).depth[tier];
 ---
 
 <section id={id} class:list={["depth-layer", `tier-${tier}`]} data-tier={tier} aria-label={meta.label}>

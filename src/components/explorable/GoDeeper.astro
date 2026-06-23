@@ -5,18 +5,13 @@ interface Link {
   note?: string;
   kind?: "spec" | "code" | "eip" | "post" | "tool";
 }
+import { useTranslations, type Lang } from "@/i18n/utils";
 interface Props {
   links: Link[];
+  lang?: Lang;
 }
-const { links } = Astro.props;
-
-const KIND_LABEL: Record<string, string> = {
-  spec: "SPEC",
-  code: "CODE",
-  eip: "EIP",
-  post: "READ",
-  tool: "TOOL",
-};
+const { links, lang = "en" } = Astro.props;
+const KIND_LABEL = useTranslations(lang).go;
 ---
 
 <ul class="go-deeper">

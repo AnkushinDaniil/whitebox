@@ -18,6 +18,7 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
 import Formula from "@/components/explorable/Formula.astro";
+import MathViz from "@/components/explorable/MathViz.astro";
 
 Gas is supposed to track the real cost of work, so the chain can't be cheaply overloaded. But for years the EVM mispriced its *most* expensive operation: reading state. An `SLOAD` or an account lookup forces a node to chase data through the Merkle-Patricia trie and off disk — slow, real work — yet it was billed a flat, tiny fee. That gap was more than inefficiency; it was an attack surface, and in 2016 it was used to bring Ethereum to a crawl. **EIP-2929** repriced state access, and **EIP-2930** softened the side effects with access lists. Let's derive both.
 
@@ -90,6 +91,11 @@ start seeded with the transaction's `tx.to`, `tx.origin`, and the precompiles.
     { t: "warm (100)", note: "every later touch: already cached, so nearly free" },
   ]}
   caption="Price by novelty: the expensive part is the first fetch, so that's where the gas goes."
+/>
+
+<MathViz
+  name="gas-cold-warm"
+  caption="Why a flat increase is the wrong fix, as a curve. Reading one slot N times, real cold-then-warm pricing (2100 once, then 100 each) stays almost flat; the naive 'just raise the flat price' line (2100 every access) runs away. The shaded gap is exactly what warm pricing saves an honest contract."
 />
 
 <Callout type="warning" title="What breaks">

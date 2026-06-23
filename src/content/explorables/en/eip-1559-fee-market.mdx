@@ -19,6 +19,7 @@ import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
 import Formula from "@/components/explorable/Formula.astro";
+import MathViz from "@/components/explorable/MathViz.astro";
 import FeeMarket from "@/components/fees/FeeMarket.tsx";
 
 Every transaction pays for the [gas](/you-could-have-invented-ethereum#step-9) it burns — but at *what price per gas*? For Ethereum's first six years the answer was an auction, and it was miserable: fees that swung 10× in an hour, wallets that guessed wrong, and a quiet tax of chronic overpayment on everyone. **EIP-1559** replaced it. The replacement looks clever and a little arbitrary the first time you see it — a "base fee," a magic 12.5%, a burn — so let's not memorize it. Let's *derive* it, starting from the auction and fixing exactly what's wrong, one step at a time.
@@ -94,6 +95,11 @@ else:
     { t: "(used − target)", note: "how far the last block ran from the half-full target" },
   ]}
   caption="A thermostat: over target the fee rises, under it the fee falls — never by more than ⅛ in one block."
+/>
+
+<MathViz
+  name="fee-controller"
+  caption="The same rule, played out. Four blocks at target hold the fee flat; ten full blocks ramp it up at +12.5% per block — the 1.125ⁿ curve — then light blocks decay it back down. The controller only ever reacts to the previous block; it never forecasts."
 />
 
 That ±12.5% cap is the quiet hero: a demand shock can't 10× your fee in one block — it ramps over several, giving wallets a stable, *predictable* number to show you. Sustained congestion still gets expensive (1.125ⁿ compounds), but it does so visibly and gradually instead of in a panic.

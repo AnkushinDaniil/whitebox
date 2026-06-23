@@ -18,6 +18,7 @@ import GoDeeper from "@/components/explorable/GoDeeper.astro";
 import JourneyNav from "@/components/explorable/JourneyNav.tsx";
 import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
 import Formula from "@/components/explorable/Formula.astro";
+import MathViz from "@/components/explorable/MathViz.astro";
 
 Ethereum scales by pushing execution onto **rollups** (L2s): they run thousands of transactions off-chain and post only the results to L1. But a rollup has to publish the *data* of those transactions somewhere public, or no one could check its work. For years it published that data as ordinary **calldata** — and that one choice made L2 fees painful and capped how cheap Ethereum could get. **EIP-4844** ("proto-danksharding") fixed it with a strange-looking new object called a **blob**. Strange until you build it: start from the calldata problem and fix exactly what's wrong, one step at a time.
 
@@ -110,6 +111,11 @@ One thing still leaks. If blobs are paid for in the same gas as execution, a sur
 Price blobs in their own unit — **blob gas** — with their own [EIP-1559-style base fee](/eip-1559-fee-market), fully separate from execution. Each block **targets 3 blobs** and allows up to **6**; the blob base fee moves up or down per block toward that target, and is **burned** just like the execution base fee. A flood of rollup data now raises the *blob* base fee without touching your swap's gas price — and a busy execution layer doesn't make blobs more expensive. Two independent congestion signals, two independent prices.
 
 <Scene name="blob-fee" caption="Blobs are metered in their own unit with their own base fee — target 3, max 6 per block, burned — so blob demand and execution demand never push on each other's price." />
+
+<MathViz
+  name="blob-exponential"
+  caption="The blob base fee plotted against accumulated excess blob gas. At or below the 3-blob target the excess stays put and the price holds near the minimum; once blocks run over target the excess builds and the fee climbs exponentially (e^(excess/UPDATE_FRACTION)) — on its own curve, never touching the execution-gas price."
+/>
 
 <Callout type="insight" title="And that is EIP-4844">
 Rollups must publish data → calldata was permanent and shared-priced → blobs give a separate, EVM-invisible lane → a KZG commitment binds each blob so it's verifiable without being stored → prune after ~18 days (availability, not storage) → a separate blob-gas market so it never competes with execution. Each fix is forced by the last one's flaw, and the net effect was dramatic: L2 fees fell **10–100×** overnight. The "proto" in proto-danksharding is the tell — this is the scaffolding for full **danksharding**: many more blobs, with *data availability sampling* so nodes can confirm a blob was published by checking a few random pieces instead of downloading the whole thing.

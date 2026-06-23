@@ -1,0 +1,123 @@
+---
+title: "EIP-4895: getting staked ETH back without a transaction"
+dek: "After the Merge, a validator's 32 ETH and its rewards lived on the consensus layer with no way home. A normal transaction can't move them — there's no EOA, no key, nothing on the execution layer to sign. EIP-4895 inverts the flow: the consensus layer pushes withdrawals into each block, and the EVM just credits the balance."
+summary: "A step-by-step derivation of EIP-4895 (beacon-chain push withdrawals) — why, between the Merge and Shanghai, staked ETH and rewards were stranded on the consensus layer with no path back to the execution layer (no EL account, no key, so no transaction could pull them), and how the fix works: the consensus layer pushes a list of withdrawal objects into each execution block (a system-level operation with no signature, no sender, no gas), the block gains a withdrawals list and a withdrawalsRoot in the header, and the EVM simply credits each withdrawal's Gwei amount to its recipient address — with partial 'skim' withdrawals of rewards above 32 ETH and full withdrawals of an exited validator's whole balance, both swept automatically."
+topic: EIPs
+order: 10
+spine: true
+prerequisites: ["the Merge (consensus + execution layers)", "staking basics"]
+updated: 2026-06-23
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+After the Merge, Ethereum runs as two layers bolted together: the <KeyTerm term="consensus layer" def="The beacon chain — it runs proof-of-stake, tracks validators and their balances (the 32 ETH stake plus accrued rewards), and decides which execution block is canonical. It does not run the EVM." /> tracks validators and their balances, and the <KeyTerm term="execution layer" def="The EVM and the world state of accounts and contracts — where ordinary balances live and transactions execute. It has no idea about validator balances on the beacon chain." /> runs the EVM over ordinary accounts. You could put ETH *in* (the one-way deposit contract), but from September 2022 until the Shanghai/Capella upgrade in April 2023, there was no way to get staked ETH *out*. The funds existed only as a number on the beacon chain, and nothing on the execution layer could touch them. **EIP-4895** is the elegant fix. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Trapped on the CL" },
+  { id: "step-2", label: "Push, don't pull" },
+  { id: "step-3", label: "Just credit the balance" },
+  { id: "step-4", label: "Skim vs exit" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Trapped on the CL">
+
+## The problem: a balance no transaction can reach
+
+A validator's money lives on the consensus layer as a plain balance entry — `32 ETH` of stake plus whatever it has earned. The natural way to move ETH on Ethereum is a transaction: an account signs *"send X to Y"*. But a validator **is not an execution-layer account**. It has no EOA, no private key the EVM recognizes, and no balance in the execution-layer state to draw from. So there is literally no transaction anyone can write to pull that money across — the sender doesn't exist where transactions live.
+
+<Scene name="wd-stuck" caption="The validator's stake and rewards sit on the consensus layer; ordinary accounts and the EVM live on the execution layer. Deposits flow in one-way, but nothing on the execution side can sign for or reach the validator balance — so it can't come back." />
+
+The two layers don't share an account model, and a transaction is a *pull* initiated by an account that owns the funds. Here the owner of the funds is the protocol's validator registry, not an EOA.
+
+<Callout type="warning" title="What breaks">
+The thing that wants to release the money (the consensus layer) can't sign a transaction, and the thing that runs transactions (the execution layer) can't see the money. If a transaction can't pull, what can move the ETH across?
+</Callout>
+
+**→ Step 2: stop pulling and start pushing.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Push, don't pull">
+
+## Invert the flow: the CL pushes withdrawals into the block
+
+A transaction is a *pull* the funds' owner signs. So flip the direction: let the consensus layer **push**. Define a new object — a <KeyTerm term="withdrawal" def="A system-level object the consensus layer inserts into an execution block: { index, validatorIndex, address, amount }. It is not a transaction — it has no signature, no sender account, and costs no gas. A user can never create one." /> — that the CL inserts directly into each execution block. Every execution block gains a `withdrawals` list, and the block header gains a `withdrawalsRoot` (a Merkle root committing to that list, exactly like `transactionsRoot` commits to the transactions). The execution layer doesn't *ask* for these; the consensus layer hands them over as part of building the block.
+
+<Scene name="wd-push" caption="Each execution block gains a withdrawals list and a withdrawalsRoot in the header. Unlike transactions — which carry a signature, a sender, and gas — withdrawals are pushed in by the consensus layer with none of those; they're system operations, not user actions." />
+
+This is the key reframing: a withdrawal is a **system-level operation**, not a transaction. No one signs it, it has no `from`, and it consumes no gas. The protocol itself moves the money, and the `withdrawalsRoot` makes the set verifiable and part of consensus.
+
+<SpecExcerpt
+  source="EIP-4895: Beacon chain push withdrawals as operations"
+  href="https://eips.ethereum.org/EIPS/eip-4895"
+  ref="the withdrawal object & block"
+>
+A `Withdrawal` is `{ index, validator_index, address, amount }`, where `amount` is in
+Gwei. The execution payload gains a `withdrawals` list and the header a `withdrawals_root`.
+Withdrawals are processed *after* the transactions in the block. They are not transactions:
+they have no signature and are not part of the transaction trie.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+The block now carries withdrawals. But what does the EVM actually *do* with one — and could it fail, run code, or cost gas like a transfer would?
+</Callout>
+
+**→ Step 3: the simplest possible processing.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Just credit the balance">
+
+## Processing a withdrawal: increase a balance, full stop
+
+Here's how little it takes. For each withdrawal `{ index, validatorIndex, address, amount }`, the execution layer simply **adds `amount` (converted from Gwei to Wei) to `address`'s balance**. That's the entire operation. It is *not* a value-bearing call: no EVM execution is triggered, no contract code runs, no `receive()` or fallback fires, and it costs no gas. It can't revert, because there's nothing to execute — it's an unconditional credit, the protocol minting back ETH that was already staked.
+
+<Scene name="wd-credit" caption="Processing is a pure balance increase: add the withdrawal's amount to the recipient address. No EVM call is made, so no contract code runs, nothing can revert, and no gas is spent — it's an unconditional credit, not a transfer." />
+
+Because it bypasses the EVM entirely, even a contract account receiving a withdrawal just sees its balance go up, with no execution. The `index` is a global, ever-increasing counter so every withdrawal is unique and ordered.
+
+<Callout type="warning" title="What breaks">
+We can credit a balance — but *who* gets credited, *how much*, and *when*? Does a staker have to send something to trigger it?
+</Callout>
+
+**→ Step 4: two flavors, both automatic.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Skim vs exit">
+
+## Two flavors — and you never press a button
+
+The consensus layer continuously walks the validator set (a rolling **sweep**) and emits withdrawals automatically, in two forms. A <KeyTerm term="partial withdrawal" def="Automatic 'skimming' of rewards: any validator balance above the 32 ETH cap is periodically withdrawn to the validator's withdrawal address, while the 32 ETH stays staked and keeps validating." /> skims everything above the 32 ETH effective-balance cap — your rewards come home while your stake keeps working. A **full withdrawal** returns a validator's *entire* remaining balance once it has fully exited the active set. Both require the validator to have set an `0x01` withdrawal credential pointing at an execution-layer address — and once it has, the ETH simply *arrives*; there's no withdrawal transaction to send.
+
+<Scene name="wd-flavors" caption="Partial withdrawals skim rewards above 32 ETH while the stake keeps validating; full withdrawals return an exited validator's whole balance. Both are emitted automatically by the consensus layer's sweep to the validator's withdrawal address — no user action required." />
+
+<Callout type="insight" title="And that is EIP-4895">
+Staked ETH lived on the consensus layer with no execution-layer account to sign for it → a transaction is a *pull* the owner signs, which is impossible here → so invert it: the consensus layer **pushes** withdrawal objects into each block (a `withdrawals` list + `withdrawalsRoot`), system operations with no signature, sender, or gas → the EVM processes each by simply **crediting the recipient's balance**, with no call, no code, and no way to fail → and the sweep emits them automatically as partial (skim above 32 ETH) or full (exited) withdrawals. The insight is that not everything that moves value has to be a transaction. Some value movements are the *protocol's* to make — and for those, a push beats a pull. It's why your staking rewards land in your wallet without you ever signing for them.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-4895: Beacon chain push withdrawals", note: "The spec — withdrawal objects as operations", href: "https://eips.ethereum.org/EIPS/eip-4895" },
+    { kind: "post", label: "The Merge, derived", note: "Why there are two layers at all", href: "/eip-3675-the-merge" },
+    { kind: "post", label: "How consensus runs", note: "Validators, stake, and the beacon chain", href: "/how-consensus-runs" },
+    { kind: "tool", label: "Shanghai/Capella upgrade", note: "The fork that enabled withdrawals", href: "https://ethereum.org/en/history/#shapella" },
+    { kind: "eip", label: "EIP-7251 (later)", note: "Raising the 32 ETH cap that skimming enforces", href: "https://eips.ethereum.org/EIPS/eip-7251" },
+  ]}
+/>
+
+</DepthLayer>

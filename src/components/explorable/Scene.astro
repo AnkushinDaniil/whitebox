@@ -63,7 +63,11 @@ interface Props {
     | "r155-replay"
     | "r155-bind"
     | "r155-vencode"
-    | "r155-reject";
+    | "r155-reject"
+    | "wd-stuck"
+    | "wd-push"
+    | "wd-credit"
+    | "wd-flavors";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1057,6 +1061,81 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="192">{L("chain 61 recomputes the hash with its own id → recovery fails → rejected")}</text>
       </svg>
     )}
+
+    {/* ── EIP-4895: staked ETH is trapped on the consensus layer ── */}
+    {name === "wd-stuck" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="After the Merge, staked ETH had no path back to the execution layer">
+        <text class="t-cap" x="240" y="18">{L("two layers after the Merge")}</text>
+        <rect class="wd-cl" x="40" y="30" width="400" height="54" rx="8" />
+        <text class="t-cap" x="240" y="48">{L("consensus layer · beacon chain")}</text>
+        <text class="t-ok wd-bal" x="240" y="68">{L("validator: 32 ETH + rewards")}</text>
+        <rect class="wd-el" x="40" y="120" width="400" height="54" rx="8" />
+        <text class="t-cap" x="240" y="138">{L("execution layer · accounts & EVM")}</text>
+        <text class="t-cap" x="240" y="158">{L("no account holds the stake")}</text>
+        <path class="sarrow wd-back" d="M240 84 V120" />
+        <line class="wd-bar" x1="222" y1="102" x2="258" y2="102" />
+        <text class="t-x wd-noback" x="312" y="106">{L("✗ no way back")}</text>
+        <text class="t-cap" x="240" y="194">{L("staked ETH and rewards sit on the CL with no path home to the EL")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4895: the CL pushes a withdrawals list into the block ── */}
+    {name === "wd-push" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="The consensus layer pushes a withdrawals list into each execution block">
+        <text class="t-cap" x="240" y="18">{L("the CL pushes withdrawals into each block")}</text>
+        <rect class="wd-clbox" x="20" y="40" width="120" height="58" rx="8" />
+        <text class="t-cap" x="80" y="64">{L("consensus")}</text>
+        <text class="t-cap" x="80" y="80">{L("layer")}</text>
+        <path class="sarrow wd-pa" d="M140 70 H196" />
+        <text class="t-cap wd-palbl" x="168" y="60">{L("push")}</text>
+        <rect class="wd-block" x="200" y="30" width="260" height="158" rx="10" />
+        <text class="t-cap" x="330" y="46">{L("execution block")}</text>
+        <rect class="wd-hdr" x="214" y="54" width="232" height="26" rx="5" />
+        <text class="t-fld wd-hdrt" x="224" y="71">header · withdrawalsRoot ✓</text>
+        <rect class="wd-txs" x="214" y="88" width="232" height="40" rx="5" />
+        <text class="t-cap" x="330" y="104">{L("transactions")}</text>
+        <text class="t-cap wd-sub" x="330" y="119">{L("signed · gas · sender")}</text>
+        <rect class="wd-wds" x="214" y="136" width="232" height="42" rx="5" />
+        <text class="t-cap" x="330" y="152">{L("withdrawals")}</text>
+        <text class="t-cap wd-sub" x="330" y="167">{L("no signature · no gas")}</text>
+        <text class="t-cap" x="240" y="204">{L("a new withdrawals list + withdrawalsRoot — pushed by the CL, not sent by you")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4895: processing is a pure balance credit ── */}
+    {name === "wd-credit" && (
+      <svg viewBox="0 0 480 192" role="img" aria-label="Processing a withdrawal simply credits the recipient's balance">
+        <text class="t-cap" x="240" y="20">{L("processing = credit the balance, nothing else")}</text>
+        <rect class="wd-obj" x="40" y="40" width="200" height="76" rx="8" />
+        <text class="t-cap" x="140" y="58">{L("withdrawal")}</text>
+        <text class="t-fld wd-objc" x="140" y="78">index · validatorIndex</text>
+        <text class="t-fld wd-objc" x="140" y="96">address · amount (Gwei)</text>
+        <path class="sarrow wd-ca" d="M240 78 H300" />
+        <rect class="wd-acct" x="300" y="48" width="160" height="60" rx="8" />
+        <text class="t-cap" x="380" y="70">{L("recipient account")}</text>
+        <text class="t-ok wd-plus" x="380" y="92">balance += amount</text>
+        <text class="t-x wd-nocall" x="240" y="142">{L("no EVM call · no gas · no code runs")}</text>
+        <text class="t-cap" x="240" y="176">{L("an unconditional credit — not a transfer that could run contract code")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4895: partial skim vs full exit, both automatic ── */}
+    {name === "wd-flavors" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Two automatic withdrawal flavors: partial skimming and full exit">
+        <text class="t-cap" x="240" y="20">{L("two automatic flavors, no withdraw button")}</text>
+        <rect class="wd-part" x="30" y="36" width="200" height="120" rx="8" />
+        <text class="t-cap" x="130" y="56">{L("partial · skim")}</text>
+        <text class="t-ok" x="130" y="80">{L("rewards above 32 ETH")}</text>
+        <text class="t-cap" x="130" y="100">{L("swept automatically")}</text>
+        <text class="t-cap" x="130" y="126">{L("the 32 ETH stays at work")}</text>
+        <rect class="wd-full" x="250" y="36" width="200" height="120" rx="8" />
+        <text class="t-cap" x="350" y="56">{L("full · exit")}</text>
+        <text class="t-ok" x="350" y="80">{L("validator has exited")}</text>
+        <text class="t-cap" x="350" y="100">{L("entire balance returns")}</text>
+        <text class="t-cap" x="350" y="126">{L("needs an 0x01 credential")}</text>
+        <text class="t-cap" x="240" y="190">{L("both are swept by the CL on a rolling sweep — they simply arrive")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1768,4 +1847,44 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .rv-verdict { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; animation: rv-vin 6s ease-in-out infinite; }
   .rv-vtext { opacity: 0; animation: rv-vin 6s ease-in-out infinite; }
   @keyframes rv-vin { 0%,52% { opacity: 0 } 66%,100% { opacity: 1 } }
+
+  /* EIP-4895 — wd-stuck: staked ETH trapped on the consensus layer */
+  .wd-cl { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .wd-el { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .wd-bal { animation: wd-pulse 6s ease-in-out infinite; }
+  @keyframes wd-pulse { 0%,30% { opacity: 0.6 } 48%,100% { opacity: 1 } }
+  .wd-back { stroke-dasharray: 40; stroke-dashoffset: 40; animation: wd-bdraw 6s ease-in-out infinite; }
+  @keyframes wd-bdraw { 0%,18% { stroke-dashoffset: 40 } 40%,100% { stroke-dashoffset: 0 } }
+  .wd-noback { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+  @keyframes wd-nb { 0%,44% { opacity: 0 } 58%,100% { opacity: 1 } }
+  .wd-bar { stroke: var(--color-changed); stroke-width: 2.4; opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+
+  /* EIP-4895 — wd-push: the CL pushes a withdrawals list into the block */
+  .wd-clbox { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .wd-pa { stroke-dasharray: 56; stroke-dashoffset: 56; animation: wd-padraw 6s ease-in-out infinite; }
+  @keyframes wd-padraw { 0%,16% { stroke-dashoffset: 56 } 36%,100% { stroke-dashoffset: 0 } }
+  .wd-palbl { fill: var(--color-ink-faint); }
+  .wd-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .wd-hdr { fill: color-mix(in oklab, var(--color-hash) 8%, var(--color-surface)); stroke: var(--color-hash); }
+  .wd-hdrt { fill: var(--color-ink-muted); }
+  .wd-txs { fill: var(--color-surface); stroke: var(--color-border); }
+  .wd-sub { fill: var(--color-ink-faint); }
+  .wd-wds { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: wd-wdin 6s ease-in-out infinite; }
+  @keyframes wd-wdin { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
+
+  /* EIP-4895 — wd-credit: just credit the recipient's balance */
+  .wd-obj { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .wd-objc { text-anchor: middle; }
+  .wd-ca { stroke-dasharray: 56; stroke-dashoffset: 56; animation: wd-cadraw 6s ease-in-out infinite; }
+  @keyframes wd-cadraw { 0%,24% { stroke-dashoffset: 56 } 44%,100% { stroke-dashoffset: 0 } }
+  .wd-acct { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .wd-plus { opacity: 0; animation: wd-plusin 6s ease-in-out infinite; }
+  @keyframes wd-plusin { 0%,46% { opacity: 0; transform: translateY(4px) } 60%,100% { opacity: 1; transform: translateY(0) } }
+  .wd-nocall { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+
+  /* EIP-4895 — wd-flavors: partial skim vs full exit */
+  .wd-part { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); animation: wd-hl1 7s ease-in-out infinite; }
+  .wd-full { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); animation: wd-hl2 7s ease-in-out infinite; }
+  @keyframes wd-hl1 { 0%,20% { filter: none } 32%,42% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 54%,100% { filter: none } }
+  @keyframes wd-hl2 { 0%,56% { filter: none } 68%,82% { filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { filter: none } }
 </style>

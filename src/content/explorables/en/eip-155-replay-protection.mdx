@@ -1,0 +1,122 @@
+---
+title: "EIP-155: binding a signature to its chain"
+dek: "A pre-155 Ethereum signature said who signed and what they signed — but never which network it was for. So the exact same signed bytes were valid on every chain that shared your address, and a transaction could be replayed across a fork like ETH/ETC. EIP-155 folds a chainId into what you sign, so a signature is locked to one chain."
+summary: "A step-by-step derivation of EIP-155 (simple replay attack protection) — why an early Ethereum signature carried no chain identity, so the same signed transaction was valid on any chain sharing your account and could be replayed across a chain split, and how the fix works: include chainId (with two zero placeholders) in the RLP that gets hashed and signed, and encode it in v as chainId·2 + 35 + parity, so a signature made for one chain produces the wrong hash — and a failed signer recovery — anywhere else, while legacy v=27/28 transactions stay valid but unprotected."
+topic: EIPs
+order: 9
+spine: true
+prerequisites: ["digital signatures", "what a transaction is"]
+updated: 2026-06-23
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+A signature proves two things: *who* signed, and *what* they signed. Early Ethereum transactions signed over `[nonce, gasPrice, gasLimit, to, value, data]` — the action, but **not the network it was meant for**. That omission seems harmless until you remember that your private key derives the *same address on every Ethereum-like chain*. So a perfectly valid signed transaction on one network is a perfectly valid signed transaction on another — copy the bytes, submit them elsewhere, and they execute again. This turned catastrophic at the 2016 ETH/ETC split, when two chains suddenly shared addresses, balances, and nonces. **EIP-155** is the one-line idea that fixes it: put the chain *into the signature*. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "A signature with no chain" },
+  { id: "step-2", label: "Sign the chainId too" },
+  { id: "step-3", label: "Carry it in v" },
+  { id: "step-4", label: "Wrong chain, rejected" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="A signature with no chain">
+
+## The problem: a signature that's valid everywhere
+
+To send a transaction you sign the hash of its fields. Before EIP-155 those fields were just `[nonce, gasPrice, gasLimit, to, value, data]`, and the signature `(v, r, s)` used `v = 27` or `28` — purely the <KeyTerm term="recovery id" def="The extra bit (parity) stored in v that lets a verifier recover the signer's public key from r and s. Pre-155 it was just 27 or 28 — one bit, carrying no other information." />, telling the verifier which of two possible public keys recovered. Nowhere in the signed data is there anything that says *"this transaction is for Ethereum mainnet."* So the signature authorizes the action on **any** chain that recognizes your address.
+
+<Scene name="r155-replay" caption="A pre-155 signature covers the action but not the network. Because your key gives you the same address on every chain, the identical signed bytes are valid on all of them — so a transaction broadcast on one chain can be copied and replayed on another." />
+
+This is a <KeyTerm term="replay attack" def="Re-broadcasting a validly-signed transaction on a different chain (or after a fork) where the signer never intended it. Because the signature is still valid, the transaction executes again, moving funds the user never meant to move there." />. After the DAO hard fork, ETH and ETC shared identical history up to the split, so a transaction you made on one was instantly replayable on the other — draining or duplicating transfers with no extra signing.
+
+<Callout type="warning" title="What breaks">
+The signature needs to commit to *which chain* it's for, so it can't be lifted onto another. But where do we put the chain identity — and how, without breaking every transaction already signed the old way?
+</Callout>
+
+**→ Step 2: make the chain part of what you sign.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Sign the chainId too">
+
+## Fold the chainId into the signed data
+
+Give every network a public number — a <KeyTerm term="chainId" def="A unique integer identifying a chain: 1 for Ethereum mainnet, 11155111 for Sepolia, 61 for Ethereum Classic, and so on. Registered so wallets and nodes agree on which network they're signing for." /> (mainnet is `1`, Ethereum Classic is `61`). Now, instead of hashing just the six fields, hash the list **with the chainId appended** plus two zero placeholders: `[nonce, gasPrice, gasLimit, to, value, data, chainId, 0, 0]`. That whole list is what gets keccak-hashed and signed. Because the chainId is now *inside* the hash, the signed digest is different on every chain — a signature computed for chainId `1` simply isn't a signature over the digest that chainId `61` would compute.
+
+<Scene name="r155-bind" caption="Append chainId (and two zero placeholders) to the fields before hashing. The chainId is now part of the signed digest, so the same transaction produces a different hash — and thus needs a different signature — on each chain." />
+
+The two trailing zeros are a neat trick: they make the to-be-signed structure look like a nine-element transaction whose `(v, r, s)` slots are `(chainId, 0, 0)`, reusing the existing encoding shape rather than inventing a new one.
+
+<Callout type="warning" title="What breaks">
+The signed hash now depends on the chain — good. But the *transaction itself* still only carries `(v, r, s)`. How does a receiver know which chainId to plug back in when recovering the signer, and how do old `v = 27/28` transactions keep working?
+</Callout>
+
+**→ Step 3: smuggle the chainId into v.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Carry it in v">
+
+## Encode the chainId in v — backward-compatibly
+
+There's no room for a new field, so reuse `v`. Redefine it as `v = chainId·2 + 35 + parity`, where `parity` is the `0`/`1` recovery bit. On mainnet (chainId `1`) that gives `v = 37` or `38`; the receiver reads `v`, backs out the chainId, and knows exactly which digest to reconstruct before recovering the signer. And crucially, every legacy value is *below* this range: `v = 27/28` still means "unprotected, no chainId," so old transactions remain valid forever — they're just replayable, by their own choice.
+
+<Scene name="r155-vencode" caption="The chainId rides inside v as chainId·2 + 35 + parity (so chainId 1 → v of 37 or 38). The receiver recovers the chainId from v; legacy v = 27/28 transactions still validate, simply without replay protection." />
+
+<SpecExcerpt
+  source="EIP-155: Simple replay attack protection"
+  href="https://eips.ethereum.org/EIPS/eip-155"
+  ref="the signing scheme"
+>
+If `block.number ≥ FORK_BLKNUM`, sign the nine-element RLP
+`[nonce, gasprice, gaslimit, to, value, data, chainid, 0, 0]` instead of the six-element
+list. Then `v = chain_id · 2 + 35` or `chain_id · 2 + 36` (the two parities). Mainnet
+`chain_id = 1`, so `v ∈ {37, 38}`. Transactions still signed the old way (`v ∈ {27, 28}`)
+remain valid but offer no replay protection.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+So the chainId is signed and carried. What actually *stops* a replay when someone submits a chainId-1 transaction on chainId 61?
+</Callout>
+
+**→ Step 4: watch the wrong chain reject it.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Wrong chain, rejected">
+
+## The payoff: a replay fails signer recovery
+
+Now follow an attacker copying your chainId-`1` transaction onto chainId `61`. That chain validates by reconstructing the signed digest **with its own chainId, 61** — not 1. The hash it builds is different from the one you actually signed, so when it runs ECDSA recovery on your `(r, s)`, the public key that pops out is **not your address**. The transaction looks like it was signed by some random account that has no funds, and it's rejected. The signature was cryptographically welded to chain 1; it cannot travel.
+
+<Scene name="r155-reject" caption="Replayed on chainId 61, the chain rebuilds the digest with its own id, so signer recovery returns the wrong address — not the sender. The signature only matches on the chain it was made for, so the replay is rejected." />
+
+<Callout type="insight" title="And that is EIP-155">
+A pre-155 signature committed to the action but not the network → so the same signed bytes replayed across any chain sharing your address (acutely, the ETH/ETC split) → fold a per-network **chainId** into the RLP that gets hashed and signed → carry it in **v = chainId·2 + 35 + parity**, which both transports the chainId and stays above the legacy `27/28` range for backward compatibility → and now a transaction signed for one chain recovers the *wrong* signer anywhere else, so it's rejected. One integer, mixed into the hash, turns a signature from "valid everywhere" into "valid here." It's why your wallet asks which network you're on — and why a mainnet transaction can't quietly drain your testnet (or your Classic) balance.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-155: Simple replay attack protection", note: "The spec — chainId in the signature & v", href: "https://eips.ethereum.org/EIPS/eip-155" },
+    { kind: "post", label: "Keys, signatures & addresses", note: "Why one key is the same address on every chain", href: "/you-could-have-invented-ethereum#step-2" },
+    { kind: "post", label: "EIP-2718, derived", note: "The typed envelope that later carries chainId explicitly", href: "/eip-2718-typed-transactions" },
+    { kind: "tool", label: "chainlist.org", note: "The registry of chainIds in use", href: "https://chainlist.org/" },
+    { kind: "post", label: "The DAO fork & ETH/ETC split", note: "The event that made replay protection urgent", href: "https://ethereum.org/en/history/#dao-fork" },
+  ]}
+/>
+
+</DepthLayer>

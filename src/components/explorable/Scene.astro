@@ -59,7 +59,11 @@ interface Props {
     | "tx-onefmt"
     | "tx-typebyte"
     | "tx-disambig"
-    | "tx-family";
+    | "tx-family"
+    | "r155-replay"
+    | "r155-bind"
+    | "r155-vencode"
+    | "r155-reject";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -985,6 +989,74 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="220">{L("old clients cleanly reject an unknown type byte")}</text>
       </svg>
     )}
+
+    {/* ── EIP-155: a pre-155 tx is valid on any chain — replayable ── */}
+    {name === "r155-replay" && (
+      <svg viewBox="0 0 480 204" role="img" aria-label="A pre-155 transaction can be replayed on any chain">
+        <text class="t-cap" x="240" y="22">{L("one signed transaction, no chain identity")}</text>
+        <rect class="rv-tx" x="180" y="36" width="120" height="48" rx="8" />
+        <text class="t-cap" x="240" y="57">{L("signed tx")}</text>
+        <text class="t-cap rv-vsig" x="240" y="73">v = 27 / 28</text>
+        <path class="sarrow rv-a1" d="M212 84 L128 126" />
+        <path class="sarrow rv-a2" d="M268 84 L352 126" />
+        <rect class="rv-chain" x="36" y="130" width="168" height="54" rx="8" />
+        <text class="t-cap" x="120" y="152">{L("Chain A · ETH")}</text>
+        <text class="t-ok rv-ok1" x="120" y="172">{L("✓ accepted")}</text>
+        <rect class="rv-chain" x="276" y="130" width="168" height="54" rx="8" />
+        <text class="t-cap" x="360" y="152">{L("Chain B · ETC")}</text>
+        <text class="t-x rv-ok2" x="360" y="172">{L("✓ replayed!")}</text>
+        <text class="t-cap" x="240" y="200">{L("the same signed bytes are valid on every chain that shares your address")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-155: fold chainId into the signed data ── */}
+    {name === "r155-bind" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Folding the chain id into the signed transaction data">
+        <text class="t-cap" x="240" y="20">{L("fold the chain id into the signed data")}</text>
+        <rect class="rv-list rv-old" x="44" y="32" width="392" height="30" rx="6" />
+        <text class="t-fld rv-listc" x="240" y="51">rlp[nonce, gasPrice, gas, to, value, data]</text>
+        <text class="t-cap" x="240" y="78">{L("before — valid on any chain")}</text>
+        <rect class="rv-list rv-new" x="44" y="90" width="392" height="30" rx="6" />
+        <text class="t-fld rv-listc rv-newt" x="240" y="109">rlp[ … , chainId, 0, 0]</text>
+        <text class="t-cap" x="240" y="136">{L("after — bound to one chainId")}</text>
+        <path class="sarrow rv-ha" d="M240 142 V160" />
+        <rect class="rv-hash" x="148" y="164" width="184" height="30" rx="8" />
+        <text class="t-ok" x="240" y="183">{L("keccak now differs per chain")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-155: the chainId is carried in v ── */}
+    {name === "r155-vencode" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="The chain id is encoded into the signature's v value">
+        <text class="t-cap" x="240" y="22">{L("carry the chain in v")}</text>
+        <rect class="rv-formula" x="80" y="38" width="320" height="40" rx="8" />
+        <text class="t-addr rv-ftext" x="240" y="63">v = chainId·2 + 35 + parity</text>
+        <text class="t-cap" x="120" y="108">{L("mainnet · chainId 1")}</text>
+        <text class="t-ok rv-ex1" x="120" y="126">v = 37 or 38</text>
+        <text class="t-cap" x="360" y="108">{L("legacy · pre-155")}</text>
+        <text class="t-cap" x="360" y="126">v = 27 or 28 — still ok</text>
+        <text class="t-cap" x="240" y="168">{L("the receiver reads the chain from v; old txs stay valid, unprotected")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-155: replay on the wrong chain is rejected ── */}
+    {name === "r155-reject" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="A transaction signed for one chain is rejected when replayed on another">
+        <text class="t-cap" x="240" y="20">{L("replay it on the wrong chain")}</text>
+        <rect class="rv-tx2" x="30" y="44" width="150" height="50" rx="8" />
+        <text class="t-cap" x="105" y="64">{L("tx signed for")}</text>
+        <text class="t-ok" x="105" y="83">chainId 1</text>
+        <text class="t-cap" x="240" y="58">{L("replay →")}</text>
+        <path class="sarrow rv-ra" d="M180 70 H300" />
+        <rect class="rv-chain2" x="300" y="42" width="160" height="58" rx="8" />
+        <text class="t-cap" x="380" y="64">{L("chain · chainId 61")}</text>
+        <text class="t-cap" x="380" y="82">{L("recompute hash w/ 61")}</text>
+        <rect class="rv-verdict" x="150" y="126" width="180" height="42" rx="8" />
+        <text class="t-x rv-vtext" x="240" y="146">{L("signer ≠ sender")}</text>
+        <text class="t-x rv-vtext" x="240" y="162">{L("✗ rejected")}</text>
+        <text class="t-cap" x="240" y="192">{L("chain 61 recomputes the hash with its own id → recovery fails → rejected")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -1656,4 +1728,44 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .tx-namelbl { fill: var(--color-ink-muted); }
   .txr5 .tx-chip { stroke-dasharray: 3 2; }
   .txr5 .tx-name { stroke-dasharray: 3 2; }
+
+  /* EIP-155 — r155-replay: one signed tx, valid on every chain */
+  .rv-tx { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); animation: rv-pulse 6s ease-in-out infinite; }
+  @keyframes rv-pulse { 0%,14% { filter: none } 26% { filter: drop-shadow(0 0 7px var(--color-hash)) } 40%,100% { filter: none } }
+  .rv-vsig { fill: var(--color-ink-muted); }
+  .rv-a1 { stroke-dasharray: 96; stroke-dashoffset: 96; animation: rv-draw 6s ease-in-out infinite; }
+  .rv-a2 { stroke-dasharray: 96; stroke-dashoffset: 96; animation: rv-draw 6s ease-in-out 0.3s infinite; }
+  @keyframes rv-draw { 0%,20% { stroke-dashoffset: 96 } 42%,100% { stroke-dashoffset: 0 } }
+  .rv-chain { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .rv-ok1 { opacity: 0; animation: rv-fin 6s ease-in-out infinite; }
+  .rv-ok2 { opacity: 0; animation: rv-fin 6s ease-in-out 0.3s infinite; }
+  @keyframes rv-fin { 0%,48% { opacity: 0 } 62%,100% { opacity: 1 } }
+
+  /* EIP-155 — r155-bind: chainId folded into the signed list */
+  .rv-list { fill: var(--color-surface); stroke: var(--color-border); }
+  .rv-old { opacity: 0.55; }
+  .rv-listc { text-anchor: middle; }
+  .rv-new { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); opacity: 0; animation: rv-newin 6s ease-in-out infinite; }
+  .rv-newt { fill: var(--color-accent-strong); opacity: 0; animation: rv-newin 6s ease-in-out infinite; }
+  @keyframes rv-newin { 0%,26% { opacity: 0 } 42%,100% { opacity: 1 } }
+  .rv-ha { stroke-dasharray: 24; stroke-dashoffset: 24; animation: rv-hadraw 6s ease-in-out infinite; }
+  @keyframes rv-hadraw { 0%,46% { stroke-dashoffset: 24 } 60%,100% { stroke-dashoffset: 0 } }
+  .rv-hash { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: rv-hashin 6s ease-in-out infinite; }
+  @keyframes rv-hashin { 0%,56% { opacity: 0 } 70%,100% { opacity: 1 } }
+
+  /* EIP-155 — r155-vencode: chainId carried in v */
+  .rv-formula { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .rv-ftext { animation: rv-fpulse 6s ease-in-out infinite; }
+  @keyframes rv-fpulse { 0%,30% { opacity: 0.55 } 46%,100% { opacity: 1 } }
+  .rv-ex1 { opacity: 0; animation: rv-exin 6s ease-out infinite; }
+  @keyframes rv-exin { 0%,50% { opacity: 0 } 64%,100% { opacity: 1 } }
+
+  /* EIP-155 — r155-reject: replay on the wrong chain fails recovery */
+  .rv-tx2 { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .rv-ra { stroke-dasharray: 120; stroke-dashoffset: 120; animation: rv-radraw 6s ease-in-out infinite; }
+  @keyframes rv-radraw { 0%,16% { stroke-dashoffset: 120 } 38%,100% { stroke-dashoffset: 0 } }
+  .rv-chain2 { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .rv-verdict { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; animation: rv-vin 6s ease-in-out infinite; }
+  .rv-vtext { opacity: 0; animation: rv-vin 6s ease-in-out infinite; }
+  @keyframes rv-vin { 0%,52% { opacity: 0 } 66%,100% { opacity: 1 } }
 </style>

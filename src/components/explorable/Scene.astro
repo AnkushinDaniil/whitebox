@@ -87,7 +87,11 @@ interface Props {
     | "mb-shard"
     | "mb-raise"
     | "mb-consolidate"
-    | "mb-payoff";
+    | "mb-payoff"
+    | "evm-why"
+    | "evm-stack"
+    | "evm-gas"
+    | "evm-regions";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1540,6 +1544,112 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="178">{L("vote weight scales with balance, so security is unchanged — Pectra (2025)")}</text>
       </svg>
     )}
+
+    {/* ── EVM: a fixed action becomes a program the account runs ── */}
+    {name === "evm-why" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="A transaction's fixed action is replaced by a program stored in the account">
+        <text class="t-cap" x="120" y="26">{L("before — one fixed action")}</text>
+        <rect class="ev-fixed" x="30" y="38" width="180" height="70" rx="8" />
+        <text class="t-fld ev-cc" x="120" y="66">if transfer:</text>
+        <text class="t-fld ev-cc" x="120" y="84">  balance[to] += v</text>
+        <text class="t-x ev-rigid" x="120" y="130">{L("the protocol hard-codes it")}</text>
+        <path class="sarrow ev-morph" d="M214 74 H266" />
+        <text class="t-cap ev-ml" x="240" y="64">{L("put code in")}</text>
+        <text class="t-cap" x="360" y="26">{L("after — arbitrary code")}</text>
+        <rect class="ev-prog" x="270" y="38" width="180" height="70" rx="8" />
+        <text class="t-fld ev-op evo0" x="284" y="58">PUSH 2</text>
+        <text class="t-fld ev-op evo1" x="284" y="74">PUSH 3</text>
+        <text class="t-fld ev-op evo2" x="284" y="90">ADD  MUL …</text>
+        <text class="t-fld ev-cc" x="360" y="102" />
+        <text class="t-ok ev-free" x="360" y="130">{L("the account runs your program")}</text>
+        <text class="t-cap" x="240" y="172">{L("give the account a code field and a machine to run it — that machine is the EVM")}</text>
+      </svg>
+    )}
+
+    {/* ── EVM: the stack machine executes (2 + 3) × 4, step by step ── */}
+    {name === "evm-stack" && (
+      <svg viewBox="0 0 480 248" role="img" aria-label="A stack machine evaluating (2 plus 3) times 4 opcode by opcode">
+        <text class="ev-op-cap ec0" x="240" y="22" text-anchor="middle">PUSH1 2 — {L("push the value 2")}</text>
+        <text class="ev-op-cap ec1" x="240" y="22" text-anchor="middle">PUSH1 3 — {L("push 3 on top")}</text>
+        <text class="ev-op-cap ec2" x="240" y="22" text-anchor="middle">ADD — {L("pop 3 and 2, push 5")}</text>
+        <text class="ev-op-cap ec3" x="240" y="22" text-anchor="middle">PUSH1 4 — {L("push 4 on top")}</text>
+        <text class="ev-op-cap ec4" x="240" y="22" text-anchor="middle">MUL — {L("pop 4 and 5, push 20")}</text>
+
+        {/* bytecode / opcode list with a per-row instruction pointer */}
+        <text class="t-cap" x="30" y="46" text-anchor="start">{L("bytecode")}</text>
+        {[["6002", "PUSH1 2", 0], ["6003", "PUSH1 3", 1], ["01", "ADD", 2], ["6004", "PUSH1 4", 3], ["02", "MUL", 4]].map(([hex, asm, i]) => (
+          <g>
+            <rect class={`ev-iprow ev-ph${i}`} x="24" y={54 + Number(i) * 30} width="176" height="26" rx="5" />
+            <text class="t-fld ev-hex" x="36" y={71 + Number(i) * 30}>{hex}</text>
+            <text class="t-fld ev-asm" x="92" y={71 + Number(i) * 30}>{asm}</text>
+          </g>
+        ))}
+
+        {/* the stack: fixed slot outlines + animated value cells */}
+        <text class="t-cap" x="360" y="46" text-anchor="middle">{L("the stack")}</text>
+        <rect class="ev-slot" x="316" y="150" width="88" height="28" rx="5" />
+        <rect class="ev-slot" x="316" y="118" width="88" height="28" rx="5" />
+        <line class="ev-base" x1="304" y1="182" x2="416" y2="182" />
+        <text class="t-cap ev-toplbl" x="430" y="128" text-anchor="start">{L("top")}</text>
+
+        <g class="ev-cell ev-c2"><rect x="316" y="150" width="88" height="28" rx="5" /><text x="360" y="169">2</text></g>
+        <g class="ev-cell ev-c3"><rect x="316" y="118" width="88" height="28" rx="5" /><text x="360" y="137">3</text></g>
+        <g class="ev-cell ev-res ev-c5"><rect x="316" y="150" width="88" height="28" rx="5" /><text x="360" y="169">5</text></g>
+        <g class="ev-cell ev-c4"><rect x="316" y="118" width="88" height="28" rx="5" /><text x="360" y="137">4</text></g>
+        <g class="ev-cell ev-res ev-c20"><rect x="316" y="150" width="88" height="28" rx="5" /><text x="360" y="169">20</text></g>
+
+        <text class="t-cap" x="240" y="212" text-anchor="middle">{L("every opcode pushes or pops the stack — no registers, no variables")}</text>
+        <text class="t-ok ev-final" x="240" y="234" text-anchor="middle">{L("(2 + 3) × 4 = 20 — the result is left on the stack")}</text>
+      </svg>
+    )}
+
+    {/* ── EVM: gas — pay per step, bound the run ── */}
+    {name === "evm-gas" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="Gas meters each opcode and bounds execution">
+        <text class="t-cap" x="240" y="22">{L("every opcode costs gas — the budget only falls")}</text>
+        <rect class="ev-gtrack" x="40" y="38" width="400" height="22" rx="6" />
+        <rect class="ev-gfill" x="40" y="38" width="400" height="22" rx="6" />
+        <text class="t-fld ev-gremain" x="240" y="53" text-anchor="middle">{L("gas remaining")}</text>
+        {[["PUSH 3", 60], ["PUSH 3", 156], ["ADD 3", 252], ["SSTORE 20000", 330]].map(([lbl, x], i) => (
+          <g class={`ev-tick ev-tk${i}`}>
+            <line x1={x} y1="66" x2={x} y2="78" />
+            <text class="t-fld" x={x} y="92" text-anchor="middle">{lbl}</text>
+          </g>
+        ))}
+        <text class="t-x ev-halt" x="240" y="126" text-anchor="middle">{L("out of gas → revert (all changes undone)")}</text>
+        <text class="t-cap" x="240" y="156">{L("you can't tell if a program halts — so charge per step and cap it")}</text>
+        <text class="t-cap" x="240" y="174">{L("computation is now paid for and always terminates")}</text>
+      </svg>
+    )}
+
+    {/* ── EVM: three places for data — stack, memory, storage ── */}
+    {name === "evm-regions" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="The EVM's three data locations: stack, memory, and storage">
+        <text class="t-cap" x="240" y="20">{L("three places to put data — each a different lifetime & price")}</text>
+
+        <rect class="ev-reg ev-rstack" x="16" y="34" width="146" height="128" rx="8" />
+        <text class="t-cap" x="89" y="54">{L("stack")}</text>
+        {[0, 1, 2].map((i) => (<rect class="ev-sk" x="52" y={68 + i * 20} width="74" height="16" rx="3" />))}
+        <text class="t-ok" x="89" y="140">{L("cheapest")}</text>
+        <text class="t-cap ev-sub" x="89" y="155">{L("LIFO · cleared per call")}</text>
+
+        <rect class="ev-reg ev-rmem" x="170" y="34" width="146" height="128" rx="8" />
+        <text class="t-cap" x="243" y="54">{L("memory")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<rect class="ev-byte" x={186 + i * 15} y="72" width="12" height="20" rx="2" />))}
+        <text class="t-cap" x="243" y="112">{L("linear scratch bytes")}</text>
+        <text class="t-cap ev-sub" x="243" y="140">{L("cheap · wiped after the call")}</text>
+
+        <rect class="ev-reg ev-rstore" x="324" y="34" width="140" height="128" rx="8" />
+        <text class="t-cap" x="394" y="54">{L("storage")}</text>
+        <ellipse class="ev-disk" cx="394" cy="80" rx="34" ry="9" />
+        <rect class="ev-diskbody" x="360" y="80" width="68" height="30" rx="2" />
+        <ellipse class="ev-disk" cx="394" cy="110" rx="34" ry="9" />
+        <text class="t-x" x="394" y="140">{L("expensive · on disk")}</text>
+        <text class="t-cap ev-sub" x="394" y="155">{L("key→value · persists forever")}</text>
+
+        <text class="t-cap" x="240" y="186">{L("stack for working, memory for scratch, storage for what must survive")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2485,4 +2595,95 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mbb1 { animation: mb-benin 5s ease-out 0.3s infinite; }
   .mbb2 { animation: mb-benin 5s ease-out 0.6s infinite; }
   @keyframes mb-benin { 0%,10% { opacity: 0; transform: translateY(-4px) } 26%,94% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
+
+  /* ── EVM — evm-why: a fixed action becomes a program ── */
+  .ev-fixed { fill: color-mix(in oklab, var(--color-hash) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .ev-cc { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ev-rigid { animation: ev-pulse 5s ease-in-out infinite; }
+  @keyframes ev-pulse { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
+  .ev-morph { stroke-dasharray: 54; stroke-dashoffset: 54; animation: ev-mdraw 5s ease-in-out infinite; }
+  @keyframes ev-mdraw { 0%,24% { stroke-dashoffset: 54 } 46%,100% { stroke-dashoffset: 0 } }
+  .ev-ml { fill: var(--color-ink-faint); }
+  .ev-prog { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); opacity: 0; animation: ev-progin 5s ease-in-out infinite; }
+  @keyframes ev-progin { 0%,30% { opacity: 0 } 46%,100% { opacity: 1 } }
+  .ev-op { fill: var(--color-accent-strong); text-anchor: start; opacity: 0; }
+  .evo0 { animation: ev-opin 5s ease-out infinite; }
+  .evo1 { animation: ev-opin 5s ease-out 0.2s infinite; }
+  .evo2 { animation: ev-opin 5s ease-out 0.4s infinite; }
+  @keyframes ev-opin { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
+  .ev-free { fill: var(--color-node-leaf); opacity: 0; animation: ev-progin 5s ease-in-out infinite; }
+
+  /* ── EVM — evm-stack: the stack machine executes (2+3)×4 ── */
+  .ev-op-cap { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; font-weight: 600; opacity: 0; }
+  .ec0 { animation: evm-p0 13s infinite; }
+  .ec1 { animation: evm-p1 13s infinite; }
+  .ec2 { animation: evm-p2 13s infinite; }
+  .ec3 { animation: evm-p3 13s infinite; }
+  .ec4 { animation: evm-p4 13s infinite; }
+  @keyframes evm-p0 { 0% { opacity: 0 } 2% { opacity: 1 } 18% { opacity: 1 } 21% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes evm-p1 { 0%,21% { opacity: 0 } 23% { opacity: 1 } 38% { opacity: 1 } 41% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes evm-p2 { 0%,41% { opacity: 0 } 43% { opacity: 1 } 58% { opacity: 1 } 61% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes evm-p3 { 0%,61% { opacity: 0 } 63% { opacity: 1 } 78% { opacity: 1 } 81% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes evm-p4 { 0%,81% { opacity: 0 } 83% { opacity: 1 } 98% { opacity: 1 } 100% { opacity: 0 } }
+  .ev-hex { fill: var(--color-ink-faint); text-anchor: start; }
+  .ev-asm { fill: var(--color-ink-muted); text-anchor: start; }
+  .ev-iprow { fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)); stroke: var(--color-accent); opacity: 0; }
+  .ev-ph0 { animation: evm-p0 13s infinite; }
+  .ev-ph1 { animation: evm-p1 13s infinite; }
+  .ev-ph2 { animation: evm-p2 13s infinite; }
+  .ev-ph3 { animation: evm-p3 13s infinite; }
+  .ev-ph4 { animation: evm-p4 13s infinite; }
+  .ev-slot { fill: none; stroke: var(--color-border); stroke-dasharray: 3 3; }
+  .ev-base { stroke: var(--color-border-strong); stroke-width: 2; }
+  .ev-toplbl { fill: var(--color-ink-faint); }
+  .ev-cell { transform-box: fill-box; transform-origin: center; }
+  .ev-cell rect { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .ev-cell text { fill: var(--color-ink); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; font-weight: 600; }
+  .ev-res rect { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); filter: drop-shadow(0 0 5px color-mix(in oklab, var(--color-node-leaf) 55%, transparent)); }
+  .ev-c2 { animation: evm-c2 13s infinite; }
+  .ev-c3 { animation: evm-c3 13s infinite; }
+  .ev-c5 { animation: evm-c5 13s infinite; }
+  .ev-c4 { animation: evm-c4 13s infinite; }
+  .ev-c20 { animation: evm-c20 13s infinite; }
+  @keyframes evm-c2 { 0% { opacity: 0; transform: scale(0.5) } 3% { opacity: 1; transform: scale(1) } 40% { opacity: 1; transform: scale(1) } 44% { opacity: 0; transform: scale(0.9) } 100% { opacity: 0 } }
+  @keyframes evm-c3 { 0%,20% { opacity: 0; transform: scale(0.5) } 24% { opacity: 1; transform: scale(1) } 40% { opacity: 1 } 44% { opacity: 0; transform: scale(0.9) } 100% { opacity: 0 } }
+  @keyframes evm-c5 { 0%,42% { opacity: 0; transform: scale(0.5) } 47% { opacity: 1; transform: scale(1) } 80% { opacity: 1 } 84% { opacity: 0; transform: scale(0.9) } 100% { opacity: 0 } }
+  @keyframes evm-c4 { 0%,60% { opacity: 0; transform: scale(0.5) } 64% { opacity: 1; transform: scale(1) } 80% { opacity: 1 } 84% { opacity: 0; transform: scale(0.9) } 100% { opacity: 0 } }
+  @keyframes evm-c20 { 0%,82% { opacity: 0; transform: scale(0.5) } 87% { opacity: 1; transform: scale(1) } 100% { opacity: 1 } }
+  .ev-final { opacity: 0; animation: evm-final 13s infinite; }
+  @keyframes evm-final { 0%,82% { opacity: 0 } 88% { opacity: 1 } 100% { opacity: 1 } }
+
+  /* ── EVM — evm-gas: pay per step, bound the run ── */
+  .ev-gtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ev-gfill { fill: color-mix(in oklab, var(--color-node-leaf) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: ev-drain 6s ease-in-out infinite; }
+  @keyframes ev-drain {
+    0%,8% { transform: scaleX(1); fill: color-mix(in oklab, var(--color-node-leaf) 40%, var(--color-surface)) }
+    20%,26% { transform: scaleX(0.9) }
+    36%,42% { transform: scaleX(0.8) }
+    52%,58% { transform: scaleX(0.72); fill: color-mix(in oklab, var(--color-accent) 30%, var(--color-surface)) }
+    70%,100% { transform: scaleX(0.14); fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)) }
+  }
+  .ev-gremain { fill: var(--color-ink-muted); }
+  .ev-tick line { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .ev-tick { opacity: 0.3; }
+  .ev-tk0 { animation: ev-tick 6s ease-out infinite; }
+  .ev-tk1 { animation: ev-tick 6s ease-out 0.9s infinite; }
+  .ev-tk2 { animation: ev-tick 6s ease-out 1.8s infinite; }
+  .ev-tk3 { animation: ev-tick 6s ease-out 3s infinite; }
+  @keyframes ev-tick { 0% { opacity: 0.3 } 12% { opacity: 1 } 100% { opacity: 0.5 } }
+  .ev-halt { opacity: 0; animation: ev-halt 6s ease-in-out infinite; }
+  @keyframes ev-halt { 0%,68% { opacity: 0 } 80% { opacity: 1 } 100% { opacity: 1 } }
+
+  /* ── EVM — evm-regions: stack / memory / storage ── */
+  .ev-reg { fill: var(--color-surface); }
+  .ev-rstack { stroke: var(--color-node-leaf); }
+  .ev-rmem { stroke: var(--color-accent-dim); }
+  .ev-rstore { stroke: var(--color-hash); }
+  .ev-sub { fill: var(--color-ink-faint); }
+  .ev-sk { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); animation: ev-skb 4s ease-in-out infinite; }
+  @keyframes ev-skb { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+  .ev-byte { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); animation: ev-byte 4s ease-in-out infinite; }
+  @keyframes ev-byte { 0%,100% { opacity: 0.45 } 50% { opacity: 0.9 } }
+  .ev-disk { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); }
+  .ev-diskbody { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
 </style>

@@ -1,0 +1,167 @@
+---
+title: "The EVM: turning an account into a computer"
+dek: "Chapter 1 gave us accounts and unforgeable, signed transactions — but a transaction could still only do one hard-coded thing: move value. This chapter derives the machine that lets an account run *any* program: a stack, a way to pay for computation, and three places to keep data. Build it and the EVM falls out."
+summary: "A from-scratch derivation of the Ethereum Virtual Machine. Starting from accounts that can only transfer value, we invent programmability one constraint at a time: store code in the account and run it on a minimal stack machine (watch (2+3)×4 execute opcode by opcode), meter every instruction with gas so computation is paid-for and always terminates (the halting problem forces it), and split data into a stack, memory, and storage by lifetime and cost. Ends with a live bytecode stepper running real EVM execution."
+topic: "Start here"
+order: 0
+spine: true
+prerequisites: ["accounts & signed transactions"]
+updated: 2026-06-23
+readingMinutes: 14
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import Formula from "@/components/explorable/Formula.astro";
+import EvmStepper from "@/components/evm/EvmStepper.tsx";
+
+By the end of [chapter 1](/you-could-have-invented-ethereum) we had a shared ledger, accounts, and transactions that are **unforgeable** — signed by a key only their owner holds. But look closely at what a transaction can actually *do*: it moves value from one account to another. That's it. The rule is welded into the protocol. If you want anything richer — an escrow that releases when two people agree, a token that isn't ETH, an auction — you can't express it, because there's nowhere to put the logic and nothing to run it. This chapter fixes exactly that, and the thing we build to fix it is the **Ethereum Virtual Machine**. We'll invent it the same way as everything else: name the missing piece, add the smallest thing that supplies it, and see what breaks next.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Store code in the account" },
+  { id: "step-2", label: "A stack machine" },
+  { id: "step-3", label: "Pay per step: gas" },
+  { id: "step-4", label: "Where data lives" },
+  { id: "step-5", label: "Run it yourself" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Store code in the account">
+
+## The problem: the only verb is "transfer"
+
+A transaction names a recipient and an amount, and the protocol applies one fixed rule: subtract here, add there. There is no way to say *"only move this if X"* or *"do this other thing entirely,"* because the account holds just a balance and a nonce — no behaviour. To make accounts programmable, the idea writes itself: give an account a **code** field, and give the protocol a machine that runs that code whenever the account is called.
+
+<Scene name="evm-why" caption="Before: the protocol hard-codes a single action (transfer). After: the account carries a code field holding arbitrary instructions, and the protocol runs them when the account is called. That runtime is what we have to design." />
+
+An account with code is a <KeyTerm term="contract account" def="An account whose behaviour is defined by code stored on-chain. When it's called, the EVM executes that code deterministically on every node; it has its own balance and storage but no private key." />. Now the question is *what* that machine looks like. It has to be dead simple, because **every node on Earth must run it and get bit-for-bit the same answer** — otherwise they'd disagree on the new state and the chain would split.
+
+<Callout type="warning" title="What breaks">
+We've decided the account holds code. But "run some code" is doing a lot of work. What execution model is simple enough to specify exactly, deterministic on every machine, and still able to compute anything?
+</Callout>
+
+**→ Step 2: the simplest computer that can compute anything.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A stack machine">
+
+## Derive the machine: a stack, and nothing else
+
+A CPU with registers is fiddly to specify and easy to disagree on. So reach for the most minimal model that's still Turing-complete: a <KeyTerm term="stack machine" def="A computer with no named registers or variables. Instructions take their operands from the top of a last-in-first-out stack and push results back onto it. Simple to specify exactly — which is why the EVM is one." />. There are no variables and no registers — just a last-in-first-out stack of values. Each instruction (an <KeyTerm term="opcode" def="A one-byte EVM instruction, e.g. 0x01 = ADD, 0x60 = PUSH1, 0x02 = MUL. The contract's code is just a string of these bytes; the EVM reads them one at a time." />) is one byte: it pops what it needs off the top and pushes what it produces back on.
+
+That sounds abstract until you watch it. Here's the program for `(2 + 3) × 4` — five opcodes — running one step at a time. Watch the stack:
+
+<Scene name="evm-stack" caption="The bytecode 60 02 · 60 03 · 01 · 60 04 · 02 running opcode by opcode. PUSH puts a value on top; ADD pops the top two (3 and 2) and pushes their sum (5); PUSH 4; MUL pops 4 and 5 and pushes 20. No variables — every value lives on the stack, and the answer is whatever's left on top." />
+
+Notice what just happened. `ADD` didn't need to be told *where* 2 and 3 were — they were simply the top two items, and it replaced them with `5`. That's the whole trick: because operands always come from the top of the stack, each opcode's behaviour is trivial to define, and any node running the same bytes gets the same result. Chain enough of these one-byte instructions together and you can compute anything.
+
+<Callout type="warning" title="What breaks">
+A stack machine can loop and branch — which means it can loop *forever*. If validating a block means running everyone's code, one infinite loop would freeze every node on the network. We need computation to be **guaranteed to stop**.
+</Callout>
+
+**→ Step 3: make every step cost something.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Pay per step: gas">
+
+## Gas: computation you pay for, and that always halts
+
+You cannot, in general, look at a program and decide whether it will ever stop — that's the **halting problem**, and it's not a gap we can engineer around. So don't try. Instead, attach a price to *every* opcode and make each transaction carry a budget. Executing an instruction spends from that budget; when the budget hits zero, execution stops immediately. That budget is <KeyTerm term="gas" def="A unit metering EVM work. Every opcode has a fixed gas cost; a transaction supplies a gas limit and pays for the gas it burns. When gas runs out, execution halts and reverts — which is what makes unbounded loops safe." />.
+
+<Scene name="evm-gas" caption="Each opcode subtracts its cost from the gas budget, which only ever falls. Cheap ops (PUSH, ADD) cost a little; touching storage (SSTORE) costs a lot. If the budget hits zero mid-execution, everything reverts — so even an infinite loop simply runs until it runs out of gas, then stops." />
+
+This one move solves two problems at once. It makes computation **paid-for**, so spamming the network with heavy work costs real money; and it makes execution **bounded**, because a finite budget can only buy finitely many steps. An infinite loop is no longer dangerous — it just burns through its gas and halts.
+
+<Formula
+  expr="gas_used = Σ cost(opcode)  ≤  gas_limit"
+  terms={[
+    { t: "cost(opcode)", note: "a fixed price per instruction — 3 for ADD, 20000 to write a fresh storage slot" },
+    { t: "gas_limit", note: "the budget the sender attaches; hit it and execution reverts" },
+  ]}
+  caption="Total cost is just the sum of the per-opcode prices. Bounded budget → bounded steps → guaranteed to terminate."
+/>
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper, §9 — Execution Model"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="the machine state"
+>
+The EVM is a stack-based machine with a word size of 256 bits. The machine state is the
+tuple `(g, pc, m, i, s)`: gas available `g`, program counter `pc`, memory `m`, active
+memory words `i`, and the stack `s`. Execution halts if gas would go negative
+(out-of-gas), on a `STOP`/`RETURN`, or on an exceptional condition — in which case all
+state changes in the current frame are reverted.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+We can run code and pay for it. But real programs need to *remember* things — a token's balances, an auction's high bid. The stack is wiped the instant execution ends. Where does data that must survive actually live?
+</Callout>
+
+**→ Step 4: three places for data, by lifetime.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Where data lives">
+
+## Three data locations, priced by how long they last
+
+Different data has different lifetimes, and lifetime is what should set the price. So the EVM gives code **three** distinct places to put values, and the whole design is that cost tracks permanence.
+
+<Scene name="evm-regions" caption="The stack holds the working values an opcode needs right now — tiny, LIFO, and free-ish, but gone the moment the call ends. Memory is a linear scratchpad of bytes — cheap, expandable, and wiped after the call. Storage is a key→value map that lives on every node's disk forever — which is why writing it is the most expensive thing the EVM does." />
+
+- The <KeyTerm term="stack" def="The working surface where opcodes take operands and leave results. Max 1024 items, each a 256-bit word. Effectively free, but exists only for the current call." /> is for the values an instruction needs this very moment.
+- <KeyTerm term="memory" def="A linear, byte-addressable scratch space that starts empty each call and grows as needed. Cheap to use, but discarded when the call returns." /> is a scratchpad for the duration of a call — building up a return value, hashing a blob of bytes.
+- <KeyTerm term="storage" def="The contract's permanent key→value store, committed to the state trie and held on every node's disk. Reads and especially writes (SSTORE) are the priciest common operations, because everyone stores it forever." /> is the contract's permanent memory — the only place data survives from one transaction to the next.
+
+Because storage is written to every node's disk *and kept forever*, it's deliberately the most expensive resource in the machine — orders of magnitude pricier than touching the stack. That single price gap is the seed of a surprising number of later upgrades: [pricing cold vs. warm access](/eip-2929-2930-access-lists) so first-touch reflects the real disk cost, and [transient storage](/eip-1153-transient-storage) for data that only needs to live for one transaction. Keep the gap in mind — we'll come back to it in Part III.
+
+<Callout type="insight" title="And that is the EVM">
+Accounts could only transfer value → give an account a **code** field and a machine to run it → make that machine a minimal, deterministic **stack machine** so every node agrees → meter each opcode with **gas** so computation is paid-for and always halts (the halting problem forces the meter) → and split data into **stack / memory / storage** by lifetime, with permanence setting the price. That's the Ethereum Virtual Machine: a small, exactly-specified computer that every node runs in lockstep. Everything programmable about Ethereum — tokens, DeFi, NFTs, account abstraction — is just bytecode for this machine.
+</Callout>
+
+**→ Step 5: run some bytecode yourself.**
+
+</DepthLayer>
+
+<DepthLayer tier="spec" id="step-5" num="5" badge="live" title="Run it yourself">
+
+## The real thing, one step at a time
+
+Everything above is animated to teach the shape. This is the **actual machine**: a real EVM implementation running real bytecode. Step through the presets — the same `(2 + 3) × 4`, a store-and-load, a `RETURN`, and a countdown loop — and watch the stack, memory, storage, gas, and program counter move on every instruction. Edit the bytecode and it re-runs.
+
+<WidgetFrame
+  title="EVM bytecode stepper"
+  caption="Step or play through real EVM execution: each opcode updates the stack, memory, storage, gas, and program counter. Try the countdown loop to watch gas fall as the loop spins."
+  source="A real EVM interpreter (stack, memory, storage, gas, jumps) executing the bytecode byte-for-byte."
+>
+  <EvmStepper client:visible />
+</WidgetFrame>
+
+<Callout type="insight" title="You now have the whole foundation">
+An account with code, a stack machine to run it, gas to bound it, and three tiers of data. From here on, every chapter in this book is either the *consensus* that agrees on what this machine did (Part II) or a specific *upgrade* to it (Part III) — and each one starts from a concrete problem, exactly like this.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "Chapter 1 — You could have invented Ethereum", note: "Accounts, keys & signed transactions", href: "/you-could-have-invented-ethereum" },
+    { kind: "spec", label: "Yellow Paper §9 — Execution model", note: "The EVM defined formally", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
+    { kind: "tool", label: "evm.codes", note: "Every opcode, its gas cost, and a live playground", href: "https://www.evm.codes/" },
+    { kind: "post", label: "EIP-2929/2930 — cold vs warm state access", note: "Pricing that storage gap correctly", href: "/eip-2929-2930-access-lists" },
+    { kind: "post", label: "EIP-1153 — transient storage", note: "A fourth lifetime: one transaction", href: "/eip-1153-transient-storage" },
+  ]}
+/>
+
+</DepthLayer>

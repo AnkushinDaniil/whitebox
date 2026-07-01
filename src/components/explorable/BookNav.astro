@@ -1,0 +1,156 @@
+---
+/**
+ * BookNav — the between-chapters navigation that turns the explorables into a
+ * single readable book. Renders a progress bar and prev/next chapter cards
+ * (titles pulled from the content collection) for any chapter in BOOK.
+ * Renders nothing for pages not in the book spine.
+ */
+import { getCollection } from "astro:content";
+import { chapterNav, type FlatChapter } from "@/data/book";
+import {
+  useTranslations,
+  localizePath,
+  entryLang,
+  entrySlug,
+  type Lang,
+} from "@/i18n/utils";
+
+interface Props {
+  slug: string;
+  lang: Lang;
+}
+const { slug, lang } = Astro.props;
+const t = useTranslations(lang).book;
+const nav = chapterNav(slug);
+
+// Titles come from the collection; EIP chapters are EN-only, foundational
+// chapters exist per-lang. Prefer the requested lang, fall back to EN.
+const all = await getCollection("explorables", ({ data }) => !data.draft);
+const titleFor = (s: string): string => {
+  const inLang = all.find((e) => entrySlug(e.id) === s && entryLang(e.id) === lang);
+  const enOnly = all.find((e) => entrySlug(e.id) === s && entryLang(e.id) === "en");
+  return (inLang ?? enOnly)?.data.title ?? s;
+};
+const hrefFor = (c: FlatChapter): string => {
+  const hasLang = all.some((e) => entrySlug(e.id) === c.slug && entryLang(e.id) === lang);
+  return hasLang ? localizePath(`/${c.slug}`, lang) : `/${c.slug}`;
+};
+---
+
+{
+  nav && (
+    <nav class="booknav" aria-label="Chapter navigation">
+      <div class="bn-progress">
+        <span class="bn-count">
+          {t.part} {nav.current.partN} · {t.chapter} {nav.current.number} {t.of} {nav.total}
+        </span>
+        <div class="bn-bar" role="presentation">
+          <span class="bn-fill" style={`width:${(nav.current.number / nav.total) * 100}%`} />
+        </div>
+      </div>
+      <div class="bn-cards">
+        {nav.prev ? (
+          <a class="bn-card prev" href={hrefFor(nav.prev)}>
+            <span class="bn-dir">← {t.prev}</span>
+            <span class="bn-t">{titleFor(nav.prev.slug)}</span>
+          </a>
+        ) : (
+          <a class="bn-card toc" href={localizePath("/the-execution-layer", lang)}>
+            <span class="bn-dir">↑ {t.toc}</span>
+            <span class="bn-t">{t.toc}</span>
+          </a>
+        )}
+        {nav.next ? (
+          <a class="bn-card next" href={hrefFor(nav.next)}>
+            <span class="bn-dir">{t.next} →</span>
+            <span class="bn-t">{titleFor(nav.next.slug)}</span>
+          </a>
+        ) : (
+          <a class="bn-card toc" href={localizePath("/the-execution-layer", lang)}>
+            <span class="bn-dir">↑ {t.toc}</span>
+            <span class="bn-t">{t.toc}</span>
+          </a>
+        )}
+      </div>
+    </nav>
+  )
+}
+
+<style>
+  .booknav {
+    max-width: 46rem;
+    margin: 2.5rem auto 0;
+  }
+  .bn-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  .bn-count {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-faint);
+    text-transform: uppercase;
+  }
+  .bn-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--color-border);
+    overflow: hidden;
+  }
+  .bn-fill {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent-dim), var(--color-accent));
+    border-radius: 2px;
+  }
+  .bn-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+  }
+  .bn-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+    min-width: 0;
+  }
+  .bn-card:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+  }
+  .bn-card.next {
+    text-align: right;
+  }
+  .bn-dir {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+  .bn-t {
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+  @media (max-width: 34rem) {
+    .bn-cards {
+      grid-template-columns: 1fr;
+    }
+    .bn-card.next {
+      text-align: left;
+    }
+  }
+</style>

@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
 import EmailCapture from "@/components/EmailCapture.tsx";
+import BookNav from "@/components/explorable/BookNav.astro";
+import { chapterNav } from "@/data/book";
 import { useTranslations, localizePath, dateLocale, type Lang } from "@/i18n/utils";
 
 interface Props {
@@ -33,12 +35,29 @@ const updatedLabel = updated.toLocaleDateString(dateLocale[lang], {
   month: "short",
   day: "numeric",
 });
+const bookNav = chapterNav(slug);
 ---
 
 <BaseLayout title={title} description={summary} type="article" published={updated} lang={lang}>
   <article class="explorable">
     <header class="exp-header">
-      <a href={localizePath("/the-execution-layer", lang)} class="exp-topic">{topic}</a>
+      {
+        bookNav ? (
+          <a href={localizePath("/the-execution-layer", lang)} class="exp-topic book">
+            <span class="bk-part">{t.book.part} {bookNav.current.partN}</span>
+            <span class="bk-sep">·</span>
+            <span>{t.book.chapter} {bookNav.current.number} {t.book.of} {bookNav.total}</span>
+            {bookNav.current.groupLabel && (
+              <>
+                <span class="bk-sep">·</span>
+                <span class="bk-fork">{bookNav.current.groupLabel}</span>
+              </>
+            )}
+          </a>
+        ) : (
+          <a href={localizePath("/the-execution-layer", lang)} class="exp-topic">{topic}</a>
+        )
+      }
       <h1 class="exp-title">{title}</h1>
       <p class="exp-dek">{dek}</p>
 
@@ -65,6 +84,8 @@ const updatedLabel = updated.toLocaleDateString(dateLocale[lang], {
     <div class="exp-body">
       <slot />
     </div>
+
+    <BookNav slug={slug} lang={lang} />
 
     <div class="exp-capture">
       <EmailCapture client:visible source={`explorable:${slug}`} lang={lang} />
@@ -112,6 +133,22 @@ const updatedLabel = updated.toLocaleDateString(dateLocale[lang], {
   }
   .exp-topic:hover {
     color: var(--color-accent-strong);
+  }
+  .exp-topic.book {
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .exp-topic.book .bk-part {
+    color: var(--color-accent-strong);
+    font-weight: 600;
+  }
+  .exp-topic.book .bk-sep {
+    color: var(--color-border-strong);
+  }
+  .exp-topic.book .bk-fork {
+    color: var(--color-ink-faint);
   }
   .exp-title {
     font-size: clamp(1.9rem, 4vw, 2.7rem);

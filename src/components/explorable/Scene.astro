@@ -94,7 +94,11 @@ interface Props {
     | "evm-regions"
     | "st-fingerprint"
     | "st-nodes"
-    | "st-header";
+    | "st-header"
+    | "dc-copy"
+    | "dc-call"
+    | "dc-delegate"
+    | "dc-proxy";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1733,6 +1737,92 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="194" text-anchor="middle">{L("agree on the header and you agree on all of state; chaining locks the past")}</text>
       </svg>
     )}
+
+    {/* ── DELEGATECALL: copy-paste code vs one shared implementation ── */}
+    {name === "dc-copy" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Every contract copies the same logic, versus sharing one implementation">
+        <text class="t-cap" x="118" y="20">{L("everyone copies the same code")}</text>
+        {[0, 1, 2].map((i) => (
+          <g class="dc-copybox">
+            <rect x="24" y={30 + i * 46} width="188" height="38" rx="6" />
+            <text class="t-cap" x="60" y={53 + i * 46}>{`0x${i}${i}…`}</text>
+            <text class="t-fld dc-dup" x="180" y={53 + i * 46} text-anchor="end">transfer()</text>
+          </g>
+        ))}
+        <text class="t-x dc-waste" x="118" y="184" text-anchor="middle">{L("same bytecode, over and over")}</text>
+        <path class="sarrow dc-a1" d="M220 96 H268" />
+        <text class="t-cap" x="360" y="20">{L("share one implementation")}</text>
+        {[0, 1, 2].map((i) => (
+          <g><rect class="dc-thin" x="286" y={34 + i * 30} width="60" height="20" rx="4" /><path class="sarrow dc-share" d={`M346 ${44 + i * 30} H392`} /></g>
+        ))}
+        <rect class="dc-lib" x="392" y="52" width="72" height="60" rx="7" />
+        <text class="t-cap" x="428" y="78">{L("Library")}</text>
+        <text class="t-fld dc-libt" x="428" y="94">transfer()</text>
+        <text class="t-cap" x="360" y="150" text-anchor="middle">{L("whose data does the shared code touch?")}</text>
+      </svg>
+    )}
+
+    {/* ── DELEGATECALL: a plain CALL runs in the callee's storage ── */}
+    {name === "dc-call" && (
+      <svg viewBox="0 0 480 194" role="img" aria-label="A plain CALL runs the library code in the library's own storage">
+        <text class="t-cap" x="240" y="20">{L("CALL — run the library, in the library's context")}</text>
+        <rect class="dc-you" x="20" y="40" width="150" height="96" rx="8" />
+        <text class="t-cap" x="95" y="60">{L("your contract")}</text>
+        <rect class="dc-slot dc-empty" x="40" y="74" width="110" height="24" rx="4" />
+        <text class="t-fld dc-slott" x="95" y="90">storage: empty</text>
+        <text class="t-x dc-unchanged" x="95" y="120">{L("✗ never written")}</text>
+        <path class="sarrow dc-c1" d="M170 74 H262" /><text class="t-cap dc-cl" x="216" y="66">CALL</text>
+        <rect class="dc-libbox" x="262" y="40" width="196" height="96" rx="8" />
+        <text class="t-cap" x="360" y="60">{L("Library")}</text>
+        <text class="t-fld dc-libt" x="360" y="78">balances[msg.sender] += x</text>
+        <rect class="dc-slot dc-wrote" x="290" y="92" width="140" height="24" rx="4" />
+        <text class="t-fld dc-slott2" x="360" y="108">storage: WRITTEN here</text>
+        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("the write lands in the Library's storage — msg.sender is your contract")}</text>
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("useless: a library can't operate on your data")}</text>
+      </svg>
+    )}
+
+    {/* ── DELEGATECALL: borrow the code, keep your context ── */}
+    {name === "dc-delegate" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="DELEGATECALL runs the library's code in the caller's own context">
+        <text class="t-cap" x="240" y="20">{L("DELEGATECALL — borrow the code, keep your context")}</text>
+        <rect class="dc-you2" x="20" y="40" width="180" height="110" rx="8" />
+        <text class="t-cap" x="110" y="60">{L("your contract")}</text>
+        <rect class="dc-slot dc-wrote2" x="40" y="74" width="140" height="24" rx="4" />
+        <text class="t-fld dc-slott3" x="110" y="90">storage: WRITTEN ✓</text>
+        <text class="t-ok dc-keep" x="110" y="118">{L("your balance · your msg.sender")}</text>
+        <text class="t-fld dc-keep2" x="110" y="136">runs as if the code were yours</text>
+        <path class="sarrow dc-d1" d="M200 70 H286" /><text class="t-cap dc-dl" x="243" y="62">{L("borrow code")}</text>
+        <path class="sarrow dc-d2" d="M286 104 H200" /><text class="t-cap dc-dl2" x="243" y="120">{L("runs here ↩")}</text>
+        <rect class="dc-libbox" x="286" y="52" width="176" height="80" rx="8" />
+        <text class="t-cap" x="374" y="74">{L("Library CODE")}</text>
+        <text class="t-fld dc-libt" x="374" y="92">balances[msg.sender] += x</text>
+        <text class="t-cap dc-libsub" x="374" y="112">{L("code only — no storage used")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("same opcodes, but they read & write YOUR storage, balance, and caller")}</text>
+        <text class="t-cap" x="240" y="194" text-anchor="middle">{L("the fix over CALLCODE: it also preserves the original msg.sender & value")}</text>
+      </svg>
+    )}
+
+    {/* ── DELEGATECALL: the proxy / upgradeable pattern ── */}
+    {name === "dc-proxy" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="The proxy pattern: state in a proxy that delegatecalls a swappable implementation">
+        <text class="t-cap" x="240" y="20">{L("state in the proxy, logic swappable")}</text>
+        <rect class="dc-proxybox" x="24" y="44" width="150" height="96" rx="8" />
+        <text class="t-cap" x="99" y="66">{L("Proxy · 0xYou")}</text>
+        <rect class="dc-slot dc-wrote2" x="42" y="80" width="114" height="24" rx="4" />
+        <text class="t-fld dc-slott3" x="99" y="96">holds all state</text>
+        <text class="t-cap dc-keep2" x="99" y="126">{L("address never changes")}</text>
+        <path class="sarrow dc-p1" d="M174 78 H262" /><text class="t-cap dc-dl" x="218" y="70">DELEGATECALL</text>
+        <rect class="dc-impl dc-implold" x="262" y="44" width="196" height="42" rx="7" />
+        <text class="t-cap" x="360" y="63">{L("Implementation v1")}</text>
+        <text class="t-fld dc-libt" x="360" y="79">the logic today</text>
+        <rect class="dc-impl dc-implnew" x="262" y="96" width="196" height="42" rx="7" />
+        <text class="t-cap" x="360" y="115">{L("Implementation v2")}</text>
+        <text class="t-ok dc-upg" x="360" y="131">{L("swap in — same state")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("upgrade the logic without moving the data — how upgradeable contracts work")}</text>
+        <text class="t-cap dc-anc" x="240" y="192" text-anchor="middle">{L("the same idea EIP-7702 later brings to plain EOAs")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2809,4 +2899,48 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .st-bh { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
   .st-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .st-link { stroke-dasharray: 34; stroke-dashoffset: 34; animation: st-draw 5s ease-in-out 0.5s infinite; }
+
+  /* ── DELEGATECALL — dc-copy: duplication vs shared library ── */
+  .dc-copybox rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .dc-dup { fill: var(--color-changed); text-anchor: end; animation: dc-dup 4s ease-in-out infinite; }
+  @keyframes dc-dup { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
+  .dc-waste { animation: dc-dup 4s ease-in-out infinite; }
+  .dc-a1 { stroke-dasharray: 50; stroke-dashoffset: 50; animation: st-draw 5s ease-in-out infinite; }
+  .dc-thin { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .dc-share { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out 0.3s infinite; }
+  .dc-lib { fill: color-mix(in oklab, var(--color-node-branch) 12%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .dc-libt { fill: var(--color-accent-strong); text-anchor: middle; }
+
+  /* ── DELEGATECALL — dc-call: write lands in the library ── */
+  .dc-you { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .dc-you2 { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .dc-libbox { fill: color-mix(in oklab, var(--color-node-branch) 9%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .dc-libsub { fill: var(--color-ink-faint); }
+  .dc-slot { stroke-width: 1; }
+  .dc-slott, .dc-slott2, .dc-slott3 { text-anchor: middle; fill: var(--color-ink-muted); }
+  .dc-empty { fill: var(--color-surface); stroke: var(--color-border); }
+  .dc-wrote { fill: color-mix(in oklab, var(--color-changed) 16%, var(--color-surface)); stroke: var(--color-changed); animation: dc-wrote 5s ease-in-out infinite; }
+  @keyframes dc-wrote { 0%,40% { opacity: 0.4 } 55%,100% { opacity: 1 } }
+  .dc-unchanged { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  @keyframes dc-late { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
+  .dc-c1 { stroke-dasharray: 92; stroke-dashoffset: 92; animation: st-draw 5s ease-in-out infinite; }
+  .dc-cl, .dc-dl, .dc-dl2 { fill: var(--color-ink-faint); }
+
+  /* ── DELEGATECALL — dc-delegate: write lands in your storage ── */
+  .dc-wrote2 { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); animation: dc-wrote 5s ease-in-out infinite; }
+  .dc-keep { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .dc-keep2 { fill: var(--color-ink-faint); text-anchor: middle; }
+  .dc-d1 { stroke-dasharray: 86; stroke-dashoffset: 86; animation: st-draw 5s ease-in-out infinite; }
+  .dc-d2 { stroke-dasharray: 86; stroke-dashoffset: 86; animation: st-draw 5s ease-in-out 0.4s infinite; }
+
+  /* ── DELEGATECALL — dc-proxy: upgradeable pattern ── */
+  .dc-proxybox { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent); }
+  .dc-p1 { stroke-dasharray: 88; stroke-dashoffset: 88; animation: st-draw 5s ease-in-out infinite; }
+  .dc-impl { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .dc-implold { animation: dc-old 6s ease-in-out infinite; }
+  @keyframes dc-old { 0%,45% { opacity: 1 } 60%,100% { opacity: 0.4 } }
+  .dc-implnew { animation: dc-new 6s ease-in-out infinite; }
+  @keyframes dc-new { 0%,45% { opacity: 0.4; stroke: var(--color-border-strong) } 60%,100% { opacity: 1; stroke: var(--color-node-leaf) } }
+  .dc-upg { opacity: 0; animation: dc-late 6s ease-in-out infinite; }
+  .dc-anc { fill: var(--color-ink-faint); }
 </style>

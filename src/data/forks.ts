@@ -62,7 +62,7 @@ export const FORKS: Fork[] = [
     blurb: "First planned upgrade; the network leaves beta.",
     eips: [
       { eip: "2", title: "Homestead consensus changes", category: "execution" },
-      { eip: "7", title: "DELEGATECALL", category: "execution" },
+      { eip: "7", title: "DELEGATECALL", category: "execution", slug: "eip-7-delegatecall" },
       { eip: "8", title: "devp2p forward compatibility", category: "general" },
     ],
   },

@@ -1,0 +1,129 @@
+---
+title: "EIP-7: DELEGATECALL — borrow the code, keep your context"
+dek: "Contracts wanted to reuse a shared library's logic without copy-pasting its bytecode into every one. But a normal CALL runs that logic in the library's own storage — useless for a library that's supposed to work on your data. DELEGATECALL runs borrowed code in the caller's context, and in doing so it quietly invented libraries, proxies, and upgradeable contracts."
+summary: "A step-by-step derivation of EIP-7 (DELEGATECALL), shipped in Homestead (2016). Why contracts needed to reuse shared code without duplicating bytecode; why a plain CALL executes the callee's code in the callee's storage (with the caller as msg.sender), which makes a shared library operate on the wrong account's data; how CALLCODE ran the code in the caller's storage but clobbered msg.sender; and how DELEGATECALL fixes both — running the callee's code entirely in the caller's context (caller's storage, balance, and the original msg.sender/msg.value preserved). Ends on what it unlocks: Solidity libraries, the proxy pattern, upgradeable contracts, and the direct line to EIP-7702."
+topic: EIPs
+order: 16
+spine: true
+prerequisites: ["the EVM & the call model", "storage & context"]
+updated: 2026-06-24
+readingMinutes: 11
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+
+We enter Part III at the beginning: **Homestead, March 2016**, Ethereum's first planned upgrade. It shipped a small opcode with enormous consequences. By now (from [the EVM chapter](/the-evm)) you know a contract is code plus storage, and that one contract can **call** another. But calling raises a question the earliest EVM answered badly: if I want to reuse *another* contract's code — a shared library of vetted logic — *whose data does that code run on?* Get the answer wrong and shared libraries are impossible; get it right and you unlock proxies and upgradeable contracts. **EIP-7** is that right answer, `DELEGATECALL`. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Reuse without copying" },
+  { id: "step-2", label: "CALL runs in the wrong place" },
+  { id: "step-3", label: "Borrow code, keep context" },
+  { id: "step-4", label: "Proxies & upgrades" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Reuse without copying">
+
+## The problem: shared logic, without copy-paste
+
+Deploying a contract costs gas proportional to its code size, and the same routines — safe math, token transfers, access control — get written again and again. Copy-pasting a library's bytecode into every contract is wasteful and unmaintainable: fix a bug and you'd have to redeploy *everyone*. The obvious wish is a single, audited **library** contract deployed once, whose code many contracts can borrow.
+
+<Scene name="dc-copy" caption="Every contract carrying its own copy of the same transfer logic is pure duplication — expensive to deploy and impossible to patch in one place. The wish: deploy the logic once as a shared library and have many contracts run it. But that raises the real question — whose storage does the shared code touch?" />
+
+<Callout type="warning" title="What breaks">
+"Just call the library" seems to solve it. But calling another contract runs *its* code in *its* own world. For a library whose whole job is to operate on *your* balances, that's exactly backwards. Let's see it fail.
+</Callout>
+
+**→ Step 2: watch a plain CALL land in the wrong storage.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="CALL runs in the wrong place">
+
+## Why a normal CALL can't build a library
+
+When your contract does a plain `CALL` to the library, the EVM switches into the **library's** <KeyTerm term="execution context" def="The account whose storage, balance, and address the currently-running code reads and writes, plus msg.sender/msg.value. A plain CALL switches context to the callee; the code runs 'as' the callee." />. The library's code executes, but every `SSTORE` it does writes to the *library's* storage, `address(this)` is the *library*, and `msg.sender` is *your* contract. So a library method like `balances[msg.sender] += amount` dutifully updates the **library's** balances mapping — not yours. Your storage is never touched.
+
+<Scene name="dc-call" caption="A plain CALL runs the library's code in the library's context: the write lands in the library's storage, and to the library, msg.sender is your contract. Your contract's own storage is never written. A library that mutates the caller's data is impossible this way." />
+
+The code is perfectly good; it just ran in the wrong account's world. What we actually want is the opposite wiring: the library's *code*, but *our* context.
+
+<Callout type="warning" title="What breaks">
+We need to run the callee's code but have every storage read/write, the balance, and the address all be *ours*. An earlier attempt, `CALLCODE`, did run the code in the caller's storage — but it overwrote `msg.sender` with the caller, breaking any logic that checks who originally called. Can we get the code-borrowing *and* keep our identity intact?
+</Callout>
+
+**→ Step 3: DELEGATECALL.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Borrow code, keep context">
+
+## DELEGATECALL: the callee's code, the caller's everything
+
+<KeyTerm term="DELEGATECALL" def="An EVM call (EIP-7) that loads the callee's code and runs it entirely in the caller's context: the caller's storage and balance, the caller's address as this, and — unlike the older CALLCODE — the original msg.sender and msg.value preserved. 'Run this code as if it were mine.'" /> is the exact wiring we wanted. It loads the target's **code** but executes it in **your** context: reads and writes hit *your* storage, `address(this)` is *you*, the balance is *yours*. And it fixes `CALLCODE`'s flaw — it **preserves the original `msg.sender` and `msg.value`**, so the borrowed code sees the same caller and value your contract was called with. It is, precisely, *"run this contract's code as if it were part of mine."*
+
+<Scene name="dc-delegate" caption="DELEGATECALL loads the library's code but runs it in your context: the write lands in YOUR storage, the balance and address are yours, and the original msg.sender/msg.value are preserved. The library becomes, in effect, extra methods bolted onto your contract." />
+
+<Formula
+  expr="DELEGATECALL:  code = callee  ·  context = caller"
+  terms={[
+    { t: "code = callee", note: "the instructions executed are the target library's bytecode" },
+    { t: "context = caller", note: "storage, balance, address(this), and the original msg.sender/value are the caller's" },
+  ]}
+  caption="Split what a call binds: take the code from there, keep the context here. That single split is the whole idea."
+/>
+
+<SpecExcerpt
+  source="EIP-7: DELEGATECALL"
+  href="https://eips.ethereum.org/EIPS/eip-7"
+  ref="semantics"
+>
+Adds a new opcode `DELEGATECALL` (0xf4) at the same stack layout as `CALLCODE` but without
+a value argument. It executes the code of the target address in the context of the calling
+contract — the same storage, the same `CALLER` (`msg.sender`) and `CALLVALUE` (`msg.value`)
+as the current environment. It behaves as if the called code were part of the caller.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — but a door opens. If a contract can run *any* other contract's code as its own, its behaviour is no longer fixed at deployment. What can you build once you separate a contract's *storage* from its *logic*?
+</Callout>
+
+**→ Step 4: separate state from logic, and upgrade.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Proxies & upgrades">
+
+## The payoff: libraries, proxies, upgradeable contracts
+
+Once code and context are separable, patterns fall out. Solidity `library` calls compile to `DELEGATECALL`, so shared logic lives once on-chain. More powerfully, you can split a system into a thin <KeyTerm term="proxy" def="A minimal contract that holds all the state and, on every call, DELEGATECALLs to a separate implementation contract for the logic. Because state lives in the proxy, swapping the implementation address upgrades behaviour without moving data — and the address users know never changes." /> that holds all the **state** and a separate **implementation** that holds the **logic**. Every call to the proxy is delegated to the implementation, which runs against the proxy's storage. To upgrade, you just point the proxy at a new implementation — the data stays put and the address everyone uses never changes.
+
+<Scene name="dc-proxy" caption="A proxy holds all the state and DELEGATECALLs its logic to an implementation contract. Swap the implementation from v1 to v2 and behaviour upgrades while the state — and the address users know — stay exactly where they are. This is how upgradeable contracts work." />
+
+<Callout type="insight" title="And that is DELEGATECALL">
+Contracts wanted shared code without copy-paste → a plain **CALL** runs the library in the *library's* context, so writes land in the wrong storage → **CALLCODE** ran it in the caller's storage but clobbered `msg.sender` → **DELEGATECALL** runs the callee's *code* in the caller's *full context*, preserving the original `msg.sender`/`msg.value`. Splitting code from context is a tiny change with a vast blast radius: Solidity libraries, the proxy pattern, and every upgradeable contract in production descend from this one opcode. And the idea comes back around — [EIP-7702](/eip-7702-set-eoa-code) gives ordinary EOAs a designator that makes them run a contract's code in *their own* context, which is DELEGATECALL's insight applied to accounts instead of contracts. A 2016 opcode still shaping 2025's roadmap.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-7: DELEGATECALL", note: "The spec — the opcode and its context rules", href: "https://eips.ethereum.org/EIPS/eip-7" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "The call model & storage context this builds on", href: "/the-evm" },
+    { kind: "post", label: "EIP-7702, derived", note: "The same idea, brought to plain EOAs", href: "/eip-7702-set-eoa-code" },
+    { kind: "eip", label: "EIP-1167: Minimal proxy", note: "The tiny clone contract built on DELEGATECALL", href: "https://eips.ethereum.org/EIPS/eip-1167" },
+    { kind: "code", label: "OpenZeppelin — proxy patterns", note: "Production upgradeable-contract implementations", href: "https://docs.openzeppelin.com/contracts/5.x/api/proxy" },
+  ]}
+/>
+
+</DepthLayer>

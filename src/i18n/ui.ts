@@ -94,6 +94,24 @@ export const ui = {
       next: "Next",
       toc: "Contents",
       readingChapter: "Reading chapter",
+      appLayer: "Application layer",
+      parts: {
+        I: {
+          title: "Designing the machine",
+          blurb:
+            "Build Ethereum from a shared spreadsheet up to a programmable, staked world computer — inventing each piece the moment you feel its absence.",
+        },
+        II: {
+          title: "Running it",
+          blurb:
+            "The live clockwork: how a million validators with no leader agree every twelve seconds, how a fresh node catches up, and how clients actually keep the state on disk.",
+        },
+        III: {
+          title: "The upgrades, in order",
+          blurb:
+            "Every consequential change to Ethereum, in the order it shipped — each one a problem the network hit, derived to its fix.",
+        },
+      },
     },
     email: {
       eyebrow: "Whitebox · Notes",
@@ -206,6 +224,24 @@ export const ui = {
       next: "Далее",
       toc: "Содержание",
       readingChapter: "Читаете главу",
+      appLayer: "Уровень приложений",
+      parts: {
+        I: {
+          title: "Проектируем машину",
+          blurb:
+            "Соберите Ethereum от общей таблицы до программируемого мирового компьютера со ставками — изобретая каждую деталь в тот момент, когда чувствуете её нехватку.",
+        },
+        II: {
+          title: "Как это работает",
+          blurb:
+            "Живой механизм: как миллион валидаторов без лидера договариваются каждые двенадцать секунд, как свежий узел догоняет цепочку и как клиенты на самом деле хранят состояние на диске.",
+        },
+        III: {
+          title: "Обновления, по порядку",
+          blurb:
+            "Каждое значимое изменение Ethereum в порядке его выхода — каждое как проблема, с которой столкнулась сеть, выведенная до своего решения.",
+        },
+      },
     },
     email: {
       eyebrow: "Whitebox · Заметки",

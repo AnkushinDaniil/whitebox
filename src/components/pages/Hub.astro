@@ -48,14 +48,16 @@ const specHref = (e: string) =>
           <section class="part">
             <div class="part-head">
               <span class="part-n">{t.book.part} {part.n}</span>
-              <h2 class="part-title">{part.title}</h2>
-              <p class="part-blurb">{part.blurb}</p>
+              <h2 class="part-title">{t.book.parts[part.n]?.title ?? part.title}</h2>
+              <p class="part-blurb">{t.book.parts[part.n]?.blurb ?? part.blurb}</p>
             </div>
             {part.groups.map((g) => (
               <div class="group">
                 {(g.forkName || g.label) && (
                   <div class="group-head">
-                    <span class="group-name">{g.forkName ?? g.label}</span>
+                    <span class="group-name">
+                      {g.forkName ?? (g.label === "Application layer" ? t.book.appLayer : g.label)}
+                    </span>
                     {g.date && <span class="group-date">{g.date}</span>}
                   </div>
                 )}

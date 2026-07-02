@@ -35,6 +35,7 @@ export const BOOK: BookPart[] = [
         chapters: [
           { slug: "you-could-have-invented-ethereum" },
           { slug: "the-evm" },
+          { slug: "state-and-the-trie" },
         ],
       },
     ],

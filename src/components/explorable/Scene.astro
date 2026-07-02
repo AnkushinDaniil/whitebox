@@ -91,7 +91,10 @@ interface Props {
     | "evm-why"
     | "evm-stack"
     | "evm-gas"
-    | "evm-regions";
+    | "evm-regions"
+    | "st-fingerprint"
+    | "st-nodes"
+    | "st-header";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1650,6 +1653,86 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="186">{L("stack for working, memory for scratch, storage for what must survive")}</text>
       </svg>
     )}
+
+    {/* ── State: the whole world collapses to one 32-byte root ── */}
+    {name === "st-fingerprint" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="All of world state hashes into a single root that any change flips">
+        <text class="t-cap" x="90" y="22">{L("world state")}</text>
+        {[["0xa7…", "12.0 ETH", 0], ["0x3f…", "0.4 ETH", 1], ["0x9c…", "88 ETH", 2], ["0x1b…", "code+store", 3]].map(([addr, val, i]) => (
+          <g class={i === 1 ? "st-acct st-tamper" : "st-acct"}>
+            <rect x="24" y={38 + Number(i) * 32} width="140" height="26" rx="5" />
+            <text class="t-fld st-aa" x="36" y={55 + Number(i) * 32}>{addr}</text>
+            <text class={`t-fld st-av${i === 1 ? " st-avt" : ""}`} x="150" y={55 + Number(i) * 32} text-anchor="end">{val}</text>
+          </g>
+        ))}
+        <path class="sarrow st-a1" d="M164 96 H214" />
+        <rect class="st-hash" x="214" y="78" width="86" height="36" rx="7" />
+        <text class="t-cap" x="257" y="100">keccak</text>
+        <path class="sarrow st-a2" d="M300 96 H350" />
+        <rect class="st-root" x="350" y="74" width="108" height="44" rx="8" />
+        <text class="t-cap" x="404" y="92">{L("state root")}</text>
+        <text class="st-roothex" x="404" y="108">0x9f2e…</text>
+        <text class="t-x st-flip" x="240" y="150" text-anchor="middle">{L("flip one wei → the root changes")}</text>
+        <text class="t-cap" x="240" y="182">{L("one 32-byte fingerprint commits to every account — tamper anywhere and it shows")}</text>
+      </svg>
+    )}
+
+    {/* ── State: the three Merkle-Patricia node types ── */}
+    {name === "st-nodes" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="The three Merkle-Patricia trie node types: branch, extension, and leaf">
+        <text class="t-cap" x="240" y="20">{L("a path spelled in nibbles: a · 7 · c · 1")}</text>
+
+        <rect class="st-ext" x="20" y="40" width="130" height="52" rx="7" />
+        <text class="t-cap" x="85" y="60">{L("extension")}</text>
+        <text class="t-fld st-nn" x="85" y="78">shared: a7</text>
+        <path class="sarrow st-e1" d="M150 66 H196" />
+
+        <rect class="st-branch" x="196" y="34" width="150" height="88" rx="7" />
+        <text class="t-cap" x="271" y="52">{L("branch · 16 ways")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={206 + i * 17} y="62" width="13" height="13" rx="2" />
+        ))}
+        {[8, 9, 10, 11, 12, 13, 14, 15].map((i) => (
+          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={206 + (i - 8) * 17} y="80" width="13" height="13" rx="2" />
+        ))}
+        <text class="t-fld st-nn" x="271" y="112">{L("one slot per nibble 0–f")}</text>
+        <path class="sarrow st-e2" d="M346 78 H392" />
+
+        <rect class="st-leaf" x="392" y="52" width="80" height="52" rx="7" />
+        <text class="t-cap" x="432" y="72">{L("leaf")}</text>
+        <text class="t-fld st-nn" x="432" y="90">c1 → value</text>
+
+        <text class="t-cap" x="240" y="150">{L("extension: shared prefix · branch: 16 ways · leaf: tail + value")}</text>
+        <text class="t-cap st-sub2" x="240" y="176" text-anchor="middle">{L("every node also stores the hash of its children — that's the 'Merkle' part")}</text>
+        <text class="t-cap" x="240" y="200" text-anchor="middle">{L("so the root hash depends on every value beneath it")}</text>
+      </svg>
+    )}
+
+    {/* ── State: the state root lands in the block header; headers chain ── */}
+    {name === "st-header" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="The state root is one field in the block header, and headers chain by parent hash">
+        <text class="t-cap" x="240" y="20">{L("three roots summarize the whole block")}</text>
+        <rect class="st-hdr" x="150" y="32" width="180" height="82" rx="8" />
+        <text class="t-cap" x="240" y="50">{L("block header")}</text>
+        <text class="t-fld st-hf st-hfhot" x="164" y="70">stateRoot   0x9f2e…</text>
+        <text class="t-fld st-hf" x="164" y="86">txRoot      0x4c11…</text>
+        <text class="t-fld st-hf" x="164" y="102">receiptsRoot 0x77a…</text>
+        <path class="sarrow st-ha" d="M330 73 H372" />
+        <rect class="st-bh" x="372" y="56" width="96" height="34" rx="7" />
+        <text class="t-cap" x="420" y="70">blockHash</text>
+        <text class="st-roothex" x="420" y="84">0xb3…</text>
+
+        {[0, 1, 2].map((i) => (
+          <g>
+            <rect class="st-block" x={40 + i * 150} y="134" width="118" height="40" rx="6" />
+            <text class="t-cap" x={99 + i * 150} y="150">{`block n${i ? "+" + i : ""}`}</text>
+            <text class="t-fld st-nn" x={99 + i * 150} y="166">parentHash ↩</text>
+            {i < 2 && <path class="sarrow st-link" d={`M${158 + i * 150} 154 H${190 + i * 150}`} />}
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="194" text-anchor="middle">{L("agree on the header and you agree on all of state; chaining locks the past")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2686,4 +2769,44 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes ev-byte { 0%,100% { opacity: 0.45 } 50% { opacity: 0.9 } }
   .ev-disk { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); }
   .ev-diskbody { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+
+  /* ── State — st-fingerprint: world state → one root, tamper flips it ── */
+  .st-acct rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .st-aa { fill: var(--color-ink-muted); text-anchor: start; }
+  .st-av { fill: var(--color-ink-faint); }
+  .st-tamper rect { animation: st-tamp 6s ease-in-out infinite; }
+  .st-avt { animation: st-tampv 6s ease-in-out infinite; }
+  @keyframes st-tamp { 0%,54% { stroke: var(--color-border-strong) } 64%,88% { stroke: var(--color-changed) } 100% { stroke: var(--color-border-strong) } }
+  @keyframes st-tampv { 0%,54% { fill: var(--color-ink-faint) } 64%,88% { fill: var(--color-changed) } 100% { fill: var(--color-ink-faint) } }
+  .st-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out infinite; }
+  .st-a2 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out 0.3s infinite; }
+  @keyframes st-draw { 0%,10% { stroke-dashoffset: 52 } 30%,100% { stroke-dashoffset: 0 } }
+  .st-hash { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .st-root { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); }
+  .st-roothex { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: st-roothex 6s ease-in-out infinite; }
+  @keyframes st-roothex { 0%,58% { fill: var(--color-accent-strong) } 66%,88% { fill: var(--color-changed) } 100% { fill: var(--color-accent-strong) } }
+  .st-flip { opacity: 0; animation: st-flip 6s ease-in-out infinite; }
+  @keyframes st-flip { 0%,56% { opacity: 0 } 66%,90% { opacity: 1 } 100% { opacity: 0 } }
+
+  /* ── State — st-nodes: the three node types ── */
+  .st-ext { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .st-branch { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .st-leaf { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .st-nn { fill: var(--color-ink-muted); text-anchor: middle; }
+  .st-sub2 { fill: var(--color-ink-faint); }
+  .st-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .st-hot { fill: color-mix(in oklab, var(--color-node-branch) 45%, var(--color-surface)); stroke: var(--color-node-branch); animation: st-hot 4s ease-in-out infinite; }
+  @keyframes st-hot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
+  .st-e1 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out infinite; }
+  .st-e2 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out 0.4s infinite; }
+
+  /* ── State — st-header: roots → header → chained blocks ── */
+  .st-hdr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .st-hf { fill: var(--color-ink-muted); text-anchor: start; font-size: 8.5px; }
+  .st-hfhot { fill: var(--color-accent-strong); animation: st-hfhot 5s ease-in-out infinite; }
+  @keyframes st-hfhot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
+  .st-ha { stroke-dasharray: 44; stroke-dashoffset: 44; animation: st-draw 5s ease-in-out infinite; }
+  .st-bh { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .st-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .st-link { stroke-dasharray: 34; stroke-dashoffset: 34; animation: st-draw 5s ease-in-out 0.5s infinite; }
 </style>

@@ -1,0 +1,163 @@
+---
+title: "State & the trie: one hash for the whole world"
+dek: "The EVM computes over storage — but where does that storage actually live, and how does a network of strangers agree it's byte-for-byte identical without shipping gigabytes to each other? This chapter derives the Merkle-Patricia trie: the structure that squeezes all of world state into a single 32-byte root you can update cheaply and prove against."
+summary: "A from-scratch derivation of Ethereum's state trie. Starting from the need for every node to agree on identical world state, we invent the Merkle-Patricia trie one flaw-fix at a time: a plain map has no fingerprint; one hash commits but forces a full re-hash and proves nothing in isolation; a Merkle tree gives cheap updates and inclusion proofs; making the key itself the path yields a canonical trie; and collapsing unbranched runs gives the Merkle-Patricia trie. Covers the leaf/extension/branch node types, why keys are hashed into nibbles, how a single balance change re-hashes only its path to a new state root, and how that root sits in the block header so agreeing on a header means agreeing on all of state."
+topic: "Start here"
+order: 1
+spine: true
+prerequisites: ["the EVM & storage", "hashing (keccak256)"]
+updated: 2026-06-24
+readingMinutes: 15
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import WidgetFrame from "@/components/explorable/WidgetFrame.astro";
+import Formula from "@/components/explorable/Formula.astro";
+import Bleed from "@/components/explorable/Bleed.astro";
+import MptDerivation from "@/components/trie/MptDerivation.tsx";
+import ScrollyTrie from "@/components/trie/ScrollyTrie.tsx";
+
+[Chapter 2](/the-evm) left a thread hanging. The EVM's `storage` — the only place a contract's data survives — is, we said, *"committed to the state trie and held on every node's disk."* But what is that trie, and why that shape? The real problem underneath it is stark: hundreds of thousands of machines, run by strangers, each hold **all** of Ethereum's state — every account balance, nonce, contract, and storage slot — and they have to agree it's *exactly* the same, block after block. You can't do that by emailing each other gigabytes and diffing. This chapter derives the structure that makes it possible, the same way we derive everything: start with the dumbest thing that could work and fix what breaks.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "One hash for everything" },
+  { id: "step-2", label: "Derive the structure" },
+  { id: "step-3", label: "The three node types" },
+  { id: "step-4", label: "An update, end to end" },
+  { id: "step-5", label: "It lands in the header" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="One hash for everything">
+
+## The problem: prove two worlds are identical, cheaply
+
+The <KeyTerm term="world state" def="The complete mapping from every account address to its state — balance, nonce, and for contracts the code hash and storage. This is what a block's execution transforms; every full node holds all of it." /> is enormous and always changing. Two nodes need a way to check they hold the identical state without shipping it all — and, separately, to prove a *single* fact (*"account 0xa7… holds 12 ETH"*) to someone who doesn't have the state at all. Both needs point at the same tool: a **cryptographic fingerprint**. Hash the whole state into one 32-byte number, and if two nodes' numbers match, their states match; change one wei anywhere and the number flips.
+
+<Scene name="st-fingerprint" caption="Hash all of world state into a single 32-byte root. Two nodes with the same root hold the same state; flip a single wei in any account and the root changes — so disagreement is instantly visible. This one fingerprint is the thing the whole network agrees on." />
+
+<Callout type="warning" title="What breaks">
+Hashing state as one giant blob gives us the fingerprint — but nothing else. Change one balance and you must re-hash *everything*. And to prove one account to a light client, you'd have to hand over the entire state so they can reproduce the hash. Both are hopeless at Ethereum's size. We need the fingerprint to be *structured*.
+</Callout>
+
+**→ Step 2: earn the structure, one fix at a time.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Derive the structure">
+
+## From a plain map to a Merkle-Patricia trie
+
+Watch the structure build itself. Each stage below fixes the previous one's flaw — a plain map has no commitment at all; hashing it into one number commits but can't prove or update cheaply; hashing *in a tree* means a change only re-hashes one path *and* any leaf can be proven by its branch; making the **key itself** the route down the tree makes the shape canonical (everyone builds the identical tree); and collapsing long single-child runs removes the wasted nodes. What falls out is the <KeyTerm term="Merkle-Patricia trie" def="Ethereum's state structure: a radix trie keyed by the path through the data, where every node also commits to the hash of its children (Merkle), and unbranched paths are compressed (Patricia). Gives a single root hash, O(log n) updates, and compact inclusion proofs." />.
+
+<WidgetFrame
+  title="Deriving the Merkle-Patricia trie"
+  caption="Step through the five stages: plain map → one hash → Merkle tree → key-as-path trie → Patricia-compressed MPT. Each stage fixes exactly one flaw of the last."
+  source="Real trie construction — the same structure Ethereum's clients build, rendered stage by stage."
+>
+  <MptDerivation client:visible />
+</WidgetFrame>
+
+Two properties are worth naming, because everything downstream leans on them. A <KeyTerm term="Merkle root" def="The hash at the top of a tree of hashes, where each node hashes its children. Because the hash propagates upward, the single root commits to every leaf beneath it — and a short list of sibling hashes (a branch) proves any one leaf." /> commits to every leaf through a chain of child-hashes, so one root fixes the entire dataset. And because the *key* determines the *path*, the tree is **canonical**: given the same accounts, every client independently builds the byte-for-byte same trie and therefore the same root. No ordering choices, no ambiguity.
+
+<Callout type="warning" title="What breaks">
+"Make the key the path" is doing a lot of work. What does a node in this tree actually look like — and how do we keep it compact when most paths through it don't branch at all?
+</Callout>
+
+**→ Step 3: the three kinds of node.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="The three node types">
+
+## Leaf, extension, branch — and why exactly three
+
+A key is first hashed and then read four bits at a time. Each 4-bit chunk is a <KeyTerm term="nibble" def="Half a byte — one hex digit, 0–f. Trie keys are traversed one nibble at a time, so every branch point has 16 possible directions, one per nibble value." />, so at any branch point there are sixteen possible directions. That fixes the node types you need: a <KeyTerm term="branch node" def="A 17-slot node — one child pointer per nibble (0–f) plus a value slot. Used wherever paths actually diverge." /> for where paths genuinely diverge, an <KeyTerm term="extension node" def="A node that stores a shared sequence of nibbles and a single child pointer — the Patricia compression that collapses a long non-branching run into one node." /> to collapse a shared run of nibbles into one node, and a <KeyTerm term="leaf node" def="A node holding the remaining nibbles of a key plus its value — the end of a path." /> to hold the tail of the key and its value.
+
+<Scene name="st-nodes" caption="Traversing the key a7c1: an extension node absorbs the shared prefix 'a7', a 16-way branch node splits at the next nibble 'c', and a leaf node holds the final 'c1' and the value. Each node also stores the hashes of its children — that Merkle layer is what makes the root depend on every value below it." />
+
+That "each node also stores its children's hashes" is the quiet load-bearing detail: it's what fuses a plain routing trie (Patricia) with a hash tree (Merkle). The route makes lookups deterministic; the hashes make the whole thing tamper-evident up to the root.
+
+<Formula
+  expr="path = nibbles( keccak256(address) )"
+  terms={[
+    { t: "keccak256(address)", note: "hash the key first — spreads keys evenly so the trie stays shallow and balanced" },
+    { t: "nibbles", note: "split into 4-bit chunks; each nibble picks one of a branch's 16 directions" },
+  ]}
+  caption="Keys are hashed, then walked one nibble at a time — so the path down the trie is determined by the key itself."
+/>
+
+<SpecExcerpt
+  source="Ethereum Yellow Paper, §4.1 & Appendix D — World State & the Trie"
+  href="https://ethereum.github.io/yellowpaper/paper.pdf"
+  ref="state as a trie"
+>
+The world state is a mapping between addresses and account states, maintained as a
+modified Merkle-Patricia trie (`trie`). The trie is keyed by `keccak256(address)` and its
+values are the RLP-encoded account states `(nonce, balance, storageRoot, codeHash)`. The
+root node's hash — the state root — is a secure commitment to the entire state and is
+recorded in the block header.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+We have a structure with one root. Now the real test: a transaction changes one balance. Does the whole trie have to be rebuilt — or is this where the tree shape finally pays off?
+</Callout>
+
+**→ Step 4: change one balance and watch it propagate.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="An update, end to end">
+
+## One balance changes; only its path re-hashes
+
+Here's the payoff for all that structure. Change a single account's balance and you *don't* touch the rest of the trie. You rewrite the leaf, then walk **up** its path re-hashing each parent — because a node's hash depends on its children, a changed child forces a new hash all the way to the root. Every node *not* on that path keeps its old hash untouched and is simply reused. Scroll through it:
+
+<Bleed>
+  <ScrollyTrie client:visible />
+</Bleed>
+
+So an update is **O(depth)**, not O(state size): a handful of hashes, not millions. That same path — the leaf plus the sibling hashes along the way — is exactly a <KeyTerm term="Merkle proof" def="The leaf plus the sibling hashes on the path to the root. Anyone holding only the root can recompute upward and confirm the leaf is included — proving one account without the rest of the state." />: hand it to someone who has only the root and they can verify that one account, without the rest of the state. Cheap updates and compact proofs are the *same* property, read in two directions.
+
+<Callout type="insight" title="Why this shape, in one line">
+The trie is the answer to three demands at once: **one** number to agree on (the root), **cheap** updates (only the path re-hashes), and **portable** proofs (a branch verifies one fact against the root). No flat structure gives you all three.
+</Callout>
+
+**→ Step 5: where the root actually goes.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-5" num="5" badge="step" title="It lands in the header">
+
+## The state root in the block header
+
+The whole point of collapsing state to one hash is what you can now do with it. The <KeyTerm term="state root" def="The hash of the state trie's root node — a single 32-byte commitment to all of world state after a block executes. It's stored in the block header alongside the transactions and receipts roots." /> becomes a single field in the **block header**, sitting beside the transactions root and receipts root. Execute the block, compute the new state root, and drop it in. Now agreeing on a header is *identical* to agreeing on all of world state — a few hundred bytes stand in for the entire chain's memory. And because each header also names its parent's hash, changing any past state would change that block's root, its hash, and every hash after it.
+
+<Scene name="st-header" caption="The state root is one of three roots the header commits to. Compute it after executing the block and it summarizes all of state in 32 bytes; chaining each header to its parent's hash means altering any past state would cascade through every later block hash. Agree on the latest header and you've agreed on everything." />
+
+<Callout type="insight" title="And that is the state trie">
+Every node must agree on identical world state → commit it to one cryptographic **root** → but a flat hash can't update cheaply or prove one fact, so build it as a **Merkle** tree → make the **key the path** so the tree is canonical → **compress** unbranched runs → the Merkle-Patricia trie, with leaf, extension, and branch nodes over hashed-nibble keys. A change re-hashes only its path (and that path *is* the proof), and the resulting **state root** goes in the block header — so the entire, ever-changing memory of a world computer reduces to 32 bytes that a phone can check. The next chapters build directly on this: consensus agrees on which header (and thus which root) is canonical, and clients quietly compete on how to store this trie on real disks.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "post", label: "Chapter 2 — The EVM", note: "Where storage came from; this is where it's committed", href: "/the-evm" },
+    { kind: "spec", label: "Yellow Paper §4.1 & Appendix D", note: "World state and the Merkle-Patricia trie, formally", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
+    { kind: "post", label: "Flat DB — reading state in one hop", note: "How clients actually lay this trie on disk", href: "/flat-db-nethermind" },
+    { kind: "post", label: "EIP-2929/2930 — cold vs warm access", note: "Why touching a trie slot the first time costs more", href: "/eip-2929-2930-access-lists" },
+    { kind: "tool", label: "Verkle trees", note: "The proposed successor: much smaller proofs for statelessness", href: "https://ethereum.org/en/roadmap/verkle-trees/" },
+  ]}
+/>
+
+</DepthLayer>

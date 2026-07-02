@@ -1,0 +1,98 @@
+---
+title: "EIP-2935: keeping block hashes in state"
+dek: "The BLOCKHASH opcode can only see the last 256 blocks — about 51 minutes. Older than that, it returns zero. But L2s, provers, and light clients need to reach further back, and stateless clients need those hashes in the state itself, not in a special header cache. EIP-2935 puts them in a ring buffer inside a system contract."
+summary: "A step-by-step derivation of EIP-2935 (serve historical block hashes from state), shipped in Prague/Electra (May 2025). Why the BLOCKHASH opcode's 256-block window (~51 minutes) is limiting — contracts, rollups, cross-chain provers, and light clients often need older block hashes, and the opcode was served from a client-side header cache rather than from the state, which is awkward for stateless Ethereum — and how EIP-2935 stores each block's parent hash in a ring buffer inside a system contract's storage (writing the hash at slot (number − 1) mod 8191), making the last 8191 block hashes readable with a plain SLOAD and, crucially, part of the witnessed state; the payoff is a much larger lookback window, block hashes that stateless clients can access from state without a special cache, cheaper trust-minimized cross-chain and historical proofs, and yet another instance of the same ring-buffer-in-a-system-contract pattern used by EIP-4788's beacon root."
+topic: EIPs
+order: 35
+spine: true
+prerequisites: ["BLOCKHASH & block headers", "stateless Ethereum (witnesses)"]
+updated: 2026-07-02
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Prague / Electra, May 2025.** The EVM has always let a contract ask for a past block's hash: `BLOCKHASH(n)`. It's how a contract can pin a fact to a specific block, or seed a bit of pseudo-randomness. But there's a catch that has quietly shaped a decade of on-chain design: it only reaches back **256 blocks** — roughly 51 minutes. Ask for anything older and it returns zero. As rollups, cross-chain provers, and light clients grew up around Ethereum, that short, hard window became a real constraint — and the *way* it was implemented became an obstacle to [stateless Ethereum](/how-a-node-syncs). **EIP-2935** rebuilds block-hash lookup on a better foundation. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "A 256-block window" },
+  { id: "step-2", label: "A ring buffer in state" },
+  { id: "step-3", label: "Reach, and statelessness" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="A 256-block window">
+
+## The problem: BLOCKHASH sees only the recent past, from a side cache
+
+`BLOCKHASH(n)` returns the hash of block `n` — but only if `n` is one of the **last 256** blocks; otherwise it yields zero. Two things about this hurt. First, the **window is tiny**: many applications — a rollup verifying an older state, a <KeyTerm term="cross-chain prover" def="A contract or system that proves a fact about one chain to another (or to a rollup) by checking block hashes and Merkle proofs. It often needs hashes of blocks far older than 256, which BLOCKHASH cannot provide." /> checking historical inclusion, a light client catching up — need hashes from far further back than 51 minutes. Second, and more subtly, the opcode was served from a **client-side header cache**: each node kept the recent headers around in its own memory to answer `BLOCKHASH`. That's fine for a full node, but it's exactly the kind of out-of-band state that <KeyTerm term="stateless Ethereum" def="A future where a node can validate a block using only the block plus a cryptographic 'witness' of the state it touches, without storing the full state. Anything the EVM reads must therefore be part of the witnessed state — a side cache of headers doesn't fit." /> is trying to eliminate: a stateless client validating a block from a witness has no header cache to consult.
+
+<Scene name="bh-window" caption="BLOCKHASH can only read the last 256 block hashes (~51 min); older blocks return zero. Rollups, provers, and light clients need to reach much further back — and the opcode is served from a client-side header cache, not from state, which stateless clients can't rely on." />
+
+<Callout type="warning" title="What breaks">
+The lookback is too short for the applications that now depend on it, and the mechanism lives *outside* the state. To serve a longer history *and* fit statelessness, block hashes should live where all other durable data lives — in the state, readable like any other storage.
+</Callout>
+
+**→ Step 2: put the hashes into state, in a ring buffer.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A ring buffer in state">
+
+## EIP-2935: a system contract records each parent hash
+
+The fix reuses a pattern this book has seen before. A designated <KeyTerm term="system contract" def="A contract at a fixed, protocol-reserved address whose storage the protocol itself writes each block. EIP-2935's history contract and EIP-4788's beacon-root contract both work this way — the ring buffer lives in ordinary contract storage, so the EVM reads it with a normal SLOAD." /> holds the recent block hashes, and the protocol updates it automatically: at the start of processing block `n`, it writes the **parent** block's hash into the contract's storage at slot `(n − 1) mod 8191`. Because the index wraps, the contract is a fixed-size <KeyTerm term="ring buffer" def="A fixed-length array addressed by index-modulo-length, so new entries overwrite the oldest. Here it holds the last 8191 block hashes in 8191 storage slots, in constant space — the same structure EIP-4788 uses for beacon roots." /> holding the last **8191** hashes (~27 hours). Now a contract reads a historical hash with an ordinary `SLOAD` against that address — no special opcode path, no header cache — and, decisively, the hashes are part of the **state** and therefore of any witness.
+
+<Scene name="bh-ring" caption="EIP-2935 has the protocol write each block's parent hash into a ring buffer in a system contract's storage — slot (n−1) mod 8191. The last 8191 hashes become readable with a plain SLOAD, and live in state. It's the exact same ring-buffer-in-a-system-contract design as EIP-4788's beacon root." />
+
+<SpecExcerpt
+  source="EIP-2935: Serve historical block hashes from state"
+  href="https://eips.ethereum.org/EIPS/eip-2935"
+  ref="the buffer"
+>
+Stores the last 8191 block hashes in the storage of a system contract, updated at the start
+of each block with the parent hash at slot (number − 1) mod 8191. Contracts read historical
+hashes via SLOAD, and the data becomes part of the state accessible to stateless clients.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing for existing contracts — `BLOCKHASH` still works for the recent window. What's new is a state-resident history that reaches much further and that a stateless client can witness. The old side cache is no longer load-bearing.
+</Callout>
+
+**→ Step 3: a longer reach, and a piece of the stateless future.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Reach, and statelessness">
+
+## The payoff: further back, and witnessable
+
+Two wins fall out at once. The **reach** jumps from 256 to **8191** blocks — a 32× longer window that rollups and provers can lean on for historical proofs. And because the hashes now live in **state**, a stateless client can access them straight from a block's witness, with no header cache to keep — removing one of the awkward out-of-band pieces standing between today's Ethereum and a fully stateless, [Verkle](/how-a-node-syncs)-ready one. It also makes trust-minimized **cross-chain and historical proofs cheaper and simpler**, since a contract just reads storage. And it's a satisfying repeat of a now-familiar idea: like [EIP-4788's beacon root](/eip-4788-beacon-root), the protocol maintains a small ring buffer in a system contract, turning a special data need into ordinary, readable state.
+
+<Scene name="bh-payoff" caption="The lookback grows from 256 to 8191 blocks (32×), and the hashes now live in witnessed state — so stateless clients read them without a header cache, and cross-chain/historical proofs get cheaper. The same ring-buffer-in-a-contract pattern as EIP-4788, in service of statelessness." />
+
+<Callout type="insight" title="And that is EIP-2935">
+`BLOCKHASH` reached back only **256 blocks** and was served from a **client-side header cache** — too short for rollups and provers, and out-of-band for stateless clients → EIP-2935 has the protocol write each **parent hash into a ring buffer** in a **system contract's storage** at slot (n − 1) mod 8191 → the last **8191** hashes become readable with a plain `SLOAD` and, crucially, part of the **witnessed state** → so the lookback grows 32×, stateless clients get block hashes without a special cache, and cross-chain proofs get cheaper. It's a small mechanism doing double duty: extending a decade-old limit *and* dissolving an obstacle to statelessness — using the very same ring-buffer-in-a-contract trick as EIP-4788. State, not side channels, is where durable data belongs.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2935: Serve historical block hashes from state", note: "The spec — the history ring buffer", href: "https://eips.ethereum.org/EIPS/eip-2935" },
+    { kind: "post", label: "EIP-4788 — beacon root in the EVM", note: "The same ring-buffer-in-a-system-contract pattern", href: "/eip-4788-beacon-root" },
+    { kind: "post", label: "How a node syncs", note: "Statelessness, witnesses, and Verkle", href: "/how-a-node-syncs" },
+    { kind: "tool", label: "Stateless Ethereum — the roadmap", note: "Why state-resident data matters", href: "https://ethereum.org/en/roadmap/statelessness/" },
+  ]}
+/>
+
+</DepthLayer>

@@ -266,7 +266,7 @@ export const FORKS: Fork[] = [
     blurb: "Pectra: EOAs run code (7702), validators hold up to 2048 ETH, EL-triggerable requests.",
     eips: [
       { eip: "2537", title: "BLS12-381 precompiles", category: "execution", slug: "eip-2537-bls-precompiles" },
-      { eip: "2935", title: "Historical block hashes in state", category: "execution" },
+      { eip: "2935", title: "Historical block hashes in state", category: "execution", slug: "eip-2935-historical-block-hashes" },
       { eip: "6110", title: "On-chain validator deposits", category: "consensus", slug: "eip-6110-onchain-deposits" },
       { eip: "7002", title: "EL-triggerable withdrawals", category: "consensus", slug: "eip-7002-el-withdrawals" },
       { eip: "7251", title: "Increase MAX_EFFECTIVE_BALANCE", category: "consensus", slug: ours("eip-7251-max-effective-balance") },

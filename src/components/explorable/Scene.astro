@@ -152,7 +152,10 @@ interface Props {
     | "ss-sentry"
     | "ic-gap"
     | "ic-meter"
-    | "ic-result";
+    | "ic-result"
+    | "bh-window"
+    | "bh-ring"
+    | "bh-payoff";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2924,6 +2927,57 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="160" text-anchor="middle">{L("the same 'meter the O(n) work' lesson as EIP-150")}</text>
       </svg>
     )}
+
+    {/* ── EIP-2935: BLOCKHASH only reaches back 256 blocks ── */}
+    {name === "bh-window" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="The BLOCKHASH opcode can only read the last 256 block hashes; older blocks return zero">
+        <text class="t-cap" x="240" y="20">{L("BLOCKHASH(n): the hash of a past block")}</text>
+        <rect class="bh-chain" x="24" y="40" width="432" height="30" rx="5" />
+        <rect class="bh-recent" x="330" y="40" width="126" height="30" rx="5" />
+        <text class="t-ok bh-rl" x="393" y="59">{L("last 256")}</text>
+        <text class="t-fld bh-old" x="177" y="59" text-anchor="middle">{L("older blocks → returns 0")}</text>
+        <text class="t-cap bh-now" x="452" y="84" text-anchor="end">{L("head →")}</text>
+        <text class="t-x bh-need" x="240" y="122" text-anchor="middle">{L("but L2s, provers & light clients need older hashes")}</text>
+        <text class="t-x bh-need2" x="240" y="146" text-anchor="middle">{L("and stateless clients need them in state, not client memory")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("256 blocks ≈ 51 minutes — a hard, out-of-band limit")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2935: a system contract keeps hashes in a ring buffer in state ── */}
+    {name === "bh-ring" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="EIP-2935 stores each block's parent hash in a ring buffer inside a system contract's storage, the same pattern as EIP-4788">
+        <text class="t-cap" x="240" y="20">{L("each block: write parent hash into a ring buffer in state")}</text>
+        <text class="t-fld bh-blk" x="240" y="42" text-anchor="middle">{L("block n → store hash at slot (n−1) mod 8191")}</text>
+        <g class="bh-rot">
+          <circle class="bh-rc" cx="240" cy="118" r="46" />
+        </g>
+        <circle class="bh-slot bh-s0" cx="240" cy="72" r="7" />
+        <circle class="bh-slot bh-s1" cx="286" cy="118" r="7" />
+        <circle class="bh-slot bh-s2" cx="240" cy="164" r="7" />
+        <circle class="bh-slot bh-s3" cx="194" cy="118" r="7" />
+        <text class="t-cap bh-ct" x="240" y="115" text-anchor="middle">{L("8191 slots")}</text>
+        <text class="t-cap bh-ct2" x="240" y="130" text-anchor="middle">{L("in system storage")}</text>
+        <text class="t-ok bh-sload" x="240" y="186" text-anchor="middle">{L("now readable with a plain SLOAD — same pattern as EIP-4788's beacon root")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2935: further reach + stateless-ready ── */}
+    {name === "bh-payoff" && (
+      <svg viewBox="0 0 480 180" role="img" aria-label="Historical hashes in state extend the readable window and make block hashes part of witnessed state for stateless clients">
+        <text class="t-cap" x="240" y="20">{L("256 → 8191 blocks, and now part of state")}</text>
+        <text class="t-fld bh-wl" x="24" y="52" text-anchor="start">before</text>
+        <rect class="bh-track" x="96" y="40" width="360" height="16" rx="4" />
+        <rect class="bh-before" x="96" y="40" width="12" height="16" rx="3" />
+        <text class="t-cap bh-bl" x="118" y="52" text-anchor="start">256</text>
+        <text class="t-fld bh-wl" x="24" y="82" text-anchor="start">after</text>
+        <rect class="bh-track" x="96" y="70" width="360" height="16" rx="4" />
+        <rect class="bh-after" x="96" y="70" width="360" height="16" rx="4" />
+        <text class="t-ok bh-al" x="450" y="82" text-anchor="end">8191</text>
+        <text class="t-ok bh-state" x="240" y="120" text-anchor="middle">{L("hashes live in witnessed state — no special header cache")}</text>
+        <text class="t-cap" x="240" y="148" text-anchor="middle">{L("a building block for stateless Ethereum and cheaper cross-chain proofs")}</text>
+        <text class="t-cap" x="240" y="170" text-anchor="middle">{L("the ring-buffer-in-a-contract pattern, again")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4812,4 +4866,37 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ic-bt { text-anchor: middle; fill: var(--color-ink-muted); }
   .ic-bv { text-anchor: middle; fill: var(--color-node-leaf); }
   .ic-safe { opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
+
+  /* ── EIP-2935 — bh-window: BLOCKHASH's 256-block reach ── */
+  .bh-chain { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .bh-recent { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .bh-rl { text-anchor: middle; }
+  .bh-old { fill: var(--color-ink-faint); }
+  .bh-now { fill: var(--color-ink-muted); }
+  .bh-need { fill: var(--color-ink-muted); opacity: 0; animation: dc-late 5s ease-in-out 0.4s infinite; }
+  .bh-need2 { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
+
+  /* ── EIP-2935 — bh-ring: ring buffer in a system contract ── */
+  .bh-blk { fill: var(--color-ink-muted); }
+  .bh-rc { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 4 5; }
+  .bh-rot { transform-box: fill-box; transform-origin: 240px 118px; animation: bh-spin 12s linear infinite; }
+  @keyframes bh-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .bh-slot { fill: var(--color-surface); stroke: var(--color-node-branch); }
+  .bh-s0 { animation: bh-fill 5s ease-in-out infinite; }
+  .bh-s1 { animation: bh-fill 5s ease-in-out 1.25s infinite; }
+  .bh-s2 { animation: bh-fill 5s ease-in-out 2.5s infinite; }
+  .bh-s3 { animation: bh-fill 5s ease-in-out 3.75s infinite; }
+  @keyframes bh-fill { 0%, 12% { fill: var(--color-surface); } 20%, 45% { fill: var(--color-node-branch); } 70%, 100% { fill: var(--color-surface); } }
+  .bh-ct { fill: var(--color-ink-muted); }
+  .bh-ct2 { fill: var(--color-ink-faint); }
+  .bh-sload { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+
+  /* ── EIP-2935 — bh-payoff: reach + stateless-ready ── */
+  .bh-wl { fill: var(--color-ink-faint); }
+  .bh-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .bh-before { fill: color-mix(in oklab, var(--color-ink-faint) 30%, var(--color-surface)); stroke: var(--color-ink-faint); }
+  .bh-bl { fill: var(--color-ink-faint); }
+  .bh-after { fill: color-mix(in oklab, var(--color-node-leaf) 45%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  .bh-al { fill: var(--color-node-leaf); }
+  .bh-state { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
 </style>

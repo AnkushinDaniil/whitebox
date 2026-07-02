@@ -112,7 +112,7 @@ export const FORKS: Fork[] = [
     layer: "execution",
     blurb: "Metropolis part two — CREATE2 and cheaper bit-ops.",
     eips: [
-      { eip: "145", title: "Bitwise shifting (SHL/SHR/SAR)", category: "execution" },
+      { eip: "145", title: "Bitwise shifting (SHL/SHR/SAR)", category: "execution", slug: "eip-145-bitwise-shifting" },
       { eip: "1014", title: "CREATE2", category: "execution", slug: "eip-1014-create2" },
       { eip: "1052", title: "EXTCODEHASH", category: "execution", slug: "eip-1052-extcodehash" },
       { eip: "1234", title: "Difficulty bomb delay + 2 ETH reward", category: "consensus" },

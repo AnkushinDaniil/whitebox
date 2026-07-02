@@ -1,0 +1,98 @@
+---
+title: "EIP-145: giving a 256-bit machine a shift instruction"
+dek: "The EVM had AND, OR, XOR, and NOT from day one — but no bit-shift. Contracts faked shifting with multiplication and division by powers of two: costlier, bulkier, and unable to shift signed numbers correctly. EIP-145 adds native SHL, SHR, and SAR."
+summary: "A step-by-step derivation of EIP-145 (bitwise shifting instructions), shipped in Constantinople (February 2019). Why a word-oriented 256-bit VM shipped without shift opcodes was a real gap — bit shifting underlies packing struct fields, bitmap manipulation, fixed-point math, and cryptography, yet contracts had to emulate a left shift as multiplication by 2ⁿ and a right shift as division by 2ⁿ, paying for a MUL/DIV plus pushing the 2ⁿ constant and still unable to express a correct arithmetic (sign-preserving) right shift because DIV rounds toward zero — and how EIP-145 adds three native opcodes, SHL (0x1b), SHR (logical, 0x1c), and SAR (arithmetic, 0x1d), each costing the base 3 gas and shifting directly with no constant to push; the payoff is cheaper and smaller bytecode for all the bit manipulation that packing and cryptography depend on, a correct signed shift via SAR, and — since compilers emit them automatically — leaner contracts for free."
+topic: EIPs
+order: 38
+spine: true
+prerequisites: ["the EVM's word & bitwise operations"]
+updated: 2026-07-02
+readingMinutes: 6
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Constantinople, February 2019.** The [EVM works in 256-bit words](/the-evm) and, since genesis, has had the usual bitwise operators — `AND`, `OR`, `XOR`, `NOT`. But it was missing one that any assembly programmer would reach for immediately: the **bit shift**. Shifting bits left or right is how you pack several fields into one word, walk a bitmap, do fixed-point arithmetic, or implement a hash. On a machine built around 256-bit words, its absence is conspicuous — and the workaround was to press *arithmetic* into service. **EIP-145** finally gives the machine the instruction it should have had all along. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Shifting with arithmetic" },
+  { id: "step-2", label: "SHL, SHR, SAR" },
+  { id: "step-3", label: "Leaner bit-twiddling" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Shifting with arithmetic">
+
+## The problem: no shift, so multiply and divide instead
+
+Without a shift opcode, contracts leaned on a number-theory identity: shifting left by `n` bits is the same as **multiplying by 2ⁿ**, and shifting right by `n` is **dividing by 2ⁿ**. So a left shift became a `MUL` and a right shift a `DIV` — each of which also requires first **pushing the 2ⁿ constant** onto the stack, adding bytecode and gas. It works for unsigned values, but it's the long way round for something a CPU does in one cycle. Worse, there was no clean way to express an <KeyTerm term="arithmetic right shift" def="A right shift that preserves the sign bit, so shifting a negative number right keeps it negative (equivalent to floor-dividing by a power of two). DIV rounds toward zero rather than flooring, so it can't reproduce a correct signed shift — you had to special-case the sign by hand." />: `DIV` rounds toward zero, not toward negative infinity, so shifting a signed (negative) number right gave the wrong result unless you special-cased the sign yourself.
+
+<Scene name="sh-emul" caption="The EVM had AND/OR/XOR/NOT but no shift, so contracts emulated a left shift as MUL by 2ⁿ and a right shift as DIV by 2ⁿ — paying for a multiply/divide plus pushing the constant. And DIV can't express a correct arithmetic (sign-preserving) right shift. A basic CPU operation, simulated with arithmetic." />
+
+<Callout type="warning" title="What breaks">
+Every bit shift costs a multiply or divide and a pushed constant, on operations that packing code and cryptography perform constantly — and signed right shifts require awkward, error-prone sign handling. A word-oriented VM should shift bits natively.
+</Callout>
+
+**→ Step 2: add the three shifts directly.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="SHL, SHR, SAR">
+
+## EIP-145: three native shift opcodes
+
+The fix adds exactly the three shifts a signed/unsigned machine needs. <KeyTerm term="SHL" def="Shift Left (0x1b): pops a shift amount and a value, shifts the value left by that many bits, filling with zeros. Equivalent to the old MUL-by-2ⁿ, but one native instruction at 3 gas." /> (`0x1b`) shifts left; <KeyTerm term="SHR" def="Logical Shift Right (0x1c): shifts right, filling the top with zeros — the unsigned right shift, equivalent to DIV-by-2ⁿ for non-negative values." /> (`0x1c`) is the logical (zero-filling) right shift; and <KeyTerm term="SAR" def="Arithmetic Shift Right (0x1d): shifts right while preserving the sign bit, so negative numbers stay negative (floor-division semantics). This is the operation DIV could never express cleanly." /> (`0x1d`) is the arithmetic (sign-preserving) right shift that the old `DIV` trick couldn't do. Each pops a shift amount and a value, shifts directly, and costs the base **3 gas** like the other bitwise ops — no `MUL`/`DIV`, no constant to push.
+
+<Scene name="sh-ops" caption="EIP-145 adds SHL (left), SHR (logical right), and SAR (arithmetic, sign-preserving right). Each pops the amount and value and shifts directly at 3 gas, with no constant to push — and SAR finally gives a correct signed right shift." />
+
+<SpecExcerpt
+  source="EIP-145: Bitwise shifting instructions in EVM"
+  href="https://eips.ethereum.org/EIPS/eip-145"
+  ref="the opcodes"
+>
+Adds SHL (0x1b), SHR (0x1c), and SAR (0x1d): logical left shift, logical right shift, and
+arithmetic (sign-preserving) right shift. Each pops a shift amount and a value from the stack
+and costs the standard 3 gas, replacing the need to emulate shifts with MUL and DIV.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing — it's additive. Existing MUL/DIV-based shifts keep working; they just become unnecessary. The value is that a routine operation stops costing arithmetic-op gas and gains a correct signed variant.
+</Callout>
+
+**→ Step 3: everything that shifts bits gets leaner.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Leaner bit-twiddling">
+
+## The payoff: cheaper, smaller, and correct
+
+Bit shifting is everywhere below the surface — packing multiple values into one 256-bit slot, reading and writing bitmaps, fixed-point math, and especially cryptographic routines that shuffle bits by the thousand. Making it a single 3-gas instruction (instead of a `MUL`/`DIV` plus a pushed constant) trims gas and bytecode across all of it, and `SAR` removes a whole class of signed-shift bugs. As with every "missing primitive" EIP — [PUSH0](/eip-3855-push0), [MCOPY](/eip-5656-mcopy) — the win is quiet and automatic: compilers emit the new opcodes wherever they used to emit the arithmetic workaround, so contracts get cheaper and smaller just by recompiling.
+
+<Scene name="sh-result" caption="Native shifts make packing, bitmaps, fixed-point math, and cryptography cheaper and smaller, and give a correct signed shift via SAR. Compilers emit them automatically — the same 'add the missing primitive' story as PUSH0 and MCOPY." />
+
+<Callout type="insight" title="And that is EIP-145">
+A 256-bit, word-oriented VM shipped with `AND`/`OR`/`XOR`/`NOT` but **no shift**, so contracts emulated left shift as **MUL by 2ⁿ** and right shift as **DIV by 2ⁿ** — extra gas, a pushed constant, and no correct signed shift → EIP-145 adds **SHL**, **SHR**, and **SAR** as native 3-gas opcodes that shift directly, with `SAR` preserving the sign → so all the bit-packing, bitmap, fixed-point, and cryptographic code gets **cheaper, smaller, and correct**, automatically, on recompile. It's the smallest kind of EIP — three opcodes a CPU has had since forever — and a reminder that even a machine designed around 256-bit words had to be *taught* to slide those bits sideways.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-145: Bitwise shifting instructions", note: "The spec — SHL, SHR, SAR", href: "https://eips.ethereum.org/EIPS/eip-145" },
+    { kind: "post", label: "EIP-3855 — PUSH0", note: "Another 'add the missing primitive' opcode", href: "/eip-3855-push0" },
+    { kind: "post", label: "EIP-5656 — MCOPY", note: "The memory-copy primitive with the same story", href: "/eip-5656-mcopy" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "The 256-bit word these shifts operate on", href: "/the-evm" },
+  ]}
+/>
+
+</DepthLayer>

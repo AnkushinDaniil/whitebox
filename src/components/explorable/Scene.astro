@@ -161,7 +161,10 @@ interface Props {
     | "mc-result"
     | "ec-copy"
     | "ec-hash"
-    | "ec-use";
+    | "ec-use"
+    | "sh-emul"
+    | "sh-ops"
+    | "sh-result";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -3077,6 +3080,55 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-ok ec-fast" x="240" y="152" text-anchor="middle">{L("an O(code-size) operation becomes O(1)")}</text>
       </svg>
     )}
+
+    {/* ── EIP-145: shifts were emulated with MUL / DIV ── */}
+    {name === "sh-emul" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Before EIP-145 shifting bits was emulated with multiplication and division by powers of two">
+        <text class="t-cap" x="240" y="20">{L("the EVM had AND/OR/XOR/NOT — but no shift")}</text>
+        <g class="sh-emrow sh-em0">
+          <text class="t-cap sh-want" x="24" y="56" text-anchor="start">{L("shift left by n")}</text>
+          <path class="sarrow sh-ar" d="M150 51 H210" />
+          <rect class="sh-embox" x="210" y="40" width="246" height="24" rx="5" />
+          <text class="t-fld sh-emt" x="333" y="57" text-anchor="middle">{L("emulate: MUL by 2ⁿ (push the constant first)")}</text>
+        </g>
+        <g class="sh-emrow sh-em1">
+          <text class="t-cap sh-want" x="24" y="94" text-anchor="start">{L("shift right by n")}</text>
+          <path class="sarrow sh-ar" d="M150 89 H210" />
+          <rect class="sh-embox" x="210" y="78" width="246" height="24" rx="5" />
+          <text class="t-fld sh-emt" x="333" y="95" text-anchor="middle">{L("emulate: DIV by 2ⁿ")}</text>
+        </g>
+        <text class="t-x sh-cost" x="240" y="132" text-anchor="middle">{L("a multiply/divide + a pushed constant, for a basic bit shift")}</text>
+        <text class="t-x sh-signed" x="240" y="156" text-anchor="middle">{L("and DIV can't do a correct signed (arithmetic) right shift")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("a fundamental CPU operation, simulated with arithmetic")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-145: native SHL / SHR / SAR ── */}
+    {name === "sh-ops" && (
+      <svg viewBox="0 0 480 178" role="img" aria-label="EIP-145 adds native SHL, SHR, and SAR shift opcodes">
+        <text class="t-cap" x="240" y="20">{L("EIP-145: three native shift opcodes")}</text>
+        <g class="sh-op sh-op0"><rect class="sh-opbox" x="30" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="97" y="64">SHL</text><text class="t-cap sh-opd" x="97" y="84">{L("shift left")}</text></g>
+        <g class="sh-op sh-op1"><rect class="sh-opbox" x="173" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="240" y="64">SHR</text><text class="t-cap sh-opd" x="240" y="84">{L("logical right")}</text></g>
+        <g class="sh-op sh-op2"><rect class="sh-opbox" x="316" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="383" y="64">SAR</text><text class="t-cap sh-opd" x="383" y="84">{L("arithmetic right")}</text></g>
+        <text class="t-ok sh-3" x="240" y="128" text-anchor="middle">{L("pop amount + value, shift directly — 3 gas, no constant to push")}</text>
+        <text class="t-cap" x="240" y="156" text-anchor="middle">{L("SAR preserves the sign bit — signed shifts finally correct")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-145: cheaper bit-twiddling ── */}
+    {name === "sh-result" && (
+      <svg viewBox="0 0 480 168" role="img" aria-label="Native shifts make bit manipulation cheaper and smaller">
+        <text class="t-cap" x="240" y="20">{L("every shift gets cheaper and smaller")}</text>
+        <text class="t-fld sh-wl" x="24" y="52" text-anchor="start">{L("MUL/DIV emulation")}</text>
+        <rect class="sh-track" x="176" y="40" width="274" height="18" rx="4" />
+        <rect class="sh-before" x="176" y="40" width="274" height="18" rx="4" />
+        <text class="t-fld sh-wl" x="24" y="86" text-anchor="start">SHL/SHR/SAR</text>
+        <rect class="sh-track" x="176" y="74" width="274" height="18" rx="4" />
+        <rect class="sh-after" x="176" y="74" width="120" height="18" rx="4" />
+        <text class="t-ok sh-use" x="240" y="120" text-anchor="middle">{L("packing structs, bitmaps, fixed-point, cryptography — all leaner")}</text>
+        <text class="t-cap" x="240" y="148" text-anchor="middle">{L("compilers emit them; the same 'add the missing primitive' story")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -5061,4 +5113,32 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ec-r1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .ec-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
   .ec-fast { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
+
+  /* ── EIP-145 — sh-emul: shifts via MUL/DIV ── */
+  .sh-want { fill: var(--color-ink-muted); text-anchor: start; }
+  .sh-ar { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .sh-embox { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); stroke-dasharray: 4 4; }
+  .sh-emt { fill: var(--color-ink-muted); }
+  .sh-emrow { opacity: 0; }
+  .sh-em0 { animation: tw-rowin 5s ease-out infinite; }
+  .sh-em1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .sh-cost { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
+  .sh-signed { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+
+  /* ── EIP-145 — sh-ops: native SHL/SHR/SAR ── */
+  .sh-opbox { fill: var(--color-surface); stroke: var(--color-node-leaf); }
+  .sh-opn { text-anchor: middle; font-weight: 600; }
+  .sh-opd { text-anchor: middle; fill: var(--color-ink-faint); }
+  .sh-op { opacity: 0; }
+  .sh-op0 { animation: tw-rowin 5s ease-out infinite; }
+  .sh-op1 { animation: tw-rowin 5s ease-out 0.25s infinite; }
+  .sh-op2 { animation: tw-rowin 5s ease-out 0.5s infinite; }
+  .sh-3 { opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
+
+  /* ── EIP-145 — sh-result: cheaper bit-twiddling ── */
+  .sh-wl { fill: var(--color-ink-faint); }
+  .sh-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .sh-before { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke: var(--color-changed); }
+  .sh-after { fill: color-mix(in oklab, var(--color-node-leaf) 50%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  .sh-use { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
 </style>

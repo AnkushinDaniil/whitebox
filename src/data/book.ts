@@ -77,6 +77,7 @@ export const BOOK: BookPart[] = [
         forkName: "Constantinople",
         date: "Feb 2019",
         chapters: [
+          { slug: "eip-145-bitwise-shifting", eip: "145" },
           { slug: "eip-1014-create2", eip: "1014" },
           { slug: "eip-1052-extcodehash", eip: "1052" },
         ],

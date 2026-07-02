@@ -72,7 +72,7 @@ export const FORKS: Fork[] = [
     display: "Oct 2016",
     layer: "execution",
     blurb: "Emergency gas repricing after the 2016 DoS attacks.",
-    eips: [{ eip: "150", title: "Gas repricing for IO-heavy ops", category: "execution" }],
+    eips: [{ eip: "150", title: "Gas repricing for IO-heavy ops", category: "execution", slug: "eip-150-io-repricing" }],
   },
   {
     name: "Spurious Dragon",

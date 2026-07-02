@@ -1,0 +1,104 @@
+---
+title: "EIP-150: when gas became a security parameter"
+dek: "In 2016 an attacker discovered that Ethereum's most expensive operations — reading storage, loading accounts — were priced far below what they actually cost a node. A few cheap transactions could grind every node on Earth to a crawl. EIP-150 repriced them, and in doing so turned gas from a nominal fee into a line of defense."
+summary: "A step-by-step derivation of EIP-150 (Tangerine Whistle, October 2016). Why IO-heavy opcodes like SLOAD, CALL, BALANCE, and EXTCODESIZE were priced far below their real disk cost; how the 2016 Shanghai denial-of-service attacks exploited that gap to nearly halt the chain; the realization that gas is a security parameter that must track real resource consumption, not a nominal price; how EIP-150 sharply raised those opcodes' costs and added the 63/64 rule capping how much gas a call can forward; and the legacy — it broke gas-hardcoded contracts, spawned the empty-account cleanup of EIP-161, and its blunt across-the-board raise is what EIP-2929 later refined into cold/warm access pricing."
+topic: EIPs
+order: 17
+spine: true
+prerequisites: ["the EVM & gas", "storage & state access"]
+updated: 2026-06-24
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+The [EVM chapter](/the-evm) sold gas as the thing that makes computation *paid-for* and *bounded*. That framing has a hidden assumption: that each opcode's price actually reflects the work it causes a node to do. In **October 2016**, at the Tangerine Whistle fork, Ethereum learned the hard way what happens when that assumption is false. Some operations — the ones that reach into state and disk — were priced at a small fraction of their real cost, and an attacker turned that gap into a weapon that nearly stopped the chain. **EIP-150** is the fix, and it's where the community internalized that gas isn't a fee schedule — it's a **security parameter**. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Cheap ops, heavy cost" },
+  { id: "step-2", label: "Reprice to reality" },
+  { id: "step-3", label: "Keep gas in reserve" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Cheap ops, heavy cost">
+
+## The problem: the price tag didn't match the work
+
+Most EVM opcodes are pure computation — add, compare, hash — and their cost is honest. But the opcodes that touch *state* are different: `SLOAD` chases a key through the [state trie](/state-and-the-trie) and off disk; `CALL`, `BALANCE`, `EXTCODESIZE`, and `EXTCODECOPY` each load another account's data. Those are the slowest things a node does — and in 2015's gas schedule they were nearly free: `SLOAD` cost 50 gas, account-touching opcodes 20–40. The price tag sat far below the real burden.
+
+<Scene name="tw-underpriced" caption="SLOAD, CALL, BALANCE, and EXTCODESIZE all reach into state and disk — the most expensive work a node does — yet were priced at 20–50 gas. A transaction that invokes them thousands of times costs the attacker almost nothing but forces every node into enormous disk I/O." />
+
+That gap is a <KeyTerm term="resource-exhaustion attack" def="Crafting cheap transactions that trigger disproportionately expensive work on every validating node — here, spamming underpriced state-access opcodes so block processing slows to a crawl, threatening liveness." />. In September–October 2016 the <KeyTerm term="Shanghai DoS attacks" def="A series of 2016 denial-of-service attacks that spammed underpriced IO-heavy opcodes (EXTCODESIZE, then SUICIDE/SLOAD variants), pushing some blocks to tens of seconds of processing time and threatening to stall Ethereum." /> did exactly this: transactions that hammered these opcodes pushed block processing to tens of seconds, and the network came close to grinding to a halt.
+
+<Callout type="warning" title="What breaks">
+Computation being "paid-for" means nothing if the price is wrong. When an opcode costs a node far more than it charges, gas stops bounding the real work — and the chain's liveness is for sale cheaply. The prices have to reflect reality.
+</Callout>
+
+**→ Step 2: raise the prices to match the cost.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Reprice to reality">
+
+## Gas is a security parameter — so align it to real cost
+
+The fix isn't clever, it's corrective: raise the gas cost of the IO-heavy opcodes until it reflects what they actually make a node do. EIP-150 pushed `SLOAD` from 50 to 200, `BALANCE` and `EXTCODESIZE` and the account-loading opcodes up to 400–700, `CALL` to 700, and so on. Once the price matches the burden, the very attack that stalled the chain now costs the attacker real gas — and is simply priced out of a block.
+
+<Scene name="tw-reprice" caption="EIP-150 raises the IO-heavy opcodes to reflect their real cost — SLOAD 50 → 200, BALANCE 20 → 400, EXTCODESIZE 20 → 700, CALL 40 → 700. The same spam transaction now costs far too much gas to fit in a block, so the denial-of-service evaporates." />
+
+The lasting lesson is bigger than the numbers. <KeyTerm term="gas as a security parameter" def="The principle, cemented by EIP-150, that opcode gas costs must track the real CPU, disk, and state-growth burden each operation imposes on nodes — because any operation priced below its true cost is a potential denial-of-service vector, not just a bargain." /> means the gas schedule is part of Ethereum's threat model, not just its fee model. Every later repricing — and there have been many — traces back to this realization.
+
+<SpecExcerpt
+  source="EIP-150: Gas cost changes for IO-heavy operations"
+  href="https://eips.ethereum.org/EIPS/eip-150"
+  ref="repricing & the 1/64 rule"
+>
+Increases the gas cost of `EXTCODESIZE` to 700, `EXTCODECOPY` base to 700, `BALANCE` and
+`EXTCODEHASH`-class account access to 400, `SLOAD` to 200, and the `CALL`-family base to
+700. Additionally, a call may pass at most `all_but_one_64th` of the remaining gas to a
+sub-call, so a caller always retains at least 1/64 of its gas.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Raising CALL's cost has a second-order effect. Contracts nest calls, and if a deep chain of calls could forward *all* remaining gas downward, a callee could leave its caller with nothing — not even enough to react to the failure. Repricing alone doesn't fix that shape.
+</Callout>
+
+**→ Step 3: never forward the last drop of gas.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Keep gas in reserve">
+
+## The 63/64 rule: always keep a sliver back
+
+EIP-150 shipped a second, subtler change alongside the repricing. When a contract calls another, it may forward at most **63/64** of its remaining gas — it always keeps **at least 1/64** for itself. So no matter how deeply calls nest or how greedily a callee burns what it's handed, the caller is guaranteed to survive the sub-call with a little gas left: enough to notice the failure, clean up, and return an error instead of dying outright.
+
+<Scene name="tw-6364" caption="A call forwards at most 63/64 of the caller's remaining gas and keeps at least 1/64 in reserve. Even if the callee consumes everything it's given, the caller retains a sliver — enough to handle the failure cleanly rather than being left stranded with zero gas." />
+
+<Callout type="insight" title="And that is EIP-150">
+State-touching opcodes were priced far below their real disk cost → a few cheap transactions spamming them stalled the whole network (the 2016 Shanghai DoS) → **reprice** those opcodes up to match reality, which prices the attack out, and cap forwarded gas at **63/64** so nested calls can't strand a caller. The durable idea is that **gas is a security parameter**: mispricing an operation isn't a discount, it's a vulnerability. The fix was blunt — a flat raise that also *overcharged* the honest common case of reading the same slot repeatedly, and broke contracts that had hard-coded gas amounts (the reason `.transfer()`'s fixed 2300-gas stipend later became a footgun). Cleaning up the empty accounts the attacks left behind took a follow-up fork ([EIP-161](https://eips.ethereum.org/EIPS/eip-161), weeks later), and the crude flat pricing was eventually refined into the cold/warm model of [EIP-2929](/eip-2929-2930-access-lists). But the principle was set here, in 2016: price every opcode for what it truly costs, or someone will make you pay.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-150: Gas cost changes for IO-heavy operations", note: "The spec — the repricing and the 1/64 rule", href: "https://eips.ethereum.org/EIPS/eip-150" },
+    { kind: "post", label: "Chapter 2 — The EVM & gas", note: "Why gas bounds computation in the first place", href: "/the-evm" },
+    { kind: "post", label: "EIP-2929/2930, derived", note: "The refined successor: cold vs warm access", href: "/eip-2929-2930-access-lists" },
+    { kind: "eip", label: "EIP-161: State-trie clearing", note: "Cleaning up the empty accounts the attacks created", href: "https://eips.ethereum.org/EIPS/eip-161" },
+    { kind: "post", label: "State & the trie", note: "Why reaching into state is the expensive part", href: "/state-and-the-trie" },
+  ]}
+/>
+
+</DepthLayer>

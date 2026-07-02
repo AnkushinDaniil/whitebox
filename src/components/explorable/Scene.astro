@@ -98,7 +98,10 @@ interface Props {
     | "dc-copy"
     | "dc-call"
     | "dc-delegate"
-    | "dc-proxy";
+    | "dc-proxy"
+    | "tw-underpriced"
+    | "tw-reprice"
+    | "tw-6364";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1823,6 +1826,65 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap dc-anc" x="240" y="192" text-anchor="middle">{L("the same idea EIP-7702 later brings to plain EOAs")}</text>
       </svg>
     )}
+
+    {/* ── Tangerine Whistle: underpriced IO opcodes enable a DoS ── */}
+    {name === "tw-underpriced" && (
+      <svg viewBox="0 0 480 202" role="img" aria-label="Underpriced IO-heavy opcodes let cheap transactions grind every node to a halt">
+        <text class="t-cap" x="240" y="20">{L("the price tag sat far below the real cost")}</text>
+        {[["SLOAD", "50 gas", "reads a storage slot from disk", 0], ["CALL", "40 gas", "loads another account", 1], ["EXTCODESIZE", "20 gas", "reads a contract's code", 2], ["BALANCE", "20 gas", "reads account state", 3]].map(([op, price, real, i]) => (
+          <g>
+            <rect class="tw-oprow" x="20" y={34 + Number(i) * 30} width="300" height="24" rx="4" />
+            <text class="t-fld tw-op" x="32" y={51 + Number(i) * 30}>{op}</text>
+            <text class="t-fld tw-price" x="118" y={51 + Number(i) * 30}>{price}</text>
+            <text class="t-fld tw-real" x="180" y={51 + Number(i) * 30}>{`≫ ${real}`}</text>
+          </g>
+        ))}
+        <rect class="tw-atk" x="336" y="42" width="130" height="52" rx="7" />
+        <text class="t-cap" x="401" y="62">{L("attacker tx")}</text>
+        <text class="t-fld tw-atkt" x="401" y="80">call ×5000, cheap</text>
+        <rect class="tw-nodetrack" x="336" y="118" width="130" height="16" rx="4" />
+        <rect class="tw-nodefill" x="336" y="118" width="130" height="16" rx="4" />
+        <text class="t-x tw-stall" x="401" y="150" text-anchor="middle">{L("~30s/block · stalls")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("cheap-but-heavy opcodes, called thousands of times, froze block processing")}</text>
+        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("the 2016 Shanghai denial-of-service attacks")}</text>
+      </svg>
+    )}
+
+    {/* ── Tangerine Whistle: reprice to match real cost ── */}
+    {name === "tw-reprice" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="EIP-150 reprices the IO-heavy opcodes up to match their real cost">
+        <text class="t-cap" x="240" y="20">{L("gas is a security parameter — align it to real cost")}</text>
+        <text class="t-cap tw-colh" x="150" y="44" text-anchor="end">{L("before")}</text>
+        <text class="t-cap tw-colh" x="330" y="44" text-anchor="start">{L("after EIP-150")}</text>
+        {[["SLOAD", "50", "200", 0], ["BALANCE", "20", "400", 1], ["EXTCODESIZE", "20", "700", 2], ["CALL", "40", "700", 3]].map(([op, before, after, i]) => (
+          <g class="tw-rrow" style={`animation-delay:${(Number(i) * 0.25).toFixed(2)}s`}>
+            <text class="t-fld tw-op" x="24" y={68 + Number(i) * 28} text-anchor="start">{op}</text>
+            <text class="t-fld tw-before" x="150" y={68 + Number(i) * 28} text-anchor="end">{before}</text>
+            <path class="sarrow tw-up" d={`M170 ${63 + Number(i) * 28} H300`} />
+            <text class="t-ok tw-after" x="330" y={68 + Number(i) * 28} text-anchor="start">{after}</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("now the same attack costs real gas and is priced out of the block")}</text>
+      </svg>
+    )}
+
+    {/* ── Tangerine Whistle: the 63/64 call-gas rule ── */}
+    {name === "tw-6364" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="EIP-150's 63 over 64 rule caps the gas a call can forward">
+        <text class="t-cap" x="240" y="20">{L("and cap forwarded gas: keep 1/64 back")}</text>
+        <rect class="tw-caller" x="30" y="40" width="140" height="54" rx="8" />
+        <text class="t-cap" x="100" y="62">{L("caller · gas G")}</text>
+        <text class="t-fld tw-keep" x="100" y="80">keeps ≥ G/64</text>
+        <path class="sarrow tw-fwd" d="M170 67 H300" />
+        <text class="t-cap tw-fwdl" x="235" y="59">{L("forwards ≤ 63/64")}</text>
+        <rect class="tw-callee" x="300" y="40" width="150" height="54" rx="8" />
+        <text class="t-cap" x="375" y="62">{L("callee")}</text>
+        <text class="t-fld tw-calleet" x="375" y="80">can't drain it all</text>
+        <text class="t-cap" x="240" y="128" text-anchor="middle">{L("even if the callee burns everything it's given, the caller keeps a sliver…")}</text>
+        <text class="t-ok tw-handle" x="240" y="150" text-anchor="middle">{L("…enough gas to handle the failure cleanly")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so deep nested calls can't leave a caller stranded with zero gas")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2943,4 +3005,35 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes dc-new { 0%,45% { opacity: 0.4; stroke: var(--color-border-strong) } 60%,100% { opacity: 1; stroke: var(--color-node-leaf) } }
   .dc-upg { opacity: 0; animation: dc-late 6s ease-in-out infinite; }
   .dc-anc { fill: var(--color-ink-faint); }
+
+  /* ── Tangerine Whistle — tw-underpriced: cheap-but-heavy opcodes ── */
+  .tw-oprow { fill: var(--color-surface); stroke: var(--color-border); }
+  .tw-op { fill: var(--color-accent-strong); text-anchor: start; }
+  .tw-price { fill: var(--color-node-leaf); text-anchor: start; }
+  .tw-real { fill: var(--color-ink-faint); text-anchor: start; }
+  .tw-atk { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
+  .tw-atkt { fill: var(--color-ink-muted); text-anchor: middle; }
+  .tw-nodetrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tw-nodefill { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: tw-crawl 5s linear infinite; }
+  @keyframes tw-crawl { 0% { transform: scaleX(0.04) } 100% { transform: scaleX(1) } }
+  .tw-stall { animation: dc-dup 3s ease-in-out infinite; }
+
+  /* ── Tangerine Whistle — tw-reprice: raise IO opcode costs ── */
+  .tw-colh { fill: var(--color-ink-faint); }
+  .tw-rrow { opacity: 0; animation: tw-rowin 5s ease-out infinite; }
+  @keyframes tw-rowin { 0%,8% { opacity: 0 } 24%,100% { opacity: 1 } }
+  .tw-before { fill: var(--color-ink-faint); }
+  .tw-after { fill: var(--color-node-leaf); }
+  .tw-up { stroke-dasharray: 130; stroke-dashoffset: 130; animation: tw-updraw 5s ease-out infinite; }
+  @keyframes tw-updraw { 0%,12% { stroke-dashoffset: 130 } 40%,100% { stroke-dashoffset: 0 } }
+
+  /* ── Tangerine Whistle — tw-6364: keep 1/64 of gas back ── */
+  .tw-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .tw-keep { fill: var(--color-node-leaf); text-anchor: middle; }
+  .tw-fwd { stroke-dasharray: 128; stroke-dashoffset: 128; animation: tw-fwddraw 5s ease-in-out infinite; }
+  @keyframes tw-fwddraw { 0%,16% { stroke-dashoffset: 128 } 44%,100% { stroke-dashoffset: 0 } }
+  .tw-fwdl { fill: var(--color-ink-faint); }
+  .tw-callee { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tw-calleet { fill: var(--color-ink-muted); text-anchor: middle; }
+  .tw-handle { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

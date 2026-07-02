@@ -62,6 +62,7 @@ export const BOOK: BookPart[] = [
       "Every consequential change to Ethereum, in the order it shipped — each one a problem the network hit, derived to its fix.",
     groups: [
       { forkName: "Homestead", date: "Mar 2016", chapters: [{ slug: "eip-7-delegatecall", eip: "7" }] },
+      { forkName: "Tangerine Whistle", date: "Oct 2016", chapters: [{ slug: "eip-150-io-repricing", eip: "150" }] },
       { forkName: "Spurious Dragon", date: "Nov 2016", chapters: [{ slug: "eip-155-replay-protection", eip: "155" }] },
       {
         forkName: "Berlin",

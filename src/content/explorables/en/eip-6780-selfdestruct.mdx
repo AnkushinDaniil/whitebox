@@ -1,0 +1,102 @@
+---
+title: "EIP-6780: declawing SELFDESTRUCT"
+dek: "SELFDESTRUCT could erase a contract's code and free its address — which let a different contract be redeployed at the same address (a 'metamorphic' contract) and made 'a contract can just vanish' a headache for Ethereum's whole state design. Removing it outright would break things, so EIP-6780 restricts it: it only truly deletes if the contract was created in the same transaction."
+summary: "A step-by-step derivation of EIP-6780 (SELFDESTRUCT restriction), shipped in Cancun (March 2024). Why the original SELFDESTRUCT — which deleted a contract's code, cleared its storage, and freed its address — was dangerous: combined with CREATE2 it enabled metamorphic contracts (redeploy different code at the same address, so an audited address could silently change), and the ability to delete arbitrary state in one instruction badly complicated the roadmap toward statelessness and Verkle trees; why it couldn't simply be removed (some contracts depend on it); and how EIP-6780 keeps the full delete only when a contract selfdestructs in the same transaction it was created, otherwise merely transferring its balance while leaving code and storage intact — killing metamorphic contracts, preserving legitimate same-transaction helpers, and simplifying state semantics."
+topic: EIPs
+order: 24
+spine: true
+prerequisites: ["contracts, code & storage", "CREATE2"]
+updated: 2026-06-24
+readingMinutes: 9
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Cancun, March 2024.** Two earlier chapters left a loose thread. The [CREATE2](/eip-1014-create2) chapter warned about *metamorphic* contracts — putting different code at the same address — and the [refund reduction](/eip-3529-refund-reduction) already stripped `SELFDESTRUCT`'s gas refund. This chapter ties the thread off. `SELFDESTRUCT` was one of the EVM's most dangerous instructions: a single opcode that could **erase a contract entirely** — code gone, storage cleared, address freed. That power enabled a genuine attack surface and quietly blocked Ethereum's long-term plans. **EIP-6780** defuses it without breaking the contracts that legitimately use it. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Erase and reuse" },
+  { id: "step-2", label: "Restrict, don't remove" },
+  { id: "step-3", label: "Metamorphic, dead" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Erase and reuse">
+
+## The problem: a contract could truly vanish
+
+Original `SELFDESTRUCT` did three drastic things at once: it deleted the contract's **code**, cleared its **storage**, and freed the **address** — sending any remaining balance to a target. Freeing the address is the dangerous part, because [CREATE2](/eip-1014-create2) lets you deploy to a *chosen* address. Chain them and you get a <KeyTerm term="metamorphic contract" def="A contract that changes its code at a fixed address: deploy code via CREATE2, SELFDESTRUCT to free the address, then CREATE2 again at the same address with different code. Breaks the assumption that an address's code is immutable." />: deploy, self-destruct, redeploy *different* code at the *same* address. An address someone audited or trusted could silently become something else entirely.
+
+<Scene name="sd-danger" caption="SELFDESTRUCT wiped a contract's code and storage and freed its address; CREATE2 could then redeploy different code at that same address — a metamorphic contract. An address you'd audited could quietly change what it does." />
+
+There's a second, quieter cost. An opcode that can delete arbitrary state in one shot is a nightmare for the roadmap toward <KeyTerm term="statelessness" def="A direction for Ethereum where clients verify blocks using compact proofs (witnesses) of just the state a block touches, rather than holding all state. Verkle trees are the enabling structure. An opcode that can delete whole accounts makes generating and reasoning about these proofs far harder." /> and Verkle trees: if any account can wink out of existence, generating and reasoning about state witnesses gets much harder. "A contract can vanish" complicated everything downstream.
+
+<Callout type="warning" title="What breaks">
+The clean fix is to remove `SELFDESTRUCT` entirely — but some deployed contracts genuinely rely on it, and yanking it could lock funds or break live systems. We need to neutralize the *dangerous* behavior (deleting code, freeing the address) while keeping the *harmless* uses working.
+</Callout>
+
+**→ Step 2: keep the full power only where it's safe.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Restrict, don't remove">
+
+## EIP-6780: full delete only in the creating transaction
+
+The insight is that the *only* genuinely safe time to fully delete a contract is when it was **just created and never left the transaction** — a common pattern for a throwaway helper deployed and torn down within one call. So EIP-6780 keeps the complete "delete code + clear storage + free the address" behavior **only if the contract was created in the same transaction** as the `SELFDESTRUCT`. In every other case — the normal one, where a long-lived contract self-destructs later — `SELFDESTRUCT` now only **transfers the balance** to its target and leaves the **code and storage in place**. The contract keeps existing.
+
+<Scene name="sd-restrict" caption="After EIP-6780, SELFDESTRUCT only fully deletes when the contract was created in the same transaction (safe throwaway helpers still work). Destroyed in any later transaction — the normal case — it just sends the balance away and leaves the code and storage intact." />
+
+<SpecExcerpt
+  source="EIP-6780: SELFDESTRUCT only in same transaction"
+  href="https://eips.ethereum.org/EIPS/eip-6780"
+  ref="the new behavior"
+>
+`SELFDESTRUCT` only deletes the account (code and storage) and transfers the balance if it
+is called in the same transaction in which the contract was created. Otherwise, it
+transfers the balance to the target but does **not** delete the account or clear its
+storage — the contract continues to exist.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+A contract that self-destructs after its creation transaction no longer disappears — it just loses its balance. Is that enough to actually close the metamorphic hole?
+</Callout>
+
+**→ Step 3: yes — and the roadmap breathes easier.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Metamorphic, dead">
+
+## The payoff: no more shape-shifting addresses
+
+The metamorphic trick needed `SELFDESTRUCT` to *free the address across transactions* so a later `CREATE2` could claim it. Now, when a deployed contract self-destructs in a later transaction, its **code stays** and the address remains occupied — so `CREATE2` can't put new code there. Metamorphic contracts are effectively dead: an audited address's code can no longer be swapped out from under you. And because contracts no longer vanish, the state's semantics get dramatically simpler, clearing an obstacle on the path to statelessness. Meanwhile, the legitimate create-and-destroy-in-one-transaction pattern is untouched, so nothing real breaks.
+
+<Scene name="sd-result" caption="A contract that self-destructs in a later transaction keeps its code, so its address stays occupied and CREATE2 can't redeploy over it — metamorphic contracts are dead. Contracts never truly vanishing also simplifies state handling for statelessness, while same-transaction helpers still work." />
+
+<Callout type="insight" title="And that is EIP-6780">
+`SELFDESTRUCT` deleted code, cleared storage, and freed the address → freeing the address let **CREATE2** redeploy *different* code there (metamorphic contracts), and "a contract can vanish" blocked the statelessness roadmap → but you can't remove it outright (some contracts depend on it) → so **restrict** it: full delete only in the transaction the contract was created; otherwise it just sends its balance and leaves the code in place. Metamorphic contracts die, throwaway same-transaction helpers keep working, and the state gets simpler to reason about. It's the endpoint of a multi-fork wind-down — [EIP-3529](/eip-3529-refund-reduction) took its refund, then Cancun took its teeth — an opcode declawed rather than deleted, so the ecosystem could move on without a hard break.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-6780: SELFDESTRUCT only same-tx", note: "The spec — the restricted behavior", href: "https://eips.ethereum.org/EIPS/eip-6780" },
+    { kind: "post", label: "EIP-1014 — CREATE2", note: "The other half of the metamorphic trick", href: "/eip-1014-create2" },
+    { kind: "post", label: "EIP-3529, derived", note: "Where SELFDESTRUCT lost its gas refund", href: "/eip-3529-refund-reduction" },
+    { kind: "tool", label: "Verkle trees & statelessness", note: "Why 'contracts never vanish' matters downstream", href: "https://ethereum.org/en/roadmap/verkle-trees/" },
+    { kind: "tool", label: "evm.codes — SELFDESTRUCT (0xFF)", note: "The opcode and its post-6780 semantics", href: "https://www.evm.codes/#ff" },
+  ]}
+/>
+
+</DepthLayer>

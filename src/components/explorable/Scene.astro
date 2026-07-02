@@ -119,7 +119,10 @@ interface Props {
     | "ef-unlock"
     | "p0-hacks"
     | "p0-opcode"
-    | "p0-savings";
+    | "p0-savings"
+    | "sd-danger"
+    | "sd-restrict"
+    | "sd-result";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2317,6 +2320,64 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="166" text-anchor="middle">{L("and the RETURNDATASIZE hack can finally be retired")}</text>
       </svg>
     )}
+
+    {/* ── EIP-6780: SELFDESTRUCT wiped code + freed the address → metamorphic ── */}
+    {name === "sd-danger" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="SELFDESTRUCT deleted a contract's code and freed its address, enabling different code to be redeployed there">
+        <text class="t-cap" x="240" y="20">{L("SELFDESTRUCT wiped the code and freed the address")}</text>
+        <rect class="sd-c sd-c0" x="24" y="44" width="120" height="52" rx="8" />
+        <text class="t-cap" x="84" y="66">{L("contract v1")}</text>
+        <text class="t-fld sd-addr" x="84" y="84">0xAddr</text>
+        <path class="sarrow sd-a1" d="M144 70 H196" /><text class="t-x sd-sdl" x="170" y="62">SELFDESTRUCT</text>
+        <rect class="sd-empty" x="196" y="44" width="120" height="52" rx="8" />
+        <text class="t-x sd-wiped" x="256" y="66">{L("code + storage wiped")}</text>
+        <text class="t-fld sd-addr" x="256" y="84">0xAddr {L("free")}</text>
+        <path class="sarrow sd-a2" d="M316 70 H368" /><text class="t-cap sd-c2l" x="342" y="62">CREATE2</text>
+        <rect class="sd-c sd-c1" x="368" y="44" width="104" height="52" rx="8" />
+        <text class="t-x" x="420" y="66">{L("contract v2")}</text>
+        <text class="t-fld sd-addr" x="420" y="84">{L("same 0xAddr!")}</text>
+        <text class="t-x sd-meta" x="240" y="134" text-anchor="middle">{L("different code, same address — a 'metamorphic' contract")}</text>
+        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("an audited address could silently become something else")}</text>
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("and 'a contract can just vanish' complicated all future state handling")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-6780: full delete only in the same tx it was created ── */}
+    {name === "sd-restrict" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="After EIP-6780 SELFDESTRUCT fully deletes only if the contract was created in the same transaction">
+        <text class="t-cap" x="240" y="20">{L("full delete only if created in the same transaction")}</text>
+        <rect class="sd-case sd-same" x="24" y="40" width="200" height="120" rx="8" />
+        <text class="t-cap" x="124" y="60">{L("created & destroyed")}</text>
+        <text class="t-cap" x="124" y="76">{L("in the SAME tx")}</text>
+        <text class="t-ok sd-cok" x="124" y="104">{L("✓ full delete")}</text>
+        <text class="t-fld sd-cn" x="124" y="124">code + storage gone</text>
+        <text class="t-cap sd-cn2" x="124" y="144">{L("temporary helpers still work")}</text>
+        <rect class="sd-case sd-later" x="256" y="40" width="200" height="120" rx="8" />
+        <text class="t-cap" x="356" y="60">{L("destroyed in a")}</text>
+        <text class="t-cap" x="356" y="76">{L("LATER tx (the norm)")}</text>
+        <text class="t-x sd-clater" x="356" y="104">{L("→ only sends its balance")}</text>
+        <text class="t-ok sd-cn" x="356" y="124">code + storage STAY</text>
+        <text class="t-cap sd-cn2" x="356" y="144">{L("the contract keeps existing")}</text>
+        <text class="t-cap" x="240" y="186" text-anchor="middle">{L("can't remove it outright — some contracts rely on it — so restrict it")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-6780: metamorphic dead; state semantics simplified ── */}
+    {name === "sd-result" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="With SELFDESTRUCT restricted, the metamorphic redeploy fails and state handling is simplified">
+        <text class="t-cap" x="240" y="20">{L("the metamorphic redeploy no longer works")}</text>
+        <rect class="sd-c sd-c0" x="30" y="44" width="130" height="50" rx="8" />
+        <text class="t-cap" x="95" y="64">{L("contract at 0xAddr")}</text>
+        <text class="t-fld sd-addr" x="95" y="82">SELFDESTRUCT (later)</text>
+        <path class="sarrow sd-r1" d="M160 69 H236" />
+        <rect class="sd-c sd-stays" x="236" y="44" width="130" height="50" rx="8" />
+        <text class="t-ok" x="301" y="64">{L("code STAYS")}</text>
+        <text class="t-fld sd-addr" x="301" y="82">0xAddr occupied</text>
+        <text class="t-x sd-nometa" x="240" y="124" text-anchor="middle">{L("✗ CREATE2 can't put new code there — metamorphic contracts are dead")}</text>
+        <text class="t-ok sd-simpl" x="240" y="154" text-anchor="middle">{L("✓ contracts never vanish → simpler state, toward statelessness")}</text>
+        <text class="t-cap" x="240" y="178" text-anchor="middle">{L("same-tx create-and-destroy still works, so nothing legitimate breaks")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3891,4 +3952,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .p0-albl { animation: p0-albl 5s ease-in-out infinite; }
   @keyframes p0-albl { 0%,20% { opacity: 0.5 } 55%,100% { opacity: 1 } }
   .p0-save { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-6780 — sd-danger: SELFDESTRUCT enabled metamorphic contracts ── */
+  .sd-c { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sd-c0 { stroke: var(--color-node-leaf); }
+  .sd-c1 { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; animation: dc-late 6s ease-in-out infinite; }
+  .sd-addr { text-anchor: middle; fill: var(--color-ink-faint); }
+  .sd-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out infinite; }
+  .sd-a2 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out 0.4s infinite; }
+  .sd-sdl, .sd-c2l { fill: var(--color-ink-faint); }
+  .sd-empty { fill: color-mix(in oklab, var(--color-border) 20%, transparent); stroke: var(--color-border); stroke-dasharray: 3 2; }
+  .sd-wiped { text-anchor: middle; animation: rv-pulse 6s ease-in-out infinite; }
+  .sd-meta { opacity: 0; animation: dc-late 6s ease-in-out infinite; }
+
+  /* ── EIP-6780 — sd-restrict: full delete only in the creating tx ── */
+  .sd-case { fill: var(--color-surface); }
+  .sd-same { stroke: var(--color-node-leaf); }
+  .sd-later { stroke: var(--color-accent-dim); }
+  .sd-cok { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .sd-clater { opacity: 0; animation: dc-late 5s ease-in-out 0.2s infinite; }
+  .sd-cn { text-anchor: middle; }
+  .sd-cn2 { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── EIP-6780 — sd-result: metamorphic dead, state simplified ── */
+  .sd-stays { stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .sd-r1 { stroke-dasharray: 76; stroke-dashoffset: 76; animation: st-draw 5s ease-in-out infinite; }
+  .sd-nometa { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .sd-simpl { opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
 </style>

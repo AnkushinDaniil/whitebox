@@ -1,0 +1,98 @@
+---
+title: "EIP-3860: metering the code that makes code"
+dek: "A contract's runtime bytecode has been size-capped since 2016 — but the initcode that produces it was neither capped nor charged for the O(n) work every node does to process it. Supply megabytes of initcode and the whole network scans it almost for free. EIP-3860 caps initcode and charges per word."
+summary: "A step-by-step derivation of EIP-3860 (limit and meter initcode), shipped in Shanghai (April 2023). Why contract creation had a denial-of-service gap — runtime bytecode is capped at 24576 bytes (EIP-170) and paid for on deposit, but the initcode that returns it was uncapped and its per-byte processing (notably JUMPDEST analysis, which every node runs over the whole initcode) was not metered, so an attacker could submit enormous initcode that forces O(n) work across the network at far below its true cost — and how EIP-3860 closes it by charging 2 gas per 32-byte word of initcode and capping initcode at 49152 bytes (twice the runtime limit), so the cost tracks the work and the size is bounded; the payoff is DoS-safe creation, a consistent pair of limits alongside EIP-170's runtime cap, and a small but real gas bump for CREATE/CREATE2 factory patterns."
+topic: EIPs
+order: 34
+spine: true
+prerequisites: ["contract creation (CREATE / CREATE2)", "gas & metering the network's work"]
+updated: 2026-07-02
+readingMinutes: 7
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Shanghai, April 2023.** Deploying a contract is a two-part act. You send a small program — the **initcode** — and the EVM runs it; whatever bytes it *returns* become the contract's permanent **runtime code**. Since 2016, runtime code has been capped at 24576 bytes (EIP-170), and you pay to store it. But the initcode itself slipped through: it was never size-limited, and the O(n) work the network must do just to *process* it wasn't fully charged. That's a small crack — and in gas economics, an unpriced O(n) operation is exactly the shape of a denial-of-service. **EIP-3860** seals it. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The unpriced scan" },
+  { id: "step-2", label: "Meter and cap" },
+  { id: "step-3", label: "Two matching limits" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The unpriced scan">
+
+## The problem: initcode was uncapped and its O(n) work underpriced
+
+When the EVM is handed initcode, it doesn't just execute it — it must first do work proportional to the initcode's *length*, regardless of what the code does. The clearest example is <KeyTerm term="JUMPDEST analysis" def="Before running bytecode, the EVM scans the entire program to mark which byte offsets are valid jump destinations (JUMPDEST opcodes). It's O(n) in the code length and must be done over the whole initcode — work every node repeats, whether or not the code ever runs to completion." />: every node scans the whole initcode to find valid jump targets. Runtime code was capped and paid for, but initcode was **uncapped**, and this per-byte scanning wasn't metered in proportion to its size. So an attacker could hand the network **megabytes** of initcode and make every node grind through it for a fee far below the real cost — an underpriced O(n) operation, the classic DoS shape.
+
+<Scene name="ic-gap" caption="Contract creation runs initcode to return runtime code (capped at 24576 bytes since EIP-170). But initcode itself was uncapped, and the O(n) JUMPDEST scan every node runs over it was underpriced — so huge initcode forces network-wide work for almost nothing. An underpriced denial-of-service." />
+
+<Callout type="warning" title="What breaks">
+The runtime side is buttoned up: bounded size, paid deposit. The *creation* side isn't. Work that scales with initcode length is imposed on every node but not charged in proportion — and the initcode has no size ceiling at all. Both need fixing.
+</Callout>
+
+**→ Step 2: charge for the size, and bound it.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Meter and cap">
+
+## EIP-3860: two gas per word, plus a hard cap
+
+The fix is the same principle Ethereum applies whenever it finds unpriced O(n) work: make the cost track the size. EIP-3860 adds an <KeyTerm term="initcode word charge" def="An extra 2 gas per 32-byte word of initcode, levied on CREATE, CREATE2, and contract-creation transactions. It directly prices the length-proportional work (like JUMPDEST analysis) the network does on the initcode." /> of **2 gas per 32-byte word** of initcode on `CREATE`, `CREATE2`, and creation transactions — so the longer the initcode, the more you pay, exactly matching the scan. And it adds a <KeyTerm term="initcode size cap" def="A hard limit of 49152 bytes (MAX_INITCODE_SIZE = 2 × MAX_CODE_SIZE) on initcode. Exceeding it is an immediate failure, bounding the worst-case work a single creation can impose." /> of **49152 bytes** — exactly twice the runtime limit — so no single creation can be unboundedly large. Cost now scales with work, and work is bounded.
+
+<Scene name="ic-meter" caption="EIP-3860 charges 2 gas per 32-byte word of initcode, so cost tracks the length-proportional scan, and caps initcode at 49152 bytes (2× the runtime limit). No unbounded initcode, no unpriced O(n) work — the standard 'meter the work' fix." />
+
+<SpecExcerpt
+  source="EIP-3860: Limit and meter initcode"
+  href="https://eips.ethereum.org/EIPS/eip-3860"
+  ref="the charge"
+>
+Introduces a maximum initcode size of 49152 (2 × MAX_CODE_SIZE) and charges an additional
+2 gas for every 32-byte word of initcode, applied to CREATE, CREATE2, and creation
+transactions — pricing the cost of jumpdest analysis and hashing over the initcode.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+For almost every real contract, nothing — the word charge is tiny and 49152 bytes is generous. What changes is the worst case: an attacker can no longer weaponize giant initcode, and CREATE2 factories now pay a small, size-proportional fee they didn't before.
+</Callout>
+
+**→ Step 3: creation and runtime finally match.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Two matching limits">
+
+## The payoff: symmetric, DoS-safe creation
+
+With EIP-3860, the two halves of a contract's life are finally symmetric: **initcode** is capped at 49152 bytes and metered per word; **runtime code** is capped at 24576 bytes ([EIP-170](https://eips.ethereum.org/EIPS/eip-170)) and paid on deposit. Contract creation is DoS-safe — no unbounded input, no unpriced O(n) work. The change is nearly invisible to ordinary deployments and slightly raises the cost of <KeyTerm term="CREATE2 factory" def="A contract that deploys other contracts via CREATE2, often at deterministic addresses. Because these patterns deploy many contracts, the new per-word initcode charge is the place EIP-3860's cost is most noticeable." /> patterns, which deploy contracts en masse. It's a small EIP with a clear pedigree: the same lesson as [EIP-150](/eip-150-io-repricing) — when the network does work proportional to your input, you must pay proportionally.
+
+<Scene name="ic-result" caption="Initcode (≤ 49152 bytes, +2 gas/word) and runtime code (≤ 24576 bytes, EIP-170) are now a matching, metered pair. Creation is DoS-safe; CREATE2 factories pay the small word charge. The same 'meter the O(n) work' principle as EIP-150's I/O repricing." />
+
+<Callout type="insight" title="And that is EIP-3860">
+Runtime code was capped and paid for, but the **initcode** that produces it was uncapped and its length-proportional processing (JUMPDEST analysis) was underpriced → an attacker could submit huge initcode and force **O(n) work across every node** for almost nothing, an underpriced DoS → EIP-3860 charges **2 gas per 32-byte word** of initcode and caps it at **49152 bytes** → so cost tracks work, size is bounded, creation is DoS-safe, and it mirrors EIP-170's runtime cap. It's a minor-looking gas tweak that closes a real attack surface, and a textbook application of Ethereum's oldest metering lesson: price the work the network actually does.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3860: Limit and meter initcode", note: "The spec — cap + per-word charge", href: "https://eips.ethereum.org/EIPS/eip-3860" },
+    { kind: "eip", label: "EIP-170: Contract code size limit", note: "The 24576-byte runtime cap this mirrors", href: "https://eips.ethereum.org/EIPS/eip-170" },
+    { kind: "post", label: "EIP-150 — I/O repricing", note: "The original 'meter the real work' lesson", href: "/eip-150-io-repricing" },
+    { kind: "post", label: "EIP-1014 — CREATE2", note: "The deterministic-address factories this prices", href: "/eip-1014-create2" },
+  ]}
+/>
+
+</DepthLayer>

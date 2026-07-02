@@ -149,7 +149,10 @@ interface Props {
     | "dp-fast"
     | "ss-naive"
     | "ss-net"
-    | "ss-sentry";
+    | "ss-sentry"
+    | "ic-gap"
+    | "ic-meter"
+    | "ic-result";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2875,6 +2878,52 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("cheap repeated writes restored — the stipend hole closed")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3860: initcode was uncapped and its O(n) scan unpriced ── */}
+    {name === "ic-gap" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Before EIP-3860 contract initcode was neither size-capped nor metered per byte, so huge initcode forced every node to do unpaid work">
+        <text class="t-cap" x="240" y="20">{L("creating a contract: run initcode → return runtime code")}</text>
+        <rect class="ic-init" x="24" y="36" width="250" height="30" rx="6" />
+        <text class="t-fld ic-it" x="149" y="55">{L("initcode — uncapped, per-byte scan unpriced")}</text>
+        <path class="sarrow ic-a1" d="M274 51 H330" />
+        <rect class="ic-rt" x="330" y="36" width="126" height="30" rx="6" />
+        <text class="t-ok ic-rtt" x="393" y="55">{L("runtime ≤ 24576")}</text>
+        <text class="t-cap ic-cap" x="240" y="88" text-anchor="middle">{L("every node runs JUMPDEST analysis over the whole initcode — O(n)")}</text>
+        <rect class="ic-huge" x="24" y="102" width="432" height="30" rx="6" />
+        <text class="t-x ic-ht" x="240" y="121" text-anchor="middle">{L("attacker supplies megabytes of initcode")}</text>
+        <text class="t-x ic-atk" x="240" y="162" text-anchor="middle">{L("all that scanning costs the network — but is barely charged")}</text>
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("an underpriced denial-of-service on contract creation")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3860: meter per word + cap the size ── */}
+    {name === "ic-meter" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="EIP-3860 charges 2 gas per 32-byte word of initcode and caps initcode size, so cost tracks the work">
+        <text class="t-cap" x="240" y="20">{L("EIP-3860: price the initcode by its size")}</text>
+        <rect class="ic-words" x="40" y="38" width="400" height="26" rx="5" />
+        <line class="ic-tick" x1="120" y1="38" x2="120" y2="64" /><line class="ic-tick" x1="200" y1="38" x2="200" y2="64" /><line class="ic-tick" x1="280" y1="38" x2="280" y2="64" /><line class="ic-tick" x1="360" y1="38" x2="360" y2="64" />
+        <text class="t-fld ic-wt" x="240" y="55">{L("initcode, split into 32-byte words")}</text>
+        <text class="t-ok ic-charge" x="240" y="92" text-anchor="middle">{L("+2 gas per word — cost now tracks the scan")}</text>
+        <rect class="ic-cap2" x="90" y="112" width="300" height="30" rx="6" />
+        <text class="t-ok ic-capt" x="240" y="131" text-anchor="middle">{L("and a hard cap: initcode ≤ 49152 bytes (2× runtime)")}</text>
+        <text class="t-cap" x="240" y="170" text-anchor="middle">{L("no unbounded initcode, no unpriced O(n) work")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3860: creation is DoS-safe, consistent with the runtime cap ── */}
+    {name === "ic-result" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="Contract creation becomes DoS-safe and consistent with EIP-170's runtime code size cap">
+        <text class="t-cap" x="240" y="20">{L("two matching limits, both metered")}</text>
+        <rect class="ic-box ic-box0" x="40" y="40" width="180" height="60" rx="8" />
+        <text class="t-cap ic-bt" x="130" y="64">initcode</text>
+        <text class="t-ok ic-bv" x="130" y="86">≤ 49152 · +2/word</text>
+        <rect class="ic-box ic-box1" x="260" y="40" width="180" height="60" rx="8" />
+        <text class="t-cap ic-bt" x="350" y="64">runtime (EIP-170)</text>
+        <text class="t-ok ic-bv" x="350" y="86">≤ 24576</text>
+        <text class="t-ok ic-safe" x="240" y="130" text-anchor="middle">{L("creation is DoS-safe · CREATE2 factories pay the word charge")}</text>
+        <text class="t-cap" x="240" y="160" text-anchor="middle">{L("the same 'meter the O(n) work' lesson as EIP-150")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4735,4 +4784,32 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ss-bl { fill: var(--color-changed); }
   .ss-pass { stroke: var(--color-node-leaf); }
   .ss-pl { fill: var(--color-node-leaf); }
+
+  /* ── EIP-3860 — ic-gap: uncapped, unpriced initcode ── */
+  .ic-init { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .ic-it { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ic-a1 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .ic-rt { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ic-rtt { text-anchor: middle; }
+  .ic-cap { opacity: 0; animation: dc-late 5s ease-in-out 0.4s infinite; }
+  .ic-huge { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); transform-box: fill-box; transform-origin: left center; animation: ic-grow 5s ease-out infinite; }
+  @keyframes ic-grow { 0%, 15% { transform: scaleX(0.08); } 55%, 100% { transform: scaleX(1); } }
+  .ic-ht { text-anchor: middle; fill: var(--color-changed); }
+  .ic-atk { opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+
+  /* ── EIP-3860 — ic-meter: charge per word + cap ── */
+  .ic-words { fill: color-mix(in oklab, var(--color-node-branch) 8%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .ic-tick { stroke: var(--color-node-branch); stroke-width: 1; opacity: 0.6; }
+  .ic-wt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ic-charge { opacity: 0; animation: dc-late 5s ease-in-out 0.4s infinite; }
+  .ic-cap2 { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
+  .ic-capt { text-anchor: middle; }
+
+  /* ── EIP-3860 — ic-result: two matching limits ── */
+  .ic-box { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .ic-box0 { animation: tw-rowin 5s ease-out infinite; }
+  .ic-box1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .ic-bt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ic-bv { text-anchor: middle; fill: var(--color-node-leaf); }
+  .ic-safe { opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
 </style>

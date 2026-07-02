@@ -233,7 +233,7 @@ export const FORKS: Fork[] = [
     eips: [
       { eip: "3651", title: "Warm COINBASE", category: "execution" },
       { eip: "3855", title: "PUSH0 instruction", category: "execution", slug: "eip-3855-push0" },
-      { eip: "3860", title: "Limit and meter initcode", category: "execution" },
+      { eip: "3860", title: "Limit and meter initcode", category: "execution", slug: "eip-3860-initcode-metering" },
       { eip: "4895", title: "Beacon-chain push withdrawals", category: "consensus", slug: ours("eip-4895-withdrawals") },
       { eip: "6049", title: "Deprecate SELFDESTRUCT (warn)", category: "execution" },
     ],

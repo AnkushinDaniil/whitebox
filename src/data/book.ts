@@ -114,6 +114,7 @@ export const BOOK: BookPart[] = [
         date: "Apr 2023",
         chapters: [
           { slug: "eip-3855-push0", eip: "3855" },
+          { slug: "eip-3860-initcode-metering", eip: "3860" },
           { slug: "eip-4895-withdrawals", eip: "4895" },
         ],
       },

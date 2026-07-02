@@ -1,0 +1,111 @@
+---
+title: "EIP-1344: CHAINID — replay protection for contract signatures"
+dek: "EIP-155 bound transactions to their chain. But contracts increasingly verify their own signed messages — gasless approvals, meta-transactions, off-chain orders — and those had no chain identity, so a signature valid against a contract on one chain replayed against the same contract on another. CHAINID exposes the current chain's id to the EVM, so a contract can bind its signatures to the chain it's actually running on."
+summary: "A step-by-step derivation of EIP-1344 (the CHAINID opcode), shipped in Istanbul (December 2019). Why EIP-155 only protected transactions, leaving contract-verified signatures (EIP-712 typed data, permit, meta-transactions) replayable across chains and forks that share a contract's address; why hardcoding the chain id at deploy time fails on a chain split (the constant survives unchanged on both sides); and how CHAINID (0x46) returns the current chain's id at runtime so a contract can fold it into its EIP-712 domain separator — binding each signature to the chain it was signed for, with the caveat that a cached domain separator must be recomputed if CHAINID changes."
+topic: EIPs
+order: 20
+spine: true
+prerequisites: ["EIP-155 replay protection", "signatures & ecrecover"]
+updated: 2026-06-24
+readingMinutes: 9
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+
+**Istanbul, December 2019.** [EIP-155](/eip-155-replay-protection) solved cross-chain replay for *transactions* by folding a `chainId` into what you sign. But by 2019 a whole world of signatures had grown up *inside* contracts — gasless token approvals (`permit`), meta-transactions, off-chain DEX orders — where a user signs a **message** and a contract verifies it with `ecrecover`. Those signatures had exactly the problem 155 fixed, one layer up: no chain identity, so a signature valid against a contract on one chain was valid against the same contract everywhere. The catch is that a contract can't just *know* its chain — unless the protocol tells it. **EIP-1344** is the opcode that tells it. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Signatures with no chain" },
+  { id: "step-2", label: "Read the chain at runtime" },
+  { id: "step-3", label: "Survive a chain split" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Signatures with no chain">
+
+## The problem: a contract's signatures replay everywhere
+
+A contract that accepts signed messages verifies them with <KeyTerm term="ecrecover" def="The EVM precompile that recovers the signer's address from a message hash and a signature (v, r, s). A contract compares the recovered address to who it expects — the basis of permit, meta-transactions, and off-chain orders." />: recover the signer from `(hash, v, r, s)` and check it's who it should be. But if the hash the user signed says nothing about *which chain* the contract is on, then the same signature recovers the same signer against the **same contract address** on any chain — and contract addresses are often identical across chains (especially after a fork, or via [CREATE2](/eip-1014-create2)). So a `permit` you signed on mainnet can be replayed against the twin contract on another chain.
+
+<Scene name="ci-replay" caption="A user signs a permit; the contract verifies it with ecrecover. Because the signed message carries no chain identity, the identical signature is accepted against the same contract address on every chain — a cross-chain replay, exactly the EIP-155 problem but for contract-level signatures." />
+
+<Callout type="warning" title="What breaks">
+We need the signed message to commit to the chain, the way a 155 transaction does. But the *contract* is what builds the message to verify — and a contract, running in the EVM, has no way to ask "which chain am I on?" There's no opcode for it. Could we just bake the chain id in when we deploy?
+</Callout>
+
+**→ Step 2: give the EVM a way to read the chain.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Read the chain at runtime">
+
+## CHAINID: the current chain's id, at runtime
+
+Hardcoding the id at deploy time is tempting but wrong — we'll see why in a moment — so the real fix makes the chain id *readable while the contract runs*. <KeyTerm term="CHAINID" def="The Istanbul opcode 0x46. It pushes the id of the chain the transaction is executing on onto the stack — the same value EIP-155 uses — so contract code can read its own chain at runtime." /> (opcode `0x46`) pushes the current chain's id onto the stack. Now a contract can fold that id into the <KeyTerm term="domain separator" def="An EIP-712 value that scopes a signature to a specific app and deployment: it hashes together the contract name, version, the chainId, and the verifying contract's address. Signatures are made over (domainSeparator, message), so they only validate in that exact domain." /> — the EIP-712 value that scopes a signature to *this app, this contract, this chain*. The message a user signs is made over that domain, so a signature is only valid where the domain matches.
+
+<Scene name="ci-domain" caption="CHAINID (0x46) returns the id of the chain the code is running on. The contract folds it into its EIP-712 domain separator (chainId + verifying contract), and the user's message is signed over that domain — so the signature is valid only on chain 1, and only for this contract." />
+
+<Formula
+  expr="domainSeparator = keccak256( name, version, CHAINID, address(this) )"
+  terms={[
+    { t: "CHAINID", note: "read at runtime (0x46) — so it reflects the chain the contract is actually on" },
+    { t: "address(this)", note: "scopes it to this exact contract, not just this chain" },
+  ]}
+  caption="Sign over this domain and the signature is welded to (this chain, this contract) — a contract-level version of EIP-155's trick."
+/>
+
+<SpecExcerpt
+  source="EIP-1344: ChainID opcode"
+  href="https://eips.ethereum.org/EIPS/eip-1344"
+  ref="the opcode"
+>
+Adds `CHAINID` (`0x46`), which returns the current chain's `chain_id` as defined by
+EIP-155 — a value fixed per network. It lets contracts incorporate the chain id into
+signed data (e.g. an EIP-712 domain separator) so signatures made for one chain are not
+valid on another. Note: reading it at runtime is required so the value stays correct
+across a hard fork that changes the chain id.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+So why *not* just read `CHAINID` once at deployment and store it as a constant? On an ordinary chain nothing goes wrong — but the whole point of a chain id is to distinguish chains *after they split*, and a stored constant can't do that.
+</Callout>
+
+**→ Step 3: the split is the whole point.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Survive a chain split">
+
+## Why it must be read live: the chain split
+
+Picture a hard fork that splits one chain into two — the exact scenario EIP-155 was born from. Your contract now exists, byte-for-byte, on **both** chains at the same address. If it had *hardcoded* its chain id at deploy, both copies would carry the *same* constant, and a signature would still validate on both — the hole never closes. Because `CHAINID` is read **at runtime**, the two copies now return **different** ids: on the original chain it's `1`, on the new one it's, say, `61`. The domain separator differs, so a signature made for chain `1` recomputes to a domain that doesn't match on chain `61`, and it's rejected. The protection tracks the split automatically.
+
+<Scene name="ci-split" caption="After a split, the same contract runs on both chains but CHAINID returns a different id on each. A signature made for chain 1 matches the domain there (✓) but not on chain 61, where the domain now uses 61 (✗). The catch: a contract that cached its domain separator at deploy must recompute it when CHAINID changes, or the cache reopens the hole." />
+
+<Callout type="insight" title="And that is CHAINID">
+EIP-155 protected **transactions**, but contract-verified **messages** (permit, meta-tx, off-chain orders) had no chain identity, so they replayed against the same contract on any chain → the fix is to let the contract read its chain, but **hardcoding** it fails on a split (the constant survives on both sides) → so `CHAINID` (0x46) returns the id **at runtime**, and a contract folds it into its **EIP-712 domain separator**, welding each signature to the chain it was signed for. It's EIP-155's idea lifted from the protocol into the EVM, and it's what makes `permit`, gasless approvals, and every EIP-712 signature safe across chains and forks — with the one sharp edge that a *cached* domain separator must be invalidated when the chain id changes. Read the chain live, or the cache lies.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-1344: ChainID opcode", note: "The spec — 0x46 and the split caveat", href: "https://eips.ethereum.org/EIPS/eip-1344" },
+    { kind: "post", label: "EIP-155, derived", note: "The transaction-level replay protection this extends", href: "/eip-155-replay-protection" },
+    { kind: "eip", label: "EIP-712: Typed structured data signing", note: "The domain separator CHAINID feeds", href: "https://eips.ethereum.org/EIPS/eip-712" },
+    { kind: "eip", label: "EIP-2612: permit", note: "Gasless approvals — the flagship CHAINID user", href: "https://eips.ethereum.org/EIPS/eip-2612" },
+    { kind: "post", label: "EIP-1014 — CREATE2", note: "Why the same contract address recurs across chains", href: "/eip-1014-create2" },
+  ]}
+/>
+
+</DepthLayer>

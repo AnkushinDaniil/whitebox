@@ -857,15 +857,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-4844: blobs have their own fee market (blob gas) ── */}
     {name === "blob-fee" && (
-      <svg viewBox="0 0 480 190" role="img" aria-label="Blobs are priced in a separate blob-gas fee market">
-        <text class="t-cap" x="118" y="24">{L("blobs per block")}</text>
-        {[0, 1, 2, 3, 4, 5].map((i) => (<rect class={`bf-slot bs${i}`} x={28 + i * 36} y="36" width="28" height="40" rx="4" />))}
-        <line class="bf-target" x1="132" y1="30" x2="132" y2="82" />
-        <text class="t-cap bf-tlbl" x="80" y="98">{L("target 3")}</text>
-        <text class="t-cap" x="226" y="98">{L("max 6")}</text>
-        <rect class="bf-track" x="28" y="116" width="408" height="18" rx="6" /><rect class="bf-fill" x="30" y="118" width="404" height="14" rx="5" />
-        <text class="t-fld bf-fee" x="240" y="129" text-anchor="middle">{L("blob base fee — its own market")}</text>
-        <text class="t-cap" x="240" y="172">{L("priced in blob gas with its own base fee · doesn’t compete with execution")}</text>
+      <svg viewBox="0 0 480 190" role="img" aria-label="When blobs exceed the target, the blob base fee rises a beat later; when they fall back, it drops">
+        <text class="t-cap" x="118" y="22">{L("blobs per block")}</text>
+        {[0, 1, 2].map((i) => (<rect class="bf-slot bf-base" x={28 + i * 36} y="34" width="28" height="42" rx="4" />))}
+        {[3, 4, 5].map((i) => (<rect class={`bf-slot bf-surge bf-surge${i - 3}`} x={28 + i * 36} y="34" width="28" height="42" rx="4" />))}
+        <line class="bf-target" x1="132" y1="28" x2="132" y2="82" />
+        <text class="t-cap bf-tlbl" x="80" y="96">{L("target 3")}</text>
+        <text class="t-x bf-spike" x="240" y="96">{L("demand spikes over target")}</text>
+        <rect class="bf-track" x="28" y="116" width="408" height="18" rx="6" />
+        <rect class="bf-fill" x="30" y="118" width="404" height="14" rx="5" />
+        <text class="t-fld bf-fee" x="240" y="129" text-anchor="middle">{L("blob base fee follows demand")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("over target → the fee rises; back to target → it falls")}</text>
       </svg>
     )}
 
@@ -1003,18 +1005,22 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-2718: the first byte routes legacy vs typed, no collision ── */}
     {name === "tx-disambig" && (
-      <svg viewBox="0 0 480 208" role="img" aria-label="The first byte disambiguates legacy from typed transactions">
-        <rect class="td-byte" x="184" y="24" width="112" height="34" rx="8" />
-        <text class="t-cap" x="240" y="45">{L("first byte = ?")}</text>
-        <path class="sarrow td-l1" d="M208 58 L120 102" />
-        <path class="sarrow td-l2" d="M272 58 L360 102" />
-        <rect class="td-legacy" x="28" y="106" width="184" height="64" rx="8" />
-        <text class="tx-byte2" x="120" y="134">≥ 0xc0</text>
-        <text class="t-cap" x="120" y="154">{L("RLP list → legacy tx")}</text>
-        <rect class="td-typed" x="268" y="106" width="184" height="64" rx="8" />
-        <text class="tx-byte2" x="360" y="134">0x00–0x7f</text>
-        <text class="t-cap" x="360" y="154">{L("type byte → typed tx")}</text>
-        <text class="t-cap" x="240" y="198">{L("an RLP list starts ≥ 0xc0, so type bytes 0x00–0x7f never collide")}</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="A byte-value axis showing the typed range and legacy range are separated by an unused gap">
+        <text class="t-cap" x="240" y="20">{L("the first byte decides — and the two ranges can't overlap")}</text>
+        <text class="t-cap td-marklbl" x="140" y="46" text-anchor="middle">{L("a first byte")}</text>
+        <circle class="td-mark" cx="140" cy="58" r="5" />
+        <rect class="td-zone td-typedz" x="40" y="70" width="199" height="26" rx="3" />
+        <rect class="td-zone td-gapz" x="239" y="70" width="102" height="26" rx="3" />
+        <rect class="td-zone td-legacyz" x="341" y="70" width="99" height="26" rx="3" />
+        <text class="t-ok td-tl" x="140" y="87" text-anchor="middle">{L("typed · type byte")}</text>
+        <text class="td-gaplbl" x="290" y="87" text-anchor="middle">{L("gap — unused")}</text>
+        <text class="td-legacylbl" x="390" y="87" text-anchor="middle">{L("legacy · RLP list")}</text>
+        <line class="td-axis" x1="40" y1="106" x2="440" y2="106" />
+        {[["0x00", 40], ["0x7f", 239], ["0xc0", 341], ["0xff", 440]].map(([lbl, x]) => (
+          <g><line class="td-tick" x1={x} y1="102" x2={x} y2="110" /><text class="td-num" x={x} y="124">{lbl}</text></g>
+        ))}
+        <text class="t-cap" x="240" y="152" text-anchor="middle">{L("an RLP list always starts ≥ 0xc0; type bytes are ≤ 0x7f")}</text>
+        <text class="t-ok" x="240" y="178" text-anchor="middle">{L("the empty gap 0x80–0xbf guarantees they can never collide")}</text>
       </svg>
     )}
 
@@ -1165,9 +1171,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-fld wd-objc" x="140" y="78">index · validatorIndex</text>
         <text class="t-fld wd-objc" x="140" y="96">address · amount (Gwei)</text>
         <path class="sarrow wd-ca" d="M240 78 H300" />
-        <rect class="wd-acct" x="300" y="48" width="160" height="60" rx="8" />
-        <text class="t-cap" x="380" y="70">{L("recipient account")}</text>
-        <text class="t-ok wd-plus" x="380" y="92">balance += amount</text>
+        <rect class="wd-acct" x="300" y="48" width="160" height="64" rx="8" />
+        <text class="t-cap" x="380" y="66">{L("recipient account")}</text>
+        <rect class="wd-balcell" x="322" y="76" width="116" height="24" rx="4" />
+        <text class="wd-balbefore" x="380" y="93">10.0 ETH</text>
+        <text class="wd-balafter" x="380" y="93">12.0 ETH</text>
         <text class="t-x wd-nocall" x="240" y="142">{L("no EVM call · no gas · no code runs")}</text>
         <text class="t-cap" x="240" y="176">{L("an unconditional credit — not a transfer that could run contract code")}</text>
       </svg>
@@ -2598,16 +2606,25 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes bp-appear { 0%,46% { opacity: 0 } 60%,100% { opacity: 1 } }
   .bp-commit { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
 
-  /* EIP-4844 — blob-fee: slots fill around the target; the blob base fee breathes */
+  /* EIP-4844 — blob-fee: over-target blobs appear, then the fee rises a beat later (6s) */
   .bf-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .bf-slot.bs0, .bf-slot.bs1, .bf-slot.bs2 { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .bf-slot.bs3 { animation: bf-flux 5s ease-in-out infinite; }
-  @keyframes bf-flux { 0%,40% { fill: var(--color-surface); stroke: var(--color-border-strong) } 55%,80% { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf) } 100% { fill: var(--color-surface); stroke: var(--color-border-strong) } }
+  .bf-base { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .bf-surge { fill: color-mix(in oklab, var(--color-changed) 24%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; }
+  .bf-surge0 { animation: bf-surge 6s ease-in-out infinite; }
+  .bf-surge1 { animation: bf-surge 6s ease-in-out 0.15s infinite; }
+  .bf-surge2 { animation: bf-surge 6s ease-in-out 0.3s infinite; }
+  @keyframes bf-surge { 0%,42% { opacity: 0 } 48%,72% { opacity: 1 } 78%,100% { opacity: 0 } }
+  .bf-spike { opacity: 0; animation: bf-surge 6s ease-in-out infinite; }
   .bf-target { stroke: var(--color-hash); stroke-width: 1.4; stroke-dasharray: 4 3; }
   .bf-tlbl { fill: var(--color-hash); }
   .bf-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .bf-fill { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); transform-box: fill-box; transform-origin: left; animation: bf-fee 5s ease-in-out infinite; }
-  @keyframes bf-fee { 0%,40% { transform: scaleX(0.4) } 60%,80% { transform: scaleX(0.72) } 100% { transform: scaleX(0.4) } }
+  /* the fee rises AFTER the surge (48%) and falls AFTER it clears (78%) — cause→effect */
+  .bf-fill { transform-box: fill-box; transform-origin: left center; animation: bf-fee 6s ease-in-out infinite; }
+  @keyframes bf-fee {
+    0%,48% { transform: scaleX(0.32); fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)) }
+    60%,74% { transform: scaleX(0.88); fill: color-mix(in oklab, var(--color-changed) 34%, var(--color-surface)) }
+    88%,100% { transform: scaleX(0.32); fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)) }
+  }
   .bf-fee { fill: var(--color-ink-muted); }
 
   /* shared smart-account op box */
@@ -2715,17 +2732,22 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .tt-dec { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: tt-dec 5s ease-in-out infinite; }
   @keyframes tt-dec { 0%,56% { opacity: 0 } 70%,100% { opacity: 1 } }
 
-  /* EIP-2718 — tx-disambig: the first byte routes to a lane */
-  .td-byte { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
-  .td-l1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: td-d1 6s ease-in-out infinite; }
-  .td-l2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: td-d2 6s ease-in-out infinite; }
-  @keyframes td-d1 { 0%,8% { stroke-dashoffset: 100 } 26%,46% { stroke-dashoffset: 0 } 56%,100% { stroke-dashoffset: 100 } }
-  @keyframes td-d2 { 0%,52% { stroke-dashoffset: 100 } 70%,90% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: 100 } }
-  .td-legacy { fill: color-mix(in oklab, var(--color-ink-faint) 6%, var(--color-surface)); stroke: var(--color-border-strong); animation: td-hl1 6s ease-in-out infinite; }
-  .td-typed { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); animation: td-hl2 6s ease-in-out infinite; }
-  @keyframes td-hl1 { 0%,20% { filter: none } 34%,44% { filter: drop-shadow(0 0 6px var(--color-border-strong)) } 56%,100% { filter: none } }
-  @keyframes td-hl2 { 0%,60% { filter: none } 74%,86% { filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { filter: none } }
-  .tx-byte2 { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; }
+  /* EIP-2718 — tx-disambig: a byte axis; typed & legacy ranges can't overlap (6s) */
+  .td-zone { stroke-width: 1; }
+  .td-typedz { fill: color-mix(in oklab, var(--color-node-leaf) 26%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .td-gapz { fill: color-mix(in oklab, var(--color-border) 35%, transparent); stroke: var(--color-border); stroke-dasharray: 3 2; }
+  .td-legacyz { fill: color-mix(in oklab, var(--color-accent) 26%, var(--color-surface)); stroke: var(--color-accent); }
+  .td-tl { font-size: 9px; } .td-legacylbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9px; }
+  .td-gaplbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8.5px; }
+  .td-axis { stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .td-tick { stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .td-num { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .td-marklbl { fill: var(--color-ink-faint); }
+  /* a first byte hops between the two valid zones, never landing in the gap */
+  .td-mark { fill: var(--color-accent-strong); animation: td-mark 6s ease-in-out infinite; }
+  @keyframes td-mark { 0%,18% { transform: translateX(0) } 34%,58% { transform: translateX(250px) } 74%,100% { transform: translateX(0) } }
+  .td-marklbl { animation: td-marklbl 6s ease-in-out infinite; }
+  @keyframes td-marklbl { 0%,18% { transform: translateX(0) } 34%,58% { transform: translateX(250px) } 74%,100% { transform: translateX(0) } }
 
   /* EIP-2718 — tx-family: the registry, one byte per format */
   .tx-row { opacity: 0; }
@@ -2831,8 +2853,14 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wd-ca { stroke-dasharray: 56; stroke-dashoffset: 56; animation: wd-cadraw 6s ease-in-out infinite; }
   @keyframes wd-cadraw { 0%,24% { stroke-dashoffset: 56 } 44%,100% { stroke-dashoffset: 0 } }
   .wd-acct { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .wd-plus { opacity: 0; animation: wd-plusin 6s ease-in-out infinite; }
-  @keyframes wd-plusin { 0%,46% { opacity: 0; transform: translateY(4px) } 60%,100% { opacity: 1; transform: translateY(0) } }
+  /* the balance number actually changes: 10.0 → 12.0 when the credit lands (6s) */
+  .wd-balcell { fill: var(--color-surface); stroke: var(--color-border); animation: wd-balcell 6s ease-in-out infinite; }
+  @keyframes wd-balcell { 0%,44% { stroke: var(--color-border) } 52% { stroke: var(--color-node-leaf) } 66%,100% { stroke: var(--color-border) } }
+  .wd-balbefore, .wd-balafter { font-family: var(--font-mono); font-size: 12px; text-anchor: middle; font-weight: 600; }
+  .wd-balbefore { fill: var(--color-ink-muted); animation: wd-balbefore 6s ease-in-out infinite; }
+  @keyframes wd-balbefore { 0%,44% { opacity: 1 } 50%,100% { opacity: 0 } }
+  .wd-balafter { fill: var(--color-node-leaf); opacity: 0; animation: wd-balafter 6s ease-in-out infinite; }
+  @keyframes wd-balafter { 0%,46% { opacity: 0 } 54% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-node-leaf)) } 66% { filter: none } 100% { opacity: 1 } }
   .wd-nocall { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
 
   /* EIP-4895 — wd-flavors: a sweep cursor skims excess / empties an exit (8s loop) */

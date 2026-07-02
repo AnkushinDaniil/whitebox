@@ -1,0 +1,100 @@
+---
+title: "EIP-3541: reserving a byte for the future"
+dek: "How do you leave room to add a whole new contract format later, when every possible first byte of code is already a valid opcode? You can't — unless you make one byte off-limits, on purpose. EIP-3541 forbids deploying new code that starts with 0xEF, turning that byte into reserved space that later upgrades (EOF, and EIP-7702's delegation designator) build on."
+summary: "A step-by-step derivation of EIP-3541, shipped in London (August 2021). Why introducing a new on-chain code format needs a marker that legacy bytecode can never start with — and why none exists, since every byte value 0x00–0xff already decodes as some EVM opcode; how EIP-3541 solves it by fiat, rejecting the deployment of any new contract whose code begins with 0xEF (existing 0xEF contracts are grandfathered); and what that one reserved byte unlocked: the EVM Object Format (EOF) container prefix 0xEF00, and EIP-7702's delegation designator 0xef0100 — both of which rely on no ordinary contract code being able to start with 0xEF."
+topic: EIPs
+order: 22
+spine: true
+prerequisites: ["contract code & opcodes", "contract deployment"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**London, August 2021.** Alongside the fee market and the refund fix, London shipped a change that *does nothing* on its own — it just makes a certain deployment fail. That sounds pointless until you see what it's for. Ethereum wanted to leave itself room to introduce an entirely new **contract code format** in a future fork — structured, versioned, validated up front — rather than today's take-it-as-it-comes blob of bytecode. But adding a new format needs a way to tell it apart from the old one, and that turns out to be surprisingly hard. **EIP-3541** is the small, forward-looking move that makes it possible. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "No byte is free" },
+  { id: "step-2", label: "Reserve 0xEF" },
+  { id: "step-3", label: "What it unlocked" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="No byte is free">
+
+## The problem: every byte is already an opcode
+
+A contract's code is just a sequence of bytes, and the EVM reads them as <KeyTerm term="opcodes" def="One-byte EVM instructions. The contract's code is a raw byte string interpreted an opcode at a time — 0x60 is PUSH1, 0x01 is ADD, and so on. There's no header or type tag; the first byte is simply the first instruction." />. To introduce a new format, you'd want a **magic prefix** — a first byte that says *"don't read me as plain bytecode; I'm the new thing."* The trouble is that *every* byte value from `0x00` to `0xff` already means something as an opcode (or is a defined-invalid instruction), so there's no value you can claim as a marker without it already being legal code. A new format has no way to announce itself.
+
+<Scene name="ef-nomark" caption="Contract code is a raw byte string, read opcode by opcode — 60 is PUSH1, 01 is ADD. Every one of the 256 possible first bytes already decodes as some instruction, so none is free to repurpose as a 'this is a new format' marker." />
+
+<Callout type="warning" title="What breaks">
+You can't retrofit a marker onto a byte that legitimate code already uses — you'd break existing contracts or create ambiguity. To get a clean marker, you'd have to guarantee that *no* code starts with some chosen byte. But nothing stops a contract from starting with any byte today. Unless the protocol steps in.
+</Callout>
+
+**→ Step 2: make a byte off-limits, deliberately.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Reserve 0xEF">
+
+## EIP-3541: reject new code that starts with 0xEF
+
+The fix is a rule, not a mechanism: from London onward, **any attempt to deploy new contract code whose first byte is `0xEF` fails** — the creation reverts and no contract is made. That single prohibition turns `0xEF` into <KeyTerm term="reserved prefix" def="A byte value the protocol forbids new contract code from starting with, so future upgrades can safely assign it a special meaning. EIP-3541 reserved 0xEF this way." /> — a byte guaranteed to never begin ordinary bytecode, and therefore free for a future format to claim. (`0xEF` was picked because it was an undefined opcode and evokes "EVM Format"; the tiny handful of already-deployed contracts starting with `0xEF` are grandfathered in, since the rule only blocks *new* deployments.)
+
+<Scene name="ef-reserve" caption="From London on, deploying code that begins with 0xEF is rejected outright, while any other first byte deploys as before. That makes 0xEF a reserved prefix — guaranteed free — that a future fork can give meaning to, without any risk of colliding with real bytecode." />
+
+<SpecExcerpt
+  source="EIP-3541: Reject new contract code starting with 0xEF"
+  href="https://eips.ethereum.org/EIPS/eip-3541"
+  ref="the rule"
+>
+After the London fork, new contract creation (via `CREATE`, `CREATE2`, or a creation
+transaction) fails if the returned/deployed code's first byte is `0xEF`. Code already
+deployed before the fork is unaffected. The byte is reserved to enable future formats
+(e.g. the EVM Object Format) to use it as a magic prefix.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+On its own, nothing changes — you just can't deploy a contract starting with one specific byte. The point is entirely in what that reservation *permits* later.
+</Callout>
+
+**→ Step 3: cash in the reservation.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="What it unlocked">
+
+## The payoff: a magic prefix for new formats
+
+With `0xEF` guaranteed free, a future fork can safely declare *"code beginning `0xEF…` isn't legacy bytecode — interpret it specially,"* with zero risk of misreading a real contract. Two things build directly on this. The <KeyTerm term="EOF" def="EVM Object Format — a structured, versioned contract container (header, code/data sections, validated at deploy time) that begins with the magic bytes 0xEF00. It relies on 3541 having reserved 0xEF." /> uses the prefix `0xEF00` for its versioned container. And — the connection that closes a loop in this book — [EIP-7702](/eip-7702-set-eoa-code)'s delegation designator is `0xef0100 ‖ address`: when 7702 sets an EOA's code to that value, it's using the reserved `0xEF` prefix precisely so the value can't be mistaken for ordinary bytecode.
+
+<Scene name="ef-unlock" caption="Because 0xEF is reserved, a fork can define what 0xEF… means with no ambiguity: the EOF container (0xEF00 + versioned code) and EIP-7702's delegation designator (0xef0100 + a delegate address) both live behind this one reserved byte." />
+
+<Callout type="insight" title="And that is EIP-3541">
+Adding a new code format needs a marker legacy code can never start with → but every byte is already a valid opcode, so none is free → so **reserve `0xEF` by fiat**: reject any new contract whose code begins with it, making the byte guaranteed-free → and future forks spend that reservation, giving `0xEF…` special meaning with no risk of collision. It's a change whose entire value is deferred: a single forbidden byte in 2021 became the prefix for the **EVM Object Format** and for **EIP-7702's** `0xef0100` delegation designator — the mechanism that lets an EOA run a contract's code. Sometimes the most important thing an upgrade does is quietly hold a door open.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3541: Reject code starting with 0xEF", note: "The spec — the reservation rule", href: "https://eips.ethereum.org/EIPS/eip-3541" },
+    { kind: "post", label: "EIP-7702, derived", note: "Its 0xef0100 designator relies on this reservation", href: "/eip-7702-set-eoa-code" },
+    { kind: "eip", label: "EIP-3540: EOF v1", note: "The versioned container that claims 0xEF00", href: "https://eips.ethereum.org/EIPS/eip-3540" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "Why code is just a string of opcodes", href: "/the-evm" },
+    { kind: "tool", label: "evm.codes", note: "The opcode table — see there's no spare byte", href: "https://www.evm.codes/" },
+  ]}
+/>
+
+</DepthLayer>

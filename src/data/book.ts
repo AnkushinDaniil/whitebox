@@ -81,6 +81,7 @@ export const BOOK: BookPart[] = [
         chapters: [
           { slug: "eip-1559-fee-market", eip: "1559" },
           { slug: "eip-3529-refund-reduction", eip: "3529" },
+          { slug: "eip-3541-ef-reservation", eip: "3541" },
         ],
       },
       { forkName: "Paris · The Merge", date: "Sep 2022", chapters: [{ slug: "eip-3675-the-merge", eip: "3675" }] },

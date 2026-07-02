@@ -113,7 +113,10 @@ interface Props {
     | "ci-split"
     | "rf-gastoken"
     | "rf-reduce"
-    | "rf-cap";
+    | "rf-cap"
+    | "ef-nomark"
+    | "ef-reserve"
+    | "ef-unlock";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -266,22 +269,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       </svg>
     )}
 
-    {/* ── decentralize: one sheet copies out to many nodes ── */}
+    {/* ── decentralize: a single host censors; a replicated network survives ── */}
     {name === "network" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Everyone keeps a copy">
-        <g class="origin">
-          <rect class="node" x="208" y="84" width="64" height="48" rx="8" />
-          <line class="hair2" x1="216" y1="100" x2="264" y2="100" /><line class="hair2" x1="216" y1="110" x2="264" y2="110" /><line class="hair2" x1="216" y1="120" x2="256" y2="120" />
+      <svg viewBox="0 0 480 214" role="img" aria-label="A single host can drop your edit; a replicated network re-checks and keeps it">
+        {/* BEFORE: one host can censor */}
+        <g class="net-before">
+          <rect class="node net-server" x="200" y="76" width="90" height="54" rx="8" />
+          <text class="t-cap" x="245" y="98">{L("one server")}</text>
+          <text class="t-cap" x="245" y="114">{L("single copy")}</text>
+          <text class="t-fld net-el" x="34" y="86" text-anchor="start">{L("your edit")}</text>
+          <path class="sarrow net-edit" d="M34 98 H192" />
+          <text class="t-x net-censor" x="150" y="86" text-anchor="middle">{L("✗ dropped")}</text>
+          <text class="t-cap" x="240" y="170" text-anchor="middle">{L("a single host can silently drop or rewrite your edit")}</text>
         </g>
-        {[
-          [60, 30], [380, 30], [40, 150], [400, 150],
-        ].map(([x, y], i) => (
-          <g class={`copy c${i}`}>
-            <rect class="node" x={x} y={y} width="64" height="48" rx="8" />
-            <line class="hair2" x1={x + 8} y1={y + 16} x2={x + 56} y2={y + 16} /><line class="hair2" x1={x + 8} y1={y + 26} x2={x + 56} y2={y + 26} /><line class="hair2" x1={x + 8} y1={y + 36} x2={x + 48} y2={y + 36} />
-          </g>
-        ))}
-        <text class="t-cap" x="240" y="200">{L("no master copy — every node holds the whole state")}</text>
+        {/* AFTER: replicated, everyone re-checks */}
+        <g class="net-after">
+          <rect class="node net-hub" x="208" y="86" width="64" height="44" rx="8" />
+          {[[60, 30], [380, 30], [40, 152], [400, 152]].map(([x, y], i) => (
+            <g class={`copy c${i}`}>
+              <rect class="node" x={x} y={y} width="64" height="44" rx="8" />
+              <line class="hair2" x1={x + 8} y1={y + 15} x2={x + 56} y2={y + 15} /><line class="hair2" x1={x + 8} y1={y + 25} x2={x + 56} y2={y + 25} /><line class="hair2" x1={x + 8} y1={y + 34} x2={x + 48} y2={y + 34} />
+              <text class="t-ok net-tick" x={x + 32} y={y + 28}>✓</text>
+            </g>
+          ))}
+          <text class="t-cap" x="240" y="206" text-anchor="middle">{L("everyone re-checks it — no host can silence it")}</text>
+        </g>
       </svg>
     )}
 
@@ -2201,6 +2213,57 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="172" text-anchor="middle">{L("it's also why the SSTORE-reset guard trick got costly — see transient storage")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3541: every byte is already an opcode — no free format marker ── */}
+    {name === "ef-nomark" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="A contract is just bytes and every first byte is already a valid opcode, so there's no free marker for a new format">
+        <text class="t-cap" x="240" y="20">{L("a contract is just bytes — and every byte is already an opcode")}</text>
+        {[["60", "PUSH1", 0], ["02", "arg", 1], ["60", "PUSH1", 2], ["03", "arg", 3], ["01", "ADD", 4], ["…", "", 5]].map(([hex, op, i]) => (
+          <g>
+            <rect class={`ef-byte${Number(i) === 0 ? " ef-first" : ""}`} x={40 + Number(i) * 66} y="44" width="56" height="34" rx="5" />
+            <text class="ef-hex" x={68 + Number(i) * 66} y="66">{hex}</text>
+            <text class="t-fld ef-op" x={68 + Number(i) * 66} y="92">{op}</text>
+          </g>
+        ))}
+        <text class="t-x ef-q" x="240" y="128" text-anchor="middle">{L("which byte could mean 'this is a new format'?")}</text>
+        <text class="t-cap" x="240" y="156" text-anchor="middle">{L("none are free — every value 0x00–0xff already decodes as some opcode")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so a future code format has no way to announce itself")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3541: reserve 0xEF — reject any new code that starts with it ── */}
+    {name === "ef-reserve" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="From London, any new contract whose code starts with 0xEF is rejected, reserving the byte">
+        <text class="t-cap" x="240" y="20">{L("reserve one byte by fiat: 0xEF")}</text>
+        <rect class="ef-deploy ef-bad" x="30" y="42" width="200" height="52" rx="8" />
+        <text class="t-cap" x="130" y="62">{L("deploy code 0xEF…")}</text>
+        <text class="t-x ef-rej" x="130" y="82">{L("✗ rejected — reverts")}</text>
+        <rect class="ef-deploy ef-ok" x="250" y="42" width="200" height="52" rx="8" />
+        <text class="t-cap" x="350" y="62">{L("deploy code 0x60…")}</text>
+        <text class="t-ok" x="350" y="82">{L("✓ fine — as before")}</text>
+        <text class="t-cap" x="240" y="128" text-anchor="middle">{L("from London on, no new contract's code may begin with 0xEF")}</text>
+        <text class="t-ok ef-reserved" x="240" y="156" text-anchor="middle">{L("→ 0xEF is now a reserved prefix, guaranteed free")}</text>
+        <text class="t-cap" x="240" y="178" text-anchor="middle">{L("(the handful of pre-existing 0xEF contracts are grandfathered)")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3541: 0xEF becomes the prefix for new formats ── */}
+    {name === "ef-unlock" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="With 0xEF reserved, future forks can safely define what code starting with it means">
+        <text class="t-cap" x="240" y="20">{L("now a future fork can define what 0xEF… means")}</text>
+        <rect class="ef-prefix" x="196" y="36" width="88" height="34" rx="8" />
+        <text class="t-addr" x="240" y="58">0xEF</text>
+        <path class="sarrow ef-u1" d="M212 70 L120 100" />
+        <path class="sarrow ef-u2" d="M268 70 L360 100" />
+        <rect class="ef-use ef-use0" x="24" y="102" width="184" height="56" rx="8" />
+        <text class="t-cap" x="116" y="122">{L("EOF container")}</text>
+        <text class="t-fld ef-uc" x="116" y="140">0xEF00 · versioned code</text>
+        <rect class="ef-use ef-use1" x="272" y="102" width="184" height="56" rx="8" />
+        <text class="t-cap" x="364" y="122">{L("EIP-7702 designator")}</text>
+        <text class="t-fld ef-uc" x="364" y="140">0xef0100 · delegate pointer</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("one reserved byte — the groundwork for EOF and 7702's delegation")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -2401,14 +2464,27 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes niblit { 0%,4% { fill: var(--color-surface) } 10%,40% { fill: color-mix(in oklab, var(--color-accent) 16%, var(--color-surface)) } 55%,100% { fill: var(--color-surface) } }
   @keyframes rootflash { 0%,68% { stroke: var(--color-accent); filter: none } 80% { stroke: var(--color-node-leaf); filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { stroke: var(--color-accent); filter: none } }
 
-  /* network: copies fan out */
+  /* network: a single host censors (before) → replicated survives (after), 8s loop */
+  .net-before { animation: net-before 8s ease-in-out infinite; }
+  @keyframes net-before { 0%,44% { opacity: 1 } 52%,100% { opacity: 0 } }
+  .net-server { stroke: var(--color-changed); }
+  .net-el { fill: var(--color-ink-faint); }
+  .net-edit { stroke: var(--color-changed); stroke-dasharray: 130; stroke-dashoffset: 130; animation: net-edit 8s ease-in-out infinite; }
+  @keyframes net-edit { 0%,6% { stroke-dashoffset: 130 } 24% { stroke-dashoffset: 40 } 44%,100% { stroke-dashoffset: 40 } }
+  .net-censor { opacity: 0; animation: net-censor 8s ease-in-out infinite; }
+  @keyframes net-censor { 0%,26% { opacity: 0 } 34%,44% { opacity: 1 } 52%,100% { opacity: 0 } }
+  .net-after { opacity: 0; animation: net-after 8s ease-in-out infinite; }
+  @keyframes net-after { 0%,48% { opacity: 0 } 58%,100% { opacity: 1 } }
+  .net-hub .node, .net-hub { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); }
+  .net-tick { text-anchor: middle; font-size: 13px; opacity: 0; animation: net-tick 8s ease-in-out infinite; }
+  @keyframes net-tick { 0%,70% { opacity: 0 } 80%,100% { opacity: 1 } }
   .copy { opacity: 0; transform-box: fill-box; transform-origin: center; }
   .copy .node { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); }
-  .c0 { animation: fan 5s ease-out infinite; }
-  .c1 { animation: fan 5s ease-out 0.3s infinite; }
-  .c2 { animation: fan 5s ease-out 0.6s infinite; }
-  .c3 { animation: fan 5s ease-out 0.9s infinite; }
-  @keyframes fan { 0% { opacity: 0; transform: translate(140px, 50px) scale(0.4) } 35% { opacity: 1; transform: translate(0,0) scale(1) } 85% { opacity: 1 } 100% { opacity: 0.15 } }
+  .c0 { animation: fan 8s ease-out infinite; }
+  .c1 { animation: fan 8s ease-out 0.2s infinite; }
+  .c2 { animation: fan 8s ease-out 0.4s infinite; }
+  .c3 { animation: fan 8s ease-out 0.6s infinite; }
+  @keyframes fan { 0%,50% { opacity: 0; transform: translate(140px, 40px) scale(0.4) } 68% { opacity: 1; transform: translate(0,0) scale(1) } 96% { opacity: 1 } 100% { opacity: 0.2 } }
 
   /* consensus */
   .blk.win { stroke: var(--color-node-leaf); }
@@ -3708,4 +3784,27 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes rf-wafter { 0%,20% { transform: scaleX(0.4) } 55%,100% { transform: scaleX(0.44) } }
   .rf-okcap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
   .rf-token { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-3541 — ef-nomark: every byte is already an opcode ── */
+  .ef-byte { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ef-first { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 4s ease-in-out infinite; }
+  .ef-hex { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; }
+  .ef-op { fill: var(--color-ink-faint); text-anchor: middle; }
+  .ef-q { animation: mg-en 3.5s ease-in-out infinite; }
+
+  /* ── EIP-3541 — ef-reserve: reject new 0xEF code ── */
+  .ef-deploy { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ef-bad { stroke: var(--color-changed); animation: ci-badglow 5s ease-in-out infinite; }
+  .ef-ok { stroke: var(--color-node-leaf); }
+  .ef-rej { animation: rv-pulse 5s ease-in-out infinite; }
+  .ef-reserved { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-3541 — ef-unlock: 0xEF prefixes future formats ── */
+  .ef-prefix { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
+  .ef-u1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out infinite; }
+  .ef-u2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out 0.3s infinite; }
+  .ef-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .ef-use0 { animation: tw-rowin 5s ease-out infinite; }
+  .ef-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .ef-uc { text-anchor: middle; fill: var(--color-accent-strong); }
 </style>

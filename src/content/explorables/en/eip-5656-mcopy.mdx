@@ -1,0 +1,98 @@
+---
+title: "EIP-5656: the memory-copy opcode the EVM never had"
+dek: "Copying a range of memory is one of the most basic things a program does — yet for years the EVM had no instruction for it. Contracts either ran a verbose MLOAD/MSTORE loop or abused the identity precompile as a roundabout memcpy. EIP-5656 finally adds MCOPY: one opcode, one copy."
+summary: "A step-by-step derivation of EIP-5656 (the MCOPY opcode), shipped in Cancun/Deneb (March 2024). Why the EVM lacked a native memory-to-memory copy despite it being a ubiquitous operation — contracts had to loop MLOAD then MSTORE word by word (many opcodes, extra gas, bloated bytecode) or misuse the identity precompile at address 0x04 as an ersatz memcpy (paying call overhead for an opaque hack) — and how EIP-5656 adds the MCOPY opcode (0x5e), which pops destination, source, and length and copies that many bytes of memory in a single instruction with correct overlap semantics, priced like the other copy opcodes (a base cost plus 3 gas per word plus memory expansion); the payoff is cheaper and smaller code for the countless memory copies in ABI encoding, cryptography, and data manipulation, retirement of the identity-precompile trick, and — because compilers emit it automatically — contracts getting cheaper simply by recompiling."
+topic: EIPs
+order: 36
+spine: true
+prerequisites: ["the EVM's memory model", "precompiles"]
+updated: 2026-07-02
+readingMinutes: 6
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Cancun / Deneb, March 2024.** Here's a humbling gap. In almost any programming environment, copying a block of bytes from one place to another is a single, cheap primitive — `memcpy`. The [EVM has memory](/the-evm) — a flat, expandable byte array — and contracts copy ranges of it *constantly*: assembling calldata, ABI-encoding return values, shuffling buffers in a hash function. And yet, for its entire history, the EVM had **no memory-to-memory copy instruction**. Developers worked around the hole in two awkward ways, both wasteful. **EIP-5656** closes it with a single new opcode. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "No memcpy" },
+  { id: "step-2", label: "Add MCOPY" },
+  { id: "step-3", label: "Cheaper for free" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="No memcpy">
+
+## The problem: the EVM had every way to copy memory except a good one
+
+To copy `N` bytes of memory, a contract had two options, neither good. The first was a <KeyTerm term="MLOAD/MSTORE loop" def="Copying memory word by word: MLOAD reads 32 bytes onto the stack, MSTORE writes them to the destination, repeated for each word. It works, but it's many opcodes per copy — extra gas and extra bytecode for a trivial operation." />: read 32 bytes with `MLOAD`, write them with `MSTORE`, and repeat, word by word. Correct, but it burns a pile of opcodes and gas and bloats the contract's bytecode. The second was a notorious hack: the <KeyTerm term="identity precompile" def="The precompile at address 0x04 that returns its input unchanged. Because a call to it copies input to output, contracts abused it as a memcpy — paying full call overhead for a copy, and obscuring intent." /> at address `0x04` returns whatever you send it, so you could *call* it and use the returned data as a copy — paying call overhead to smuggle a `memcpy` out of a precompile that was never meant for it. That the ecosystem leaned on such tricks is the tell: a fundamental primitive was missing.
+
+<Scene name="mc-loop" caption="With no copy opcode, contracts either looped MLOAD then MSTORE word by word (many opcodes, extra gas and bytecode) or abused the identity precompile at 0x04 as a memcpy (call overhead, opaque). The most basic operation — copying memory — had no native primitive." />
+
+<Callout type="warning" title="What breaks">
+Nothing is broken — copies happen — but every one of them is more expensive and more code than it should be, on an operation compilers emit everywhere. The EVM simply lacks the instruction that every other machine has: copy this range of memory to there.
+</Callout>
+
+**→ Step 2: add exactly that instruction.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Add MCOPY">
+
+## EIP-5656: one opcode, one copy
+
+The fix is as direct as the problem. EIP-5656 adds the <KeyTerm term="MCOPY" def="Opcode 0x5e. Pops three stack items — destination offset, source offset, and length — and copies that many bytes within memory in one instruction, with correct handling of overlapping source and destination (like memmove)." /> opcode (`0x5e`). It pops three values — **destination**, **source**, and **length** — and copies that many bytes of memory from source to destination in a single instruction. It handles **overlapping** regions correctly (the way `memmove` does), and it's priced like the EVM's other copy operations: a small base cost plus **3 gas per 32-byte word**, plus any memory-expansion cost. No loop, no call, no hack — just the primitive, at its honest price.
+
+<Scene name="mc-op" caption="EIP-5656 adds MCOPY (0x5e): pop dest, src, len and copy that many bytes of memory in one opcode, with correct overlap semantics, priced like the other copy ops (3 gas + 3 per word). The primitive the EVM was missing." />
+
+<SpecExcerpt
+  source="EIP-5656: MCOPY - Memory copying instruction"
+  href="https://eips.ethereum.org/EIPS/eip-5656"
+  ref="the opcode"
+>
+Introduces MCOPY (0x5e), which copies a region of memory from a source offset to a destination
+offset for a given length, with well-defined behavior for overlapping regions. Gas is the
+standard copy cost: a base fee plus 3 per word, plus memory expansion.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing — it's purely additive. The only change is that the loop and the identity-precompile detour are no longer necessary. What matters is how *common* the operation is: shaving cost off every memory copy adds up across the whole chain.
+</Callout>
+
+**→ Step 3: existing contracts get cheaper without lifting a finger.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Cheaper for free">
+
+## The payoff: a small opcode with broad reach
+
+Because memory copying is everywhere — <KeyTerm term="ABI encoding" def="The standard way contracts lay out function arguments and return values in memory. It involves copying and relocating byte ranges constantly, so a cheaper memory copy makes a large share of ordinary contract execution cheaper." />, string and array handling, and especially cryptographic code that shuffles buffers — a cheaper copy quietly makes a large fraction of contract execution cheaper and smaller. And the win is nearly automatic: compilers (Solidity, Vyper) **emit `MCOPY`** wherever they used to emit a copy loop, so contracts get cheaper and more compact simply by recompiling against a newer toolchain. The identity-precompile hack retires, intent becomes explicit in the bytecode, and the EVM finally has the `memcpy` it always should have. It's the same spirit as [PUSH0](/eip-3855-push0): give the machine the small, obvious primitive it lacked, and everything built on top gets a little leaner.
+
+<Scene name="mc-result" caption="MCOPY makes memory copies cheaper and smaller, and compilers emit it automatically — so contracts get cheaper just by recompiling. The identity-precompile memcpy hack is retired. A tiny opcode with chain-wide reach, in the spirit of PUSH0." />
+
+<Callout type="insight" title="And that is EIP-5656">
+The EVM had no memory-to-memory copy, so contracts either **looped MLOAD/MSTORE** (verbose, gas-heavy) or **abused the identity precompile** at 0x04 as a memcpy (call overhead, opaque) → EIP-5656 adds **MCOPY (0x5e)**, copying a memory range in one opcode with correct overlap handling, priced like the other copy ops → so the countless copies in ABI coding, arrays, and cryptography get **cheaper and smaller**, the precompile hack is retired, and because compilers emit it automatically, contracts get cheaper **just by recompiling**. It's a one-opcode EIP that fills an embarrassing gap — proof that even a mature VM can still be missing something as elementary as `memcpy`.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-5656: MCOPY memory copying instruction", note: "The spec — the 0x5e opcode", href: "https://eips.ethereum.org/EIPS/eip-5656" },
+    { kind: "post", label: "EIP-3855 — PUSH0", note: "The same 'add the missing primitive' idea", href: "/eip-3855-push0" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "The memory model MCOPY operates on", href: "/the-evm" },
+    { kind: "post", label: "EIP-196/197 — precompiles", note: "What the identity precompile at 0x04 really is", href: "/eip-196-197-bn128-precompiles" },
+  ]}
+/>
+
+</DepthLayer>

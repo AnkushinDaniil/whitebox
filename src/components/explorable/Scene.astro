@@ -155,7 +155,10 @@ interface Props {
     | "ic-result"
     | "bh-window"
     | "bh-ring"
-    | "bh-payoff";
+    | "bh-payoff"
+    | "mc-loop"
+    | "mc-op"
+    | "mc-result";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2978,6 +2981,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="170" text-anchor="middle">{L("the ring-buffer-in-a-contract pattern, again")}</text>
       </svg>
     )}
+
+    {/* ── EIP-5656: copying memory the old way was a loop or a hack ── */}
+    {name === "mc-loop" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Before EIP-5656 copying memory needed an MLOAD/MSTORE loop or abusing the identity precompile">
+        <text class="t-cap" x="240" y="20">{L("copy a range of memory — but there's no copy opcode")}</text>
+        <text class="t-fld mc-hd" x="120" y="46" text-anchor="middle">{L("option A: a loop")}</text>
+        <g class="mc-step mc-st0"><rect class="mc-op0" x="34" y="58" width="172" height="20" rx="4" /><text class="t-cap mc-ot" x="120" y="72">MLOAD → MSTORE</text></g>
+        <g class="mc-step mc-st1"><rect class="mc-op0" x="34" y="82" width="172" height="20" rx="4" /><text class="t-cap mc-ot" x="120" y="96">MLOAD → MSTORE</text></g>
+        <g class="mc-step mc-st2"><rect class="mc-op0" x="34" y="106" width="172" height="20" rx="4" /><text class="t-cap mc-ot" x="120" y="120">MLOAD → MSTORE …</text></g>
+        <text class="t-x mc-cost" x="120" y="146" text-anchor="middle">{L("many opcodes, lots of gas & bytecode")}</text>
+        <text class="t-fld mc-hd" x="352" y="46" text-anchor="middle">{L("option B: a hack")}</text>
+        <rect class="mc-id" x="266" y="62" width="172" height="52" rx="6" />
+        <text class="t-cap mc-idt" x="352" y="84">{L("CALL identity (0x04)")}</text>
+        <text class="t-fld mc-idt2" x="352" y="102">{L("misuse a precompile as memcpy")}</text>
+        <text class="t-x mc-cost" x="352" y="146" text-anchor="middle">{L("call overhead, opaque, clumsy")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("the most basic operation — memory copy — had no primitive")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-5656: MCOPY does it in one opcode ── */}
+    {name === "mc-op" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="MCOPY copies a memory range in a single opcode">
+        <text class="t-cap" x="240" y="20">{L("MCOPY(dest, src, len): one opcode")}</text>
+        <rect class="mc-mem" x="40" y="44" width="400" height="26" rx="5" />
+        <rect class="mc-src" x="70" y="44" width="120" height="26" rx="5" />
+        <text class="t-fld mc-srct" x="130" y="61">src</text>
+        <rect class="mc-dst" x="290" y="44" width="120" height="26" rx="5" />
+        <text class="t-ok mc-dstt" x="350" y="61">dest</text>
+        <path class="sarrow mc-fly" d="M190 57 H290" />
+        <circle class="mc-byte" cx="130" cy="57" r="6" />
+        <text class="t-ok mc-one" x="240" y="104" text-anchor="middle">{L("copies len bytes at once — overlap handled like memmove")}</text>
+        <text class="t-cap mc-price" x="240" y="132" text-anchor="middle">{L("priced like the other copy ops: 3 gas + 3 per word")}</text>
+        <text class="t-cap" x="240" y="160" text-anchor="middle">{L("the primitive the EVM was missing")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-5656: cheaper, smaller, automatic ── */}
+    {name === "mc-result" && (
+      <svg viewBox="0 0 480 168" role="img" aria-label="MCOPY makes memory copies cheaper and smaller, emitted automatically by compilers">
+        <text class="t-cap" x="240" y="20">{L("copies get cheaper — for free")}</text>
+        <text class="t-fld mc-wl" x="24" y="52" text-anchor="start">{L("loop / hack")}</text>
+        <rect class="mc-track" x="120" y="40" width="330" height="18" rx="4" />
+        <rect class="mc-before" x="120" y="40" width="330" height="18" rx="4" />
+        <text class="t-fld mc-wl" x="24" y="86" text-anchor="start">MCOPY</text>
+        <rect class="mc-track" x="120" y="74" width="330" height="18" rx="4" />
+        <rect class="mc-after" x="120" y="74" width="90" height="18" rx="4" />
+        <text class="t-ok mc-emit" x="240" y="120" text-anchor="middle">{L("compilers emit it automatically — contracts get cheaper on recompile")}</text>
+        <text class="t-cap" x="240" y="148" text-anchor="middle">{L("and the identity-precompile memcpy hack is retired")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4899,4 +4952,36 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bh-after { fill: color-mix(in oklab, var(--color-node-leaf) 45%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
   .bh-al { fill: var(--color-node-leaf); }
   .bh-state { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+
+  /* ── EIP-5656 — mc-loop: loop or identity-precompile hack ── */
+  .mc-hd { fill: var(--color-ink-muted); }
+  .mc-op0 { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .mc-ot { text-anchor: middle; fill: var(--color-ink-muted); }
+  .mc-step { opacity: 0; }
+  .mc-st0 { animation: tw-rowin 5s ease-out infinite; }
+  .mc-st1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .mc-st2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
+  .mc-cost { fill: var(--color-changed); }
+  .mc-id { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); stroke-dasharray: 4 4; }
+  .mc-idt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .mc-idt2 { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── EIP-5656 — mc-op: MCOPY in one opcode ── */
+  .mc-mem { fill: color-mix(in oklab, var(--color-ink-faint) 7%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .mc-src { fill: color-mix(in oklab, var(--color-node-branch) 14%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .mc-srct { text-anchor: middle; fill: var(--color-ink-muted); }
+  .mc-dst { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .mc-dstt { text-anchor: middle; }
+  .mc-fly { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .mc-byte { fill: var(--color-node-leaf); animation: mc-move 5s ease-in-out infinite; }
+  @keyframes mc-move { 0%, 15% { transform: translateX(0); opacity: 0; } 25% { opacity: 1; } 60%, 100% { transform: translateX(220px); opacity: 1; } }
+  .mc-one { opacity: 0; animation: dc-late 5s ease-in-out 0.5s infinite; }
+  .mc-price { fill: var(--color-ink-muted); }
+
+  /* ── EIP-5656 — mc-result: cheaper & smaller ── */
+  .mc-wl { fill: var(--color-ink-faint); }
+  .mc-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .mc-before { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke: var(--color-changed); }
+  .mc-after { fill: color-mix(in oklab, var(--color-node-leaf) 50%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  .mc-emit { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
 </style>

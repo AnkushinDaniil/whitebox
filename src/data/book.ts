@@ -126,6 +126,7 @@ export const BOOK: BookPart[] = [
           { slug: "eip-1153-transient-storage", eip: "1153" },
           { slug: "eip-4788-beacon-root", eip: "4788" },
           { slug: "eip-4844-blobs", eip: "4844" },
+          { slug: "eip-5656-mcopy", eip: "5656" },
           { slug: "eip-6780-selfdestruct", eip: "6780" },
         ],
       },

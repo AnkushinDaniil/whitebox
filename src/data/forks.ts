@@ -249,7 +249,7 @@ export const FORKS: Fork[] = [
       { eip: "1153", title: "Transient storage (TSTORE/TLOAD)", category: "execution", slug: ours("eip-1153-transient-storage") },
       { eip: "4788", title: "Beacon block root in the EVM", category: "consensus", slug: ours("eip-4788-beacon-root") },
       { eip: "4844", title: "Blob transactions (proto-danksharding)", category: "execution", slug: ours("eip-4844-blobs") },
-      { eip: "5656", title: "MCOPY instruction", category: "execution" },
+      { eip: "5656", title: "MCOPY instruction", category: "execution", slug: "eip-5656-mcopy" },
       { eip: "6780", title: "SELFDESTRUCT only same-tx", category: "execution", slug: "eip-6780-selfdestruct" },
       { eip: "7044", title: "Perpetually valid voluntary exits", category: "consensus" },
       { eip: "7045", title: "Wider attestation inclusion", category: "consensus" },

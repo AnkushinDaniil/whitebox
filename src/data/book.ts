@@ -80,6 +80,7 @@ export const BOOK: BookPart[] = [
         chapters: [
           { slug: "eip-2028-calldata", eip: "2028" },
           { slug: "eip-1344-chainid", eip: "1344" },
+          { slug: "eip-2200-sstore-metering", eip: "2200" },
         ],
       },
       {

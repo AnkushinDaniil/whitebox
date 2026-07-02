@@ -139,7 +139,7 @@ export const FORKS: Fork[] = [
       { eip: "1344", title: "CHAINID opcode", category: "execution", slug: "eip-1344-chainid" },
       { eip: "1884", title: "Reprice trie-size-dependent ops", category: "execution" },
       { eip: "2028", title: "Cheaper calldata", category: "execution", slug: "eip-2028-calldata" },
-      { eip: "2200", title: "Rebalanced SSTORE metering", category: "execution" },
+      { eip: "2200", title: "Rebalanced SSTORE metering", category: "execution", slug: "eip-2200-sstore-metering" },
     ],
   },
   {

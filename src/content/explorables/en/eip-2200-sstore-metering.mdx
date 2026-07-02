@@ -1,0 +1,101 @@
+---
+title: "EIP-2200: the storage price that postponed a fork"
+dek: "Writing the same storage slot three times in one transaction paid full price three times — even though only the final value ever reaches disk. Net gas metering fixed that, but the first attempt (EIP-1283) made writes so cheap that a 2300-gas stipend call could suddenly modify storage, reopening reentrancy — and got Constantinople postponed. EIP-2200 re-ships it with a sentry."
+summary: "A step-by-step derivation of EIP-2200 (structured, net-effect SSTORE gas metering), shipped in Istanbul (December 2019). Why the original per-operation SSTORE pricing overcharges — a slot written several times in one transaction pays the full cost each time, though only the net change is persisted, penalizing counters, reentrancy locks, and temporary-storage patterns — and how net gas metering prices SSTORE by its net effect versus the value at the start of the transaction; then the cautionary tale of EIP-1283, whose cheap (as low as 200-gas) writes broke the assumption that a 2300-gas call stipend could never modify storage, reopening a reentrancy vector and forcing Constantinople to be postponed and the change reverted; and how EIP-2200 restores net metering safely by adding a sentry that reverts SSTORE when less than 2300 gas remains, keeping the savings while closing the stipend hole — a direct ancestor of transient storage (EIP-1153)."
+topic: EIPs
+order: 33
+spine: true
+prerequisites: ["state & storage (SSTORE)", "gas & the reentrancy stipend"]
+updated: 2026-07-02
+readingMinutes: 9
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Istanbul, December 2019.** Every write to [contract storage](/state-and-the-trie) — an `SSTORE` — costs gas, and pricing it fairly is harder than it looks. The original scheme charged per *operation*: touch a slot, pay the full price. But a transaction often writes the *same* slot several times before it ends, and only the last value is ever persisted to disk. Charging full freight for each intermediate write overcharges some of the most common patterns on the chain. The fix — **net gas metering** — is elegant. It's also the change that, on its first attempt, quietly reopened a reentrancy hole and got an entire hard fork **postponed hours before launch**. EIP-2200 is the version that got it right. Let's derive it, mistake and all.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Overcharging every write" },
+  { id: "step-2", label: "Net metering — and its trap" },
+  { id: "step-3", label: "The sentry" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Overcharging every write">
+
+## The problem: you pay per write, but only the net change persists
+
+The original `SSTORE` pricing was per-operation: setting a slot from zero to non-zero cost 20000 gas, changing an existing non-zero value cost 5000, and clearing a slot back to zero earned a refund. Simple — but it ignores that a transaction is a *unit*. Only the slot's value **at the transaction's end** is written to the state trie; everything in between is scratch work. So a contract that increments a counter three times in one call pays 5000 × 3, even though the disk only ever sees the single net change from the start value to the final one. The same tax hits <KeyTerm term="reentrancy lock" def="A storage flag a contract sets on entry and clears on exit to prevent a function from being re-entered mid-execution. Under per-operation pricing, the set-then-clear round-trip pays full price both ways, making a basic safety pattern expensive." />s (set the flag, do work, clear it) and any use of storage as a scratchpad.
+
+<Scene name="ss-naive" caption="Per-operation SSTORE pricing charges full price for every write to a slot, even when the same slot is written several times in one transaction. Only the net change (0→3) is ever persisted to disk, so counters, reentrancy locks, and temporary-storage patterns are systematically overcharged." />
+
+<Callout type="warning" title="What breaks">
+Nothing is incorrect — but the pricing doesn't match the cost. Repeated writes to a slot cost the chain almost nothing extra (it's in memory until the transaction ends), yet the contract is billed as if each write hit disk. Gas should track the *net* effect on state, not the number of times you touched it.
+</Callout>
+
+**→ Step 2: price the net effect instead — but watch what it unlocks.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Net metering — and its trap">
+
+## Net gas metering, and the bug that postponed Constantinople
+
+The fix is <KeyTerm term="net gas metering" def="Pricing SSTORE by comparing the new value to the slot's value at the start of the transaction (the 'original' value), rather than charging a flat fee per write. No-op writes and repeated writes to an already-dirty slot cost a small 'warm' fee; refunds are tuned so that round-trips like A→B→A are nearly free." />: compare each write to the slot's value **at the start of the transaction**, and charge accordingly. A write that doesn't change the original value, or that re-touches an already-modified slot, costs only a small "dirty" fee — as little as **200 gas** — while genuine first-time changes still pay full price. Counters, locks, and scratchpads get dramatically cheaper. This first shipped as **EIP-1283**, slated for the Constantinople fork.
+
+And that's where it went wrong. Ethereum has a safety convention: a plain value transfer (`.transfer()` / `.send()`) forwards a fixed <KeyTerm term="2300-gas stipend" def="The small, fixed amount of gas forwarded with a plain Ether transfer. It was deliberately chosen to be enough to log an event but too little to modify storage — so a recipient's fallback couldn't perform a reentrancy attack. EIP-1283's 200-gas writes broke that guarantee." /> to the recipient — *deliberately* too little to modify storage, which is what kept a recipient's fallback function from mounting a reentrancy attack. But once `SSTORE` could cost 200 gas, a fallback running on just the 2300-gas stipend **could write to storage** after all. Security researchers spotted this **days before Constantinople was due to activate**. The fork was **postponed** and EIP-1283 pulled.
+
+<Scene name="ss-net" caption="Net metering makes repeated / dirty writes as cheap as 200 gas — but the 2300-gas transfer stipend was assumed to be too little to ever modify storage, the property that blocked reentrancy. At 200 gas per write it no longer was. Found days before launch, this postponed Constantinople and reverted EIP-1283." />
+
+<SpecExcerpt
+  source="EIP-2200: Structured Definitions for Net Gas Metering"
+  href="https://eips.ethereum.org/EIPS/eip-2200"
+  ref="the sentry"
+>
+SSTORE is metered on the net change to the slot relative to its value at the start of the
+transaction. To preserve the guarantee that a 2300-gas stipend cannot modify storage, SSTORE
+reverts if the remaining gas is less than or equal to SSTORE_SENTRY_GAS (2300).
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+The lesson landed hard: a *gas reprice* — seemingly just an economic tweak — silently invalidated a security assumption that real contracts depended on. Net metering is worth having. But it has to be reintroduced without handing storage writes to a 2300-gas stipend.
+</Callout>
+
+**→ Step 3: keep the savings, restore the guarantee — with a guard.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="The sentry">
+
+## EIP-2200: net metering behind a sentry
+
+EIP-2200 re-introduces net gas metering in Istanbul with one crucial addition: a <KeyTerm term="sentry" def="A guard at the top of SSTORE (SSTORE_SENTRY_GAS = 2300): if the gas remaining is at or below 2300, SSTORE reverts outright. This restores the invariant that a 2300-gas stipend can never modify storage, closing the reentrancy hole while keeping net metering's savings for calls that have real gas." />. Before doing anything, `SSTORE` checks the gas remaining: if it's **2300 or less, the operation reverts**. A fallback running on only the transfer stipend therefore *cannot* write storage — the exact invariant the old 5000-gas floor gave for free — while any call with real gas keeps net metering's cheap repeated and temporary writes. The savings survive; the reentrancy hole closes.
+
+<Scene name="ss-sentry" caption="EIP-2200 re-adds net metering with a sentry: SSTORE reverts if 2300 or less gas remains. A stipend-only call is blocked from writing (reentrancy safety restored); a real call keeps the cheap repeated/dirty writes. The property the old flat fee gave for free is now explicit." />
+
+<Callout type="insight" title="And that is EIP-2200">
+Per-operation SSTORE pricing overcharged repeated writes, since only the net change ever reaches disk → **net gas metering** prices by the net effect versus the transaction-start value, making counters, locks, and scratchpads cheap → but its first form (**EIP-1283**) made writes cost as little as 200 gas, breaking the assumption that a **2300-gas stipend** couldn't modify storage and reopening reentrancy — which **postponed Constantinople** → EIP-2200 re-ships net metering with a **sentry** that reverts SSTORE below 2300 gas, keeping the savings and closing the hole. It's a landmark twice over: it made storage pricing match real cost, and it's the canonical example of a gas change silently breaking a security assumption. The desire it served — cheap, safe temporary storage — is exactly what [transient storage (EIP-1153)](/eip-1153-transient-storage) would later answer outright.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2200: Structured net gas metering", note: "The spec — net metering + the sentry", href: "https://eips.ethereum.org/EIPS/eip-2200" },
+    { kind: "eip", label: "EIP-1283: the first attempt", note: "The version that postponed Constantinople", href: "https://eips.ethereum.org/EIPS/eip-1283" },
+    { kind: "post", label: "EIP-1153 — transient storage", note: "The real answer to cheap temporary storage", href: "/eip-1153-transient-storage" },
+    { kind: "post", label: "State & the trie", note: "Why only the net change is persisted", href: "/state-and-the-trie" },
+    { kind: "post", label: "EIP-2929/2930 — access lists", note: "The cold/warm model that later reshaped storage gas", href: "/eip-2929-2930-access-lists" },
+  ]}
+/>
+
+</DepthLayer>

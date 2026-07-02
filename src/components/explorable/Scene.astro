@@ -2752,6 +2752,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="104" y="66">{L("beacon chain")}</text>
         <text class="t-fld bls-c" x="104" y="84">{L("BLS12-381 signatures")}</text>
         <line class="bls-wall" x1="212" y1="38" x2="212" y2="106" />
+        <circle class="bls-sig" cx="176" cy="72" r="6" />
         <text class="t-x bls-blocked" x="212" y="120" text-anchor="middle">{L("✗ can't verify")}</text>
         <rect class="bls-evm" x="240" y="44" width="216" height="56" rx="8" />
         <text class="t-cap" x="348" y="66">{L("EVM precompiles")}</text>
@@ -2771,6 +2772,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         {[["G1/G2", "add · mul"], ["pairing", "the check"], ["map-to-curve", "hash-to-point"]].map(([a, n], i) => (
           <g class={`bls-op bls-op${i}`}><rect x={40 + i * 140} y="106" width="120" height="34" rx="6" /><text class="t-fld bls-opt" x={100 + i * 140} y="122">{a}</text><text class="t-fld bls-opn" x={100 + i * 140} y="134">{n}</text></g>
         ))}
+        <circle class="bls-tok" cx="30" cy="123" r="5" />
+        <text class="t-ok bls-verified" x="454" y="128" text-anchor="end">✓</text>
         <text class="t-cap" x="240" y="164" text-anchor="middle">{L("the exact curve the consensus layer uses — now verifiable on-chain")}</text>
         <text class="t-ok bls-cheap" x="240" y="180" text-anchor="middle">{L("a contract verifies a BLS signature in one cheap call")}</text>
       </svg>
@@ -2781,9 +2784,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 176" role="img" aria-label="On-chain BLS verification lets contracts check beacon-chain signatures, enabling trust-minimized bridges and aggregate signatures">
         <text class="t-cap" x="240" y="20">{L("verify Ethereum's own consensus, from a contract")}</text>
         <rect class="bls-usebox bls-usebox0" x="30" y="42" width="200" height="76" rx="8" />
-        <text class="t-cap" x="130" y="66">{L("trust-minimized bridges")}</text>
-        <text class="t-fld bls-uc" x="130" y="86">{L("verify a sync committee")}</text>
-        <text class="t-fld bls-uc" x="130" y="104">{L("BLS signature on L1/L2")}</text>
+        <text class="t-cap" x="130" y="64">{L("trust-minimized bridges")}</text>
+        <text class="t-fld bls-uc" x="130" y="84">{L("verify a sync committee")}</text>
+        <text class="t-fld bls-uc" x="130" y="102">{L("BLS signature on L1/L2")}</text>
+        <circle class="bls-brtok" cx="8" cy="80" r="5" />
+        <text class="t-ok bls-brok" x="214" y="86" text-anchor="middle">✓</text>
         <rect class="bls-usebox bls-usebox1" x="250" y="42" width="200" height="76" rx="8" />
         <text class="t-cap" x="350" y="66">{L("aggregate signatures")}</text>
         <text class="t-fld bls-uc" x="350" y="86">{L("many signers → one check")}</text>
@@ -3088,48 +3093,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "sh-emul" && (
       <svg viewBox="0 0 480 190" role="img" aria-label="Before EIP-145 shifting bits was emulated with multiplication and division by powers of two">
         <text class="t-cap" x="240" y="20">{L("the EVM had AND/OR/XOR/NOT — but no shift")}</text>
-        <g class="sh-emrow sh-em0">
-          <text class="t-cap sh-want" x="24" y="56" text-anchor="start">{L("shift left by n")}</text>
-          <path class="sarrow sh-ar" d="M150 51 H210" />
-          <rect class="sh-embox" x="210" y="40" width="246" height="24" rx="5" />
-          <text class="t-fld sh-emt" x="333" y="57" text-anchor="middle">{L("emulate: MUL by 2ⁿ (push the constant first)")}</text>
+        <text class="t-fld sh-want" x="24" y="66" text-anchor="start">{L("shift left")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <rect class="sh-cell" x={150 + i * 36} y="48" width="30" height="30" rx="4" />
+        ))}
+        <g class="sh-bits">
+          {[3, 5, 6].map((p) => (
+            <text class="sh-one" x={165 + p * 36} y="69" text-anchor="middle">1</text>
+          ))}
         </g>
-        <g class="sh-emrow sh-em1">
-          <text class="t-cap sh-want" x="24" y="94" text-anchor="start">{L("shift right by n")}</text>
-          <path class="sarrow sh-ar" d="M150 89 H210" />
-          <rect class="sh-embox" x="210" y="78" width="246" height="24" rx="5" />
-          <text class="t-fld sh-emt" x="333" y="95" text-anchor="middle">{L("emulate: DIV by 2ⁿ")}</text>
-        </g>
-        <text class="t-x sh-cost" x="240" y="132" text-anchor="middle">{L("a multiply/divide + a pushed constant, for a basic bit shift")}</text>
-        <text class="t-x sh-signed" x="240" y="156" text-anchor="middle">{L("and DIV can't do a correct signed (arithmetic) right shift")}</text>
-        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("a fundamental CPU operation, simulated with arithmetic")}</text>
+        <text class="t-x sh-cost" x="240" y="108" text-anchor="middle">{L("a multiply/divide + a pushed constant, for a basic bit shift")}</text>
+        <text class="t-x sh-signed" x="240" y="136" text-anchor="middle">{L("and DIV can't do a correct signed (arithmetic) right shift")}</text>
+        <text class="t-cap" x="240" y="166" text-anchor="middle">{L("a fundamental CPU operation, simulated with arithmetic")}</text>
       </svg>
     )}
 
     {/* ── EIP-145: native SHL / SHR / SAR ── */}
     {name === "sh-ops" && (
       <svg viewBox="0 0 480 178" role="img" aria-label="EIP-145 adds native SHL, SHR, and SAR shift opcodes">
-        <text class="t-cap" x="240" y="20">{L("EIP-145: three native shift opcodes")}</text>
-        <g class="sh-op sh-op0"><rect class="sh-opbox" x="30" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="97" y="64">SHL</text><text class="t-cap sh-opd" x="97" y="84">{L("shift left")}</text></g>
-        <g class="sh-op sh-op1"><rect class="sh-opbox" x="173" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="240" y="64">SHR</text><text class="t-cap sh-opd" x="240" y="84">{L("logical right")}</text></g>
-        <g class="sh-op sh-op2"><rect class="sh-opbox" x="316" y="40" width="134" height="58" rx="7" /><text class="t-ok sh-opn" x="383" y="64">SAR</text><text class="t-cap sh-opd" x="383" y="84">{L("arithmetic right")}</text></g>
-        <text class="t-ok sh-3" x="240" y="128" text-anchor="middle">{L("pop amount + value, shift directly — 3 gas, no constant to push")}</text>
-        <text class="t-cap" x="240" y="156" text-anchor="middle">{L("SAR preserves the sign bit — signed shifts finally correct")}</text>
+        <text class="t-cap" x="240" y="18">{L("EIP-145: three native shift opcodes")}</text>
+        {[
+          { op: "SHL", lbl: "shift left", y: 44, cls: "sh-move0", bits: [2, 4, 5], sign: false },
+          { op: "SHR", lbl: "logical right", y: 82, cls: "sh-move1", bits: [1, 2, 4], sign: false },
+          { op: "SAR", lbl: "arithmetic right", y: 120, cls: "sh-move2", bits: [1, 3, 4], sign: true },
+        ].map((r) => (
+          <g>
+            <text class="sh-opn2" x="26" y={r.y - 2} text-anchor="start">{r.op}</text>
+            <text class="sh-opd2" x="26" y={r.y + 14} text-anchor="start">{L(r.lbl)}</text>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <rect class="sh-cell" x={170 + i * 30} y={r.y - 12} width="26" height="26" rx="4" />
+            ))}
+            {r.sign && <text class="sh-one sh-sign" x="183" y={r.y + 6} text-anchor="middle">1</text>}
+            <g class={`sh-move ${r.cls}`}>
+              {r.bits.map((p) => (
+                <text class="sh-one" x={183 + p * 30} y={r.y + 6} text-anchor="middle">1</text>
+              ))}
+            </g>
+          </g>
+        ))}
+        <text class="t-cap sh-3" x="240" y="166" text-anchor="middle">{L("SAR preserves the sign bit — signed shifts finally correct")}</text>
       </svg>
     )}
 
     {/* ── EIP-145: cheaper bit-twiddling ── */}
     {name === "sh-result" && (
       <svg viewBox="0 0 480 168" role="img" aria-label="Native shifts make bit manipulation cheaper and smaller">
-        <text class="t-cap" x="240" y="20">{L("every shift gets cheaper and smaller")}</text>
-        <text class="t-fld sh-wl" x="24" y="52" text-anchor="start">{L("MUL/DIV emulation")}</text>
-        <rect class="sh-track" x="176" y="40" width="274" height="18" rx="4" />
-        <rect class="sh-before" x="176" y="40" width="274" height="18" rx="4" />
-        <text class="t-fld sh-wl" x="24" y="86" text-anchor="start">SHL/SHR/SAR</text>
-        <rect class="sh-track" x="176" y="74" width="274" height="18" rx="4" />
-        <rect class="sh-after" x="176" y="74" width="120" height="18" rx="4" />
-        <text class="t-ok sh-use" x="240" y="120" text-anchor="middle">{L("packing structs, bitmaps, fixed-point, cryptography — all leaner")}</text>
-        <text class="t-cap" x="240" y="148" text-anchor="middle">{L("compilers emit them; the same 'add the missing primitive' story")}</text>
+        <text class="t-cap" x="240" y="26">{L("every shift gets cheaper and smaller")}</text>
+        <text class="sh-codeold" x="240" y="80" text-anchor="middle">PUSH1 0x10  MUL</text>
+        <text class="sh-codenew" x="240" y="80" text-anchor="middle">SHL</text>
+        <text class="t-ok sh-use" x="240" y="122" text-anchor="middle">{L("packing structs, bitmaps, fixed-point, cryptography — all leaner")}</text>
+        <text class="t-cap" x="240" y="150" text-anchor="middle">{L("compilers emit them; the same 'add the missing primitive' story")}</text>
       </svg>
     )}
 
@@ -4952,6 +4965,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bls-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
   .bls-wall { stroke: var(--color-changed); stroke-width: 2.4; stroke-dasharray: 4 4; }
   .bls-blocked { animation: rv-pulse 5s ease-in-out infinite; }
+  /* a BLS signature tries to reach the EVM, hits the wall, and rebounds */
+  .bls-sig { fill: var(--color-node-extension); animation: bls-fly 5s ease-in-out infinite; }
+  @keyframes bls-fly {
+    0% { transform: translateX(0); opacity: 0; }
+    12% { opacity: 1; }
+    38% { transform: translateX(30px); opacity: 1; }
+    48% { transform: translateX(14px); }
+    60% { transform: translateX(24px); }
+    78% { transform: translateX(0); opacity: 0.35; }
+    100% { transform: translateX(0); opacity: 0; }
+  }
   .bls-evm { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .bls-gap2 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 
@@ -4966,6 +4990,16 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bls-opt { text-anchor: middle; fill: var(--color-accent-strong); }
   .bls-opn { text-anchor: middle; fill: var(--color-ink-faint); }
   .bls-cheap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  /* a signature runs through the precompile row and emerges verified */
+  .bls-tok { fill: var(--color-node-leaf); animation: bls-through 5s ease-in-out infinite; }
+  @keyframes bls-through {
+    0% { transform: translateX(0); opacity: 0; }
+    10% { opacity: 1; }
+    68% { transform: translateX(420px); opacity: 1; }
+    80%, 100% { transform: translateX(420px); opacity: 0; }
+  }
+  .bls-verified { opacity: 0; animation: bls-vfade 5s ease-in-out infinite; }
+  @keyframes bls-vfade { 0%, 68% { opacity: 0; } 80%, 100% { opacity: 1; } }
 
   /* ── EIP-2537 — bls-use: trustless bridges & aggregation ── */
   .bls-usebox { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
@@ -4973,6 +5007,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bls-usebox1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .bls-uc { text-anchor: middle; fill: var(--color-ink-faint); }
   .bls-align { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  /* a sync-committee signature crosses into the bridge and is verified */
+  .bls-brtok { fill: var(--color-node-leaf); animation: bls-cross 5s ease-in-out infinite; }
+  @keyframes bls-cross {
+    0% { transform: translateX(0); opacity: 0; }
+    15% { opacity: 1; }
+    55% { transform: translateX(196px); opacity: 1; }
+    66%, 100% { transform: translateX(196px); opacity: 0; }
+  }
+  .bls-brok { opacity: 0; animation: bls-vfade 5s ease-in-out infinite; }
 
   /* ── EIP-6110 — dp-poll: the CL polled+voted on the deposit contract ── */
   .dp-dc { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
@@ -5157,32 +5200,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ec-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
   .ec-fast { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
 
-  /* ── EIP-145 — sh-emul: shifts via MUL/DIV ── */
+  /* ── EIP-145 — sh-emul: bits actually slide left (a shift, done via a MUL) ── */
   .sh-want { fill: var(--color-ink-muted); text-anchor: start; }
-  .sh-ar { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
-  .sh-embox { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); stroke-dasharray: 4 4; }
-  .sh-emt { fill: var(--color-ink-muted); }
-  .sh-emrow { opacity: 0; }
-  .sh-em0 { animation: tw-rowin 5s ease-out infinite; }
-  .sh-em1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .sh-cell { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sh-one { fill: var(--color-node-leaf); font-family: ui-monospace, "SF Mono", monospace; font-size: 14px; font-weight: 600; }
+  .sh-bits { animation: sh-slideL 4.5s ease-in-out infinite; }
+  @keyframes sh-slideL { 0%, 24% { transform: translateX(0); } 54%, 76% { transform: translateX(-36px); } 100% { transform: translateX(0); } }
   .sh-cost { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
   .sh-signed { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
 
-  /* ── EIP-145 — sh-ops: native SHL/SHR/SAR ── */
-  .sh-opbox { fill: var(--color-surface); stroke: var(--color-node-leaf); }
-  .sh-opn { text-anchor: middle; font-weight: 600; }
-  .sh-opd { text-anchor: middle; fill: var(--color-ink-faint); }
-  .sh-op { opacity: 0; }
-  .sh-op0 { animation: tw-rowin 5s ease-out infinite; }
-  .sh-op1 { animation: tw-rowin 5s ease-out 0.25s infinite; }
-  .sh-op2 { animation: tw-rowin 5s ease-out 0.5s infinite; }
+  /* ── EIP-145 — sh-ops: each opcode shifts its strip in its own direction ── */
+  .sh-opn2 { fill: var(--color-node-leaf); text-anchor: start; font-weight: 700; }
+  .sh-opd2 { fill: var(--color-ink-faint); text-anchor: start; }
+  .sh-sign { fill: var(--color-changed); }
+  .sh-move0 { animation: sh-mL 4.5s ease-in-out infinite; }
+  .sh-move1 { animation: sh-mR 4.5s ease-in-out infinite; }
+  .sh-move2 { animation: sh-mR 4.5s ease-in-out infinite; }
+  @keyframes sh-mL { 0%, 24% { transform: translateX(0); } 54%, 76% { transform: translateX(-30px); } 100% { transform: translateX(0); } }
+  @keyframes sh-mR { 0%, 24% { transform: translateX(0); } 54%, 76% { transform: translateX(30px); } 100% { transform: translateX(0); } }
   .sh-3 { opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
 
-  /* ── EIP-145 — sh-result: cheaper bit-twiddling ── */
-  .sh-wl { fill: var(--color-ink-faint); }
-  .sh-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
-  .sh-before { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke: var(--color-changed); }
-  .sh-after { fill: color-mix(in oklab, var(--color-node-leaf) 50%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  /* ── EIP-145 — sh-result: the bytecode collapses PUSH1 0x10 MUL → SHL ── */
+  .sh-codeold { fill: var(--color-ink-muted); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; animation: sh-oldout 5s ease-in-out infinite; }
+  @keyframes sh-oldout { 0%, 40% { opacity: 1; } 58%, 100% { opacity: 0.12; } }
+  .sh-codenew { fill: var(--color-node-leaf); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; font-weight: 700; opacity: 0; animation: sh-newin 5s ease-in-out infinite; }
+  @keyframes sh-newin { 0%, 46% { opacity: 0; } 62%, 100% { opacity: 1; } }
   .sh-use { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
 
   /* ── EIP-3198/7516 — fm-blind: protocol computes, EVM can't read ── */

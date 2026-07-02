@@ -110,7 +110,10 @@ interface Props {
     | "cr-counterfactual"
     | "ci-replay"
     | "ci-domain"
-    | "ci-split";
+    | "ci-split"
+    | "rf-gastoken"
+    | "rf-reduce"
+    | "rf-cap";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2143,6 +2146,61 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="192" text-anchor="middle">{L("recompute the domain when CHAINID changes — or the cache reopens the hole")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3529: refunds were gamed as gas tokens ── */}
+    {name === "rf-gastoken" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="Storage refunds were gamed: fill slots when gas is cheap, clear them for a refund when gas is dear">
+        <text class="t-cap" x="240" y="20">{L("refunds were gamed: buy gas cheap, spend it dear")}</text>
+        <rect class="rf-cheap" x="24" y="38" width="196" height="72" rx="8" />
+        <text class="t-cap" x="122" y="58">{L("gas cheap → mint")}</text>
+        {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-fill" x={44 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
+        <text class="t-fld rf-ct" x="122" y="104">SSTORE many slots</text>
+        <path class="sarrow rf-ga" d="M220 74 H260" />
+        <rect class="rf-dear" x="260" y="38" width="196" height="72" rx="8" />
+        <text class="t-cap" x="358" y="58">{L("gas dear → harvest")}</text>
+        {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-clear" x={280 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
+        <text class="t-ok rf-refund" x="358" y="104">clear → big refund</text>
+        <text class="t-x rf-2x" x="240" y="146" text-anchor="middle">{L("worse: refunds let a block do up to 2× the gas limit of real work")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a 'gas token' — value stored in useless state, gaming the gas price")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3529: shrink the refunds and cap them ── */}
+    {name === "rf-reduce" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="EIP-3529 removes the selfdestruct refund, shrinks the storage refund, and tightens the cap">
+        <text class="t-cap" x="240" y="20">{L("don't remove refunds entirely — shrink and cap them")}</text>
+        <text class="t-cap rf-colh" x="238" y="44" text-anchor="end">{L("before")}</text>
+        <text class="t-cap rf-colh" x="330" y="44" text-anchor="start">{L("after")}</text>
+        {[["SELFDESTRUCT refund", "24000", "0", 0], ["SSTORE clear refund", "15000", "4800", 1], ["max refund cap", "gasUsed / 2", "gasUsed / 5", 2]].map(([lbl, bef, aft, i]) => (
+          <g class="rf-rrow" style={`animation-delay:${(Number(i) * 0.2).toFixed(2)}s`}>
+            <text class="t-fld rf-rl" x="24" y={70 + Number(i) * 30} text-anchor="start">{lbl}</text>
+            <text class="t-fld rf-bef" x="238" y={70 + Number(i) * 30} text-anchor="end">{bef}</text>
+            <path class="sarrow rf-ra" d={`M250 ${65 + Number(i) * 30} H310`} />
+            <text class={`t-ok rf-aft${Number(i) === 0 ? " rf-zero" : ""}`} x="330" y={70 + Number(i) * 30} text-anchor="start">{aft}</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a modest refund for freeing state stays; the gaming does not")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3529: block work bounded near the limit ── */}
+    {name === "rf-cap" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="After EIP-3529 a block's real work is bounded near the gas limit instead of up to twice it">
+        <text class="t-cap" x="240" y="20">{L("real work per block, bounded back to the limit")}</text>
+        <line class="rf-limit" x1="250" y1="34" x2="250" y2="120" />
+        <text class="rf-limitlbl" x="250" y="30" text-anchor="middle">{L("gas limit")}</text>
+        <text class="t-fld rf-wl" x="24" y="58" text-anchor="start">{L("before")}</text>
+        <rect class="rf-wtrack" x="90" y="46" width="360" height="20" rx="4" />
+        <rect class="rf-wbefore" x="90" y="46" width="360" height="20" rx="4" />
+        <text class="t-x rf-2xlbl" x="360" y="60" text-anchor="start">{L("~2× limit")}</text>
+        <text class="t-fld rf-wl" x="24" y="98" text-anchor="start">{L("after")}</text>
+        <rect class="rf-wtrack" x="90" y="86" width="360" height="20" rx="4" />
+        <rect class="rf-wafter" x="90" y="86" width="360" height="20" rx="4" />
+        <text class="t-ok rf-okcap" x="256" y="100" text-anchor="start">{L("≈ limit")}</text>
+        <text class="t-ok rf-token" x="240" y="146" text-anchor="middle">{L("gas tokens become unprofitable — and blocks stay predictable for EIP-1559")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("it's also why the SSTORE-reset guard trick got costly — see transient storage")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3614,4 +3672,40 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ci-bad { animation: ci-badglow 6s ease-in-out infinite; }
   @keyframes ci-badglow { 0%,50% { stroke: var(--color-border-strong) } 62%,86% { stroke: var(--color-changed) } 100% { stroke: var(--color-border-strong) } }
   .ci-cmt { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── EIP-3529 — rf-gastoken: fill slots cheap, clear them for a refund (5s) ── */
+  .rf-cheap { fill: color-mix(in oklab, var(--color-node-leaf) 6%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .rf-dear { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); }
+  .rf-ct { text-anchor: middle; fill: var(--color-ink-faint); }
+  .rf-slot { stroke-width: 1; }
+  .rf-fill { fill: var(--color-surface); stroke: var(--color-node-leaf); animation: rf-fill 5s ease-in-out infinite; }
+  @keyframes rf-fill { 0%,8% { fill: var(--color-surface) } 20%,100% { fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)) } }
+  .rf-clear { fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)); stroke: var(--color-changed); animation: rf-clear 5s ease-in-out infinite; }
+  @keyframes rf-clear { 0%,50% { fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)) } 66%,100% { fill: var(--color-surface) } }
+  .rf-ga { stroke-dasharray: 40; stroke-dashoffset: 40; animation: st-draw 5s ease-in-out infinite; }
+  .rf-refund { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .rf-2x { animation: mg-en 4s ease-in-out infinite; }
+
+  /* ── EIP-3529 — rf-reduce: before/after table ── */
+  .rf-colh { fill: var(--color-ink-faint); }
+  .rf-rrow { opacity: 0; animation: tw-rowin 5s ease-out infinite; }
+  .rf-rl { fill: var(--color-ink-muted); }
+  .rf-bef { fill: var(--color-ink-faint); }
+  .rf-aft { fill: var(--color-node-leaf); }
+  .rf-zero { fill: var(--color-changed); }
+  .rf-ra { stroke-dasharray: 60; stroke-dashoffset: 60; animation: tw-updraw 5s ease-out infinite; }
+  @keyframes tw-updraw { 0%,14% { stroke-dashoffset: 60 } 42%,100% { stroke-dashoffset: 0 } }
+
+  /* ── EIP-3529 — rf-cap: block work bounded near the limit (5s) ── */
+  .rf-limit { stroke: var(--color-hash); stroke-width: 1.4; stroke-dasharray: 3 2; }
+  .rf-limitlbl { fill: var(--color-hash); font-family: var(--font-mono); font-size: 9px; }
+  .rf-wl { fill: var(--color-ink-faint); }
+  .rf-wtrack { fill: var(--color-surface); stroke: var(--color-border); }
+  .rf-wbefore { fill: color-mix(in oklab, var(--color-changed) 34%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: rf-wbefore 5s ease-in-out infinite; }
+  @keyframes rf-wbefore { 0%,20% { transform: scaleX(0.4) } 55%,100% { transform: scaleX(1) } }
+  .rf-2xlbl { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .rf-wafter { fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: rf-wafter 5s ease-in-out infinite; }
+  @keyframes rf-wafter { 0%,20% { transform: scaleX(0.4) } 55%,100% { transform: scaleX(0.44) } }
+  .rf-okcap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .rf-token { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

@@ -1,0 +1,112 @@
+---
+title: "EIP-3529: killing the gas-refund loophole"
+dek: "Freeing storage used to hand you a big gas refund — a nice idea that got gamed. Contracts hoarded refunds as 'gas tokens,' and refunds let a block do nearly twice the real work its gas limit implied. EIP-3529 doesn't abolish refunds; it shrinks them and caps them, so cleaning up state still pays a little but the exploit dies — and blocks stay predictable for the new fee market."
+summary: "A step-by-step derivation of EIP-3529 (reduction in refunds), shipped in London (August 2021) alongside EIP-1559. Why the original SSTORE-clear and SELFDESTRUCT gas refunds — meant to reward freeing state — were exploited as gas tokens (store slots when gas is cheap, clear them for a refund when gas is dear) and let a block's real work reach up to twice its gas limit; why refunds couldn't simply be removed (that would over-punish legitimate state clearing); and how EIP-3529 removes the SELFDESTRUCT refund, cuts the SSTORE-clear refund from 15000 to 4800, and tightens the total-refund cap from gasUsed/2 to gasUsed/5 — killing gas tokens and bounding block work near the limit, which is exactly why EIP-1559 needs predictable blocks, and why the SSTORE-reset reentrancy-guard trick got expensive enough to motivate transient storage."
+topic: EIPs
+order: 21
+spine: true
+prerequisites: ["gas & storage (SSTORE)", "the EIP-1559 fee market"]
+updated: 2026-06-24
+readingMinutes: 9
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+
+**London, August 2021.** The famous change that day was [EIP-1559](/eip-1559-fee-market), but it shipped with a quieter companion that made 1559 actually work. Ethereum had long offered a **gas refund** for freeing storage: set a slot back to zero, or `SELFDESTRUCT` a contract, and you got gas back. The intent was benign — reward people for shrinking the state everyone stores. But a refund is money, and money invites gaming. By 2021 the refund had become a small industry and a real headache for block accounting. **EIP-3529** is the fix, and it's a nice case of *adjusting* an incentive rather than deleting it. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Refunds got gamed" },
+  { id: "step-2", label: "Shrink, don't abolish" },
+  { id: "step-3", label: "Blocks bounded again" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Refunds got gamed">
+
+## The problem: refunds became a tradeable asset
+
+Clearing a storage slot refunded up to ~15000 gas; `SELFDESTRUCT` refunded 24000. That created a perverse trade. When gas is **cheap**, a contract can `SSTORE` a pile of slots to non-zero; later, when gas is **expensive**, it clears them and collects the refunds — effectively buying gas at the low price and spending it at the high price. These contracts were <KeyTerm term="gas token" def="A contract (e.g. GST2, CHI) that hoards gas by writing storage slots when gas is cheap and clearing them for a refund when gas is dear — storing value in otherwise-useless state to arbitrage the gas price." />, and they did nothing useful except bloat the state and arbitrage the fee market.
+
+<Scene name="rf-gastoken" caption="Fill storage slots while gas is cheap, then clear them when gas is dear to harvest the refunds — 'gas tokens' stored value in useless state to game the gas price. Worse, because refunds offset gas paid, a single block's real work could reach nearly twice its gas limit." />
+
+There's a second, subtler harm. A refund reduces the gas a transaction is *charged*, so more transactions fit under the block's gas limit than the limit's worth of *actual* work. A block could therefore do up to **2×** the real computation its gas limit implied — terrible for predictable block sizes, and especially bad for [EIP-1559](/eip-1559-fee-market), whose whole controller depends on `gasUsed` reflecting genuine load.
+
+<Callout type="warning" title="What breaks">
+The refund's incentive is being inverted: instead of rewarding *net* state reduction, it rewards a store-then-clear churn that adds nothing. And it decouples "gas charged" from "work done." But we can't just delete refunds — legitimate contracts *do* clean up, and some rely on the SSTORE refund.
+</Callout>
+
+**→ Step 2: turn the dial down, don't rip it out.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Shrink, don't abolish">
+
+## EIP-3529: smaller refunds, tighter cap
+
+The fix is calibration, not abolition. EIP-3529 makes three changes: it **removes** the `SELFDESTRUCT` refund entirely, **cuts** the SSTORE-clear refund from 15000 to **4800**, and tightens the <KeyTerm term="refund cap" def="A ceiling on how much of a transaction's gas can be returned as a refund, as a fraction of gas used. EIP-3529 lowered it from gasUsed/2 to gasUsed/5 — so at most one-fifth of a transaction's gas can come back." /> from `gasUsed / 2` to `gasUsed / 5`. A modest reward for genuinely freeing state survives, but it's now far too small to make gas tokens or the 2× block trick worthwhile.
+
+<Scene name="rf-reduce" caption="EIP-3529 doesn't remove refunds — it shrinks them: the SELFDESTRUCT refund goes to 0, the SSTORE-clear refund drops from 15000 to 4800, and the total-refund cap tightens from gasUsed/2 to gasUsed/5. Enough to still reward freeing state, too little to game." />
+
+<Formula
+  expr="maxRefund = gasUsed / 5      (was gasUsed / 2)"
+  terms={[
+    { t: "gasUsed / 5", note: "at most a fifth of a tx's gas can be refunded — down from a half" },
+    { t: "was gasUsed / 2", note: "the old cap let refunds offset up to half, enabling the 2× block" },
+  ]}
+  caption="Halving-to-a-fifth the cap is what bounds a block's real work back near its gas limit."
+/>
+
+<SpecExcerpt
+  source="EIP-3529: Reduction in refunds"
+  href="https://eips.ethereum.org/EIPS/eip-3529"
+  ref="the changes"
+>
+Removes the gas refund for `SELFDESTRUCT`. Reduces the `SSTORE` refund to `4800` (a value
+below the cost of the operations needed to abuse it). Caps the total refund of a
+transaction at `gas_used // 5` (previously `gas_used // 2`). Together these remove the
+economic basis for gas tokens and bound the maximum block size in terms of real work.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing legitimate breaks — but one everyday pattern quietly got more expensive. Which one, and why does it matter for the chapters ahead?
+</Callout>
+
+**→ Step 3: the payoff, and a thread to pull later.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Blocks bounded again">
+
+## The payoff: predictable blocks — and a nudge toward transient storage
+
+With refunds capped at a fifth, a block's *real* work is bounded back near its gas limit instead of drifting toward twice it. That predictability is precisely what EIP-1559's fee controller needs to read demand honestly, which is why the two shipped together.
+
+<Scene name="rf-cap" caption="Before, refunds let a block's real work reach ~2× the gas limit; after, it's bounded near the limit. Gas tokens become unprofitable, and blocks stay predictable — exactly what EIP-1559's controller relies on." />
+
+<Callout type="insight" title="And that is EIP-3529">
+Refunds for freeing state got **gamed** — hoarded as gas tokens, and letting a block do ~2× its gas limit of real work → you can't just abolish refunds (legit contracts clean up) → so **shrink and cap** them: drop the SELFDESTRUCT refund, cut the SSTORE-clear refund to 4800, and lower the cap to `gasUsed/5`. Gas tokens die, and block work is bounded near the limit — which is why EIP-1559 needed this alongside it. The everyday casualty: the classic reentrancy guard that sets a storage flag to 1 and then **resets it to 0** leaned on that SSTORE refund to be cheap; once the refund shrank, so did the savings. That extra cost is a big part of *why* [transient storage (EIP-1153)](/eip-1153-transient-storage) was worth adding — a per-transaction scratchpad that needs no refund at all. One incentive fix, and you can feel it pull the roadmap forward.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3529: Reduction in refunds", note: "The spec — the three changes", href: "https://eips.ethereum.org/EIPS/eip-3529" },
+    { kind: "post", label: "EIP-1559, derived", note: "Why predictable blocks matter for the fee controller", href: "/eip-1559-fee-market" },
+    { kind: "post", label: "EIP-1153 — transient storage", note: "The refund-free scratchpad this helped motivate", href: "/eip-1153-transient-storage" },
+    { kind: "eip", label: "EIP-3298 (predecessor idea)", note: "An earlier 'remove refunds' proposal", href: "https://eips.ethereum.org/EIPS/eip-3298" },
+    { kind: "tool", label: "GST2 / CHI gas tokens", note: "The contracts EIP-3529 rendered pointless", href: "https://etherscan.io/token/0x0000000000b3f879cb30fe243b4dfee438691c04" },
+  ]}
+/>
+
+</DepthLayer>

@@ -181,7 +181,7 @@ export const FORKS: Fork[] = [
     eips: [
       { eip: "1559", title: "Fee market change (base fee + burn)", category: "execution", slug: ours("eip-1559-fee-market") },
       { eip: "3198", title: "BASEFEE opcode", category: "execution" },
-      { eip: "3529", title: "Reduction in gas refunds", category: "execution" },
+      { eip: "3529", title: "Reduction in gas refunds", category: "execution", slug: "eip-3529-refund-reduction" },
       { eip: "3541", title: "Reject contracts starting 0xEF", category: "execution" },
       { eip: "3554", title: "Difficulty bomb delay", category: "consensus" },
     ],

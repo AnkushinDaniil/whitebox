@@ -75,7 +75,14 @@ export const BOOK: BookPart[] = [
           { slug: "eip-2929-2930-access-lists", eip: "2929/2930" },
         ],
       },
-      { forkName: "London", date: "Aug 2021", chapters: [{ slug: "eip-1559-fee-market", eip: "1559" }] },
+      {
+        forkName: "London",
+        date: "Aug 2021",
+        chapters: [
+          { slug: "eip-1559-fee-market", eip: "1559" },
+          { slug: "eip-3529-refund-reduction", eip: "3529" },
+        ],
+      },
       { forkName: "Paris · The Merge", date: "Sep 2022", chapters: [{ slug: "eip-3675-the-merge", eip: "3675" }] },
       { forkName: "Shanghai · Capella", date: "Apr 2023", chapters: [{ slug: "eip-4895-withdrawals", eip: "4895" }] },
       { label: "Application layer", date: "2023", chapters: [{ slug: "eip-4337-account-abstraction", eip: "4337" }] },

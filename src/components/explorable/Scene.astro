@@ -896,13 +896,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-4337: a bundler wraps UserOps into one tx to the EntryPoint ── */}
     {name === "aa-bundler" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="A bundler wraps UserOps into one transaction to the EntryPoint">
-        {[0, 1, 2].map((i) => (<g class={`ab-op ao${i}`}><rect class="au-op" x="14" y={36 + i * 42} width="92" height="32" rx="5" /><text class="t-cap" x="60" y={56 + i * 42}>UserOp</text></g>))}
-        <path class="sarrow ab-a1" d="M106 94 H150" />
-        <rect class="ab-bundler" x="150" y="70" width="96" height="48" rx="7" /><text class="t-cap" x="198" y="90">{L("bundler (EOA)")}</text><text class="t-cap" x="198" y="105">{L("→ 1 tx")}</text>
-        <path class="sarrow ab-a2" d="M246 94 H296" />
-        <rect class="ab-entry" x="296" y="50" width="170" height="88" rx="8" /><text class="t-cap" x="381" y="72">EntryPoint</text><text class="t-cap" x="381" y="90">{L("for each UserOp:")}</text><text class="t-ok" x="381" y="108">validate → execute</text>
-        <text class="t-cap" x="240" y="178">{L("bundler → one tx → EntryPoint validates & executes each UserOp")}</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="Three UserOps collapse into one transaction that travels to the EntryPoint">
+        <text class="t-cap" x="240" y="18">{L("the bundler packs many UserOps into one transaction")}</text>
+        {[0, 1, 2].map((i) => (<g class={`ab-op ao${i}`}><rect class="au-op" x="20" y={40 + i * 40} width="92" height="30" rx="5" /><text class="t-cap" x="66" y={59 + i * 40}>UserOp</text></g>))}
+        <rect class="ab-bundler" x="176" y="70" width="96" height="52" rx="7" /><text class="t-cap" x="224" y="90">{L("bundler")}</text><text class="t-cap" x="224" y="106">{L("packs a batch")}</text>
+        <g class="ab-batch"><rect class="ab-batchbox" x="188" y="82" width="72" height="28" rx="5" /><text class="t-ok" x="224" y="100">1 tx</text></g>
+        <rect class="ab-entry" x="308" y="60" width="158" height="80" rx="8" /><text class="t-cap" x="387" y="82">EntryPoint</text><text class="t-cap" x="387" y="100">{L("for each UserOp:")}</text><text class="t-ok ab-exec" x="387" y="118">validate → execute</text>
+        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("three UserOps collapse into one tx → the EntryPoint runs each")}</text>
       </svg>
     )}
 
@@ -1191,18 +1191,22 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-3675: proof of work burns energy to race for a nonce ── */}
     {name === "mg-pow" && (
-      <svg viewBox="0 0 480 196" role="img" aria-label="Proof of work: miners race to guess a nonce, burning energy">
-        <text class="t-cap" x="240" y="20">{L("proof of work — race to guess a nonce")}</text>
-        {[["miner A", "0x9c4…", 14], ["miner B", "0x3a1…", 170], ["miner C", "0x77e…", 326]].map(([who, nonce, x], i) => (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Miners churn through nonces, burning ever more energy to race for a valid hash">
+        <text class="t-cap" x="240" y="18">{L("proof of work — race to guess a nonce, burning energy")}</text>
+        {[["miner A", "0x9c4a", "0x1f7e", 14], ["miner B", "0x3a12", "0x8b03", 170], ["miner C", "0x77ec", "0x2d99", 326]].map(([who, na, nb, x], i) => (
           <g class={`mg-miner mgm${i}`}>
-            <rect class="mg-mrect" x={x} y="36" width="140" height="54" rx="8" />
-            <text class="t-cap" x={Number(x) + 70} y="58">{L(who)}</text>
-            <text class="t-fld mg-try" x={Number(x) + 70} y="78">{`nonce ${nonce}`}</text>
+            <rect class="mg-mrect" x={x} y="34" width="140" height="50" rx="8" />
+            <text class="t-cap" x={Number(x) + 70} y="54">{L(who)}</text>
+            <text class="t-fld mg-na" x={Number(x) + 70} y="74">{`nonce ${na}`}</text>
+            <text class="t-fld mg-nb" x={Number(x) + 70} y="74">{`nonce ${nb}`}</text>
           </g>
         ))}
-        <text class="t-x mg-energy" x="240" y="120">{L("⚡ enormous energy burned ⚡")}</text>
-        <text class="t-ok mg-win" x="240" y="146">{L("first valid hash wins — security = hashpower")}</text>
-        <text class="t-cap" x="240" y="184">{L("more security = more hashpower: energy, centralization, issuance")}</text>
+        <text class="t-fld mg-elbl" x="40" y="106" text-anchor="start">{L("energy spent")}</text>
+        <rect class="mg-etrack" x="40" y="112" width="400" height="14" rx="4" />
+        <rect class="mg-efill" x="40" y="112" width="400" height="14" rx="4" />
+        <text class="t-x mg-eclimb" x="240" y="148" text-anchor="middle">{L("⚡ always climbing — spent, never returned")}</text>
+        <text class="t-ok mg-win" x="240" y="170" text-anchor="middle">{L("first valid hash wins — security = hashpower")}</text>
+        <text class="t-cap" x="240" y="192" text-anchor="middle">{L("more security = more hashpower: energy, centralization, issuance")}</text>
       </svg>
     )}
 
@@ -1337,17 +1341,23 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-1153: rolled back on revert, auto-cleared at tx end ── */}
     {name === "ts-revert" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Transient writes roll back on revert and auto-clear at transaction end">
+      <svg viewBox="0 0 480 202" role="img" aria-label="A transient write snaps back on revert, and every slot flips to zero at transaction end">
         <text class="t-cap" x="240" y="20">{L("reverts undo it; the tx end clears it")}</text>
-        <rect class="ts-frame" x="24" y="42" width="200" height="86" rx="8" />
-        <text class="t-cap" x="124" y="64">{L("a sub-call reverts")}</text>
-        <text class="t-fld ts-c" x="124" y="86">TSTORE(k, 9)</text>
-        <text class="t-x ts-undo" x="124" y="110">{L("↩ write undone")}</text>
-        <rect class="ts-frame2" x="256" y="42" width="200" height="86" rx="8" />
-        <text class="t-cap" x="356" y="64">{L("the transaction ends")}</text>
-        <text class="t-fld ts-c" x="356" y="86">all slots → 0</text>
-        <text class="t-ok ts-cleared" x="356" y="110">{L("no reset SSTORE needed")}</text>
-        <text class="t-cap" x="240" y="190">{L("writes roll back on revert and auto-clear at tx end")}</text>
+        <rect class="ts-frame" x="24" y="40" width="200" height="96" rx="8" />
+        <text class="t-cap" x="124" y="60">{L("a sub-call reverts")}</text>
+        <text class="t-fld ts-c" x="124" y="80">TSTORE(k, 9)</text>
+        <rect class="tsr-cell" x="74" y="90" width="100" height="24" rx="4" />
+        <text class="tsr-wrote" x="124" y="107">k = 9</text>
+        <text class="tsr-undone" x="124" y="107">k = 5 ↩</text>
+        <text class="t-x ts-undo" x="124" y="128">{L("snapped back on revert")}</text>
+        <rect class="ts-frame2" x="256" y="40" width="200" height="96" rx="8" />
+        <text class="t-cap" x="356" y="60">{L("the transaction ends")}</text>
+        <text class="t-fld ts-c" x="356" y="80">{L("every slot")}</text>
+        <rect class="tsr-cell" x="306" y="90" width="100" height="24" rx="4" />
+        <text class="tsr-during" x="356" y="107">k = 9</text>
+        <text class="tsr-zero" x="356" y="107">k = 0</text>
+        <text class="t-ok ts-cleared" x="356" y="128">{L("no reset SSTORE needed")}</text>
+        <text class="t-cap" x="240" y="194">{L("writes roll back on revert and auto-clear at tx end")}</text>
       </svg>
     )}
 
@@ -1462,19 +1472,19 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-2929: just raising the flat price overcharges repeats ── */}
     {name === "ga-raise" && (
-      <svg viewBox="0 0 480 180" role="img" aria-label="Raising the flat access price overcharges repeated access to the same slot">
-        <text class="t-cap" x="240" y="20">{L("just raise the flat price? it overcharges repeats")}</text>
-        {[["access #1", 60], ["access #2", 96], ["access #3", 132]].map(([lbl, y], i) => (
+      <svg viewBox="0 0 480 190" role="img" aria-label="A flat raise charges 2100 every time, but cached repeats really cost about 100 — the red is wasted gas">
+        <text class="t-cap" x="240" y="18">{L("a flat raise overcharges repeats — the red is wasted gas")}</text>
+        {[["access #1 · disk fetch", 200, 0], ["access #2 · cached", 10, 1], ["access #3 · cached", 10, 2]].map(([lbl, realw, i]) => (
           <g>
-            <rect class="ga-acc" x="40" y={Number(y) - 13} width="130" height="24" rx="6" />
-            <text class="t-x" x="105" y={Number(y) + 3}>{`${lbl} · 2100`}</text>
-            <path class="sarrow ga-ra" d={`M170 ${y} L300 92`} />
+            <text class="t-fld ga-rlbl" x="20" y={62 + Number(i) * 38} text-anchor="start">{lbl}</text>
+            <rect class="ga-charged" x="150" y={50 + Number(i) * 38} width="200" height="18" rx="3" />
+            <rect class={`ga-real ga-real${i}`} x="150" y={50 + Number(i) * 38} width={realw} height="18" rx="3" />
+            {Number(i) > 0 && <rect class={`ga-over ga-over${i}`} x={150 + Number(realw)} y={50 + Number(i) * 38} width={200 - Number(realw)} height="18" rx="3" />}
+            <text class="t-fld ga-chlbl" x="356" y={62 + Number(i) * 38} text-anchor="start">2100</text>
           </g>
         ))}
-        <rect class="ga-slot" x="300" y="64" width="130" height="56" rx="8" />
-        <text class="t-cap" x="365" y="86">{L("slot X")}</text>
-        <text class="t-fld ga-c" x="365" y="104">cached after #1</text>
-        <text class="t-cap" x="240" y="166">{L("after the first load the slot sits in memory — repeats should be near-free")}</text>
+        <text class="t-ok ga-leg1" x="150" y="180" text-anchor="start">{L("green = real cost")}</text>
+        <text class="t-x ga-leg2" x="300" y="180" text-anchor="start">{L("red = overcharged")}</text>
       </svg>
     )}
 
@@ -1537,14 +1547,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-7251: raise the cap 32 → 2048 ── */}
     {name === "mb-raise" && (
-      <svg viewBox="0 0 480 176" role="img" aria-label="EIP-7251 raises the maximum effective balance from 32 to 2048 ETH">
-        <text class="t-cap" x="240" y="24">{L("raise the cap: 32 ETH → 2048 ETH")}</text>
-        <text class="t-cap" x="80" y="62">{L("old cap")}</text>
-        <rect class="mb-bar mb-old" x="58" y="72" width="44" height="44" rx="6" />
-        <text class="t-fld mb-c" x="80" y="98">32</text>
-        <text class="t-cap" x="310" y="62">{L("new cap")}</text>
-        <rect class="mb-bar mb-new" x="160" y="72" width="290" height="44" rx="6" />
-        <text class="t-ok mb-newt" x="305" y="98">2048 ETH — all earning</text>
+      <svg viewBox="0 0 480 176" role="img" aria-label="The earning balance bar grows from the old 32 ETH cap to 2048 ETH">
+        <text class="t-cap" x="240" y="24">{L("raise the cap — the earning balance grows 32 → 2048 ETH")}</text>
+        <rect class="mb-track" x="40" y="70" width="400" height="44" rx="6" />
+        <rect class="mb-grow" x="40" y="70" width="400" height="44" rx="6" />
+        <line class="mb-32mark" x1="88" y1="64" x2="88" y2="120" />
+        <text class="t-fld mb-32lbl" x="88" y="60" text-anchor="middle">32</text>
+        <text class="t-ok mb-2048lbl" x="388" y="60">2048 ETH</text>
         <text class="t-cap" x="240" y="160">{L("one validator can now hold up to 2048 ETH of earning balance — up to 64-in-1")}</text>
       </svg>
     )}
@@ -1710,8 +1719,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <path class="sarrow st-a2" d="M300 96 H350" />
         <rect class="st-root" x="350" y="74" width="108" height="44" rx="8" />
         <text class="t-cap" x="404" y="92">{L("state root")}</text>
-        <text class="st-roothex" x="404" y="108">0x9f2e…</text>
-        <text class="t-x st-flip" x="240" y="150" text-anchor="middle">{L("flip one wei → the root changes")}</text>
+        <text class="st-roothex st-rootorig" x="404" y="108">0x9f2e…</text>
+        <text class="st-roothex st-roottamp" x="404" y="108">0x2b8c…</text>
+        <text class="t-x st-flip" x="240" y="150" text-anchor="middle">{L("flip one wei → the whole root flips")}</text>
         <text class="t-cap" x="240" y="182">{L("one 32-byte fingerprint commits to every account — tamper anywhere and it shows")}</text>
       </svg>
     )}
@@ -1891,19 +1901,18 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── Tangerine Whistle: reprice to match real cost ── */}
     {name === "tw-reprice" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="EIP-150 reprices the IO-heavy opcodes up to match their real cost">
-        <text class="t-cap" x="240" y="20">{L("gas is a security parameter — align it to real cost")}</text>
-        <text class="t-cap tw-colh" x="150" y="44" text-anchor="end">{L("before")}</text>
-        <text class="t-cap tw-colh" x="330" y="44" text-anchor="start">{L("after EIP-150")}</text>
-        {[["SLOAD", "50", "200", 0], ["BALANCE", "20", "400", 1], ["EXTCODESIZE", "20", "700", 2], ["CALL", "40", "700", 3]].map(([op, before, after, i]) => (
-          <g class="tw-rrow" style={`animation-delay:${(Number(i) * 0.25).toFixed(2)}s`}>
-            <text class="t-fld tw-op" x="24" y={68 + Number(i) * 28} text-anchor="start">{op}</text>
-            <text class="t-fld tw-before" x="150" y={68 + Number(i) * 28} text-anchor="end">{before}</text>
-            <path class="sarrow tw-up" d={`M170 ${63 + Number(i) * 28} H300`} />
-            <text class="t-ok tw-after" x="330" y={68 + Number(i) * 28} text-anchor="start">{after}</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="Each opcode's price bar grows from its old cost up to its real cost">
+        <text class="t-cap" x="240" y="20">{L("reprice to real cost — the bar grows to match")}</text>
+        {[["SLOAD", 50, 200, 57, "0.25", 0], ["BALANCE", 20, 400, 114, "0.05", 1], ["EXTCODESIZE", 20, 700, 200, "0.029", 2], ["CALL", 40, 700, 200, "0.057", 3]].map(([op, bef, aft, w, frac, i]) => (
+          <g>
+            <text class="t-fld tw-op" x="20" y={56 + Number(i) * 32} text-anchor="start">{op}</text>
+            <text class="tw-bef" x="104" y={56 + Number(i) * 32} text-anchor="end">{bef}</text>
+            <rect class="tw-barbg" x="110" y={44 + Number(i) * 32} width={w} height="14" rx="3" />
+            <rect class={`tw-bar tw-bar${i}`} x="110" y={44 + Number(i) * 32} width={w} height="14" rx="3" style={`--frac:${frac}`} />
+            <text class={`tw-aft tw-aft${i}`} x={116 + Number(w)} y={56 + Number(i) * 32} text-anchor="start">{aft}</text>
           </g>
         ))}
-        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("now the same attack costs real gas and is priced out of the block")}</text>
+        <text class="t-cap" x="240" y="188" text-anchor="middle">{L("EXTCODESIZE jumps 20 → 700 — 35× — so the attack no longer fits in a block")}</text>
       </svg>
     )}
 
@@ -2557,15 +2566,20 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes au-mem { 0%,46% { filter: none } 60% { filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { filter: none } }
   .au-tmem { fill: var(--color-surface); stroke: var(--color-border); opacity: 0.55; }
 
-  /* EIP-4337 — aa-bundler: ops fold into one tx, EntryPoint runs each */
-  .ab-op { opacity: 0; }
-  .ao0 { animation: ab-in 5s ease-out infinite; } .ao1 { animation: ab-in 5s ease-out 0.35s infinite; } .ao2 { animation: ab-in 5s ease-out 0.7s infinite; }
-  @keyframes ab-in { 0%,4% { opacity: 0; transform: translateX(-8px) } 16%,100% { opacity: 1; transform: translateX(0) } }
+  /* EIP-4337 — aa-bundler: 3 UserOps collapse into 1 tx, which travels to EntryPoint (6s) */
+  .ab-op { transform-box: fill-box; }
+  .ao0 { animation: ab-col0 6s ease-in-out infinite; }
+  .ao1 { animation: ab-col1 6s ease-in-out infinite; }
+  .ao2 { animation: ab-col2 6s ease-in-out infinite; }
+  @keyframes ab-col0 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,41px) } 44%,100% { opacity: 0; transform: translate(140px,41px) } }
+  @keyframes ab-col1 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,1px) } 44%,100% { opacity: 0; transform: translate(140px,1px) } }
+  @keyframes ab-col2 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,-39px) } 44%,100% { opacity: 0; transform: translate(140px,-39px) } }
   .ab-bundler { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
-  .ab-a1 { stroke-dasharray: 60; stroke-dashoffset: 60; animation: ab-draw 5s ease-out infinite; }
-  .ab-a2 { stroke-dasharray: 60; stroke-dashoffset: 60; animation: ab-draw 5s ease-out 0.6s infinite; }
-  @keyframes ab-draw { 0%,22% { stroke-dashoffset: 60 } 42%,100% { stroke-dashoffset: 0 } }
-  .ab-entry { animation: au-mem 5s ease-in-out 0.6s infinite; }
+  .ab-batchbox { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ab-batch { animation: ab-batch 6s ease-in-out infinite; }
+  @keyframes ab-batch { 0%,42% { opacity: 0; transform: translateX(0) } 48% { opacity: 1; transform: translateX(0) } 68% { opacity: 1; transform: translateX(120px) } 74%,100% { opacity: 0; transform: translateX(128px) } }
+  .ab-exec { opacity: 0; animation: ab-exec 6s ease-in-out infinite; }
+  @keyframes ab-exec { 0%,72% { opacity: 0 } 82%,100% { opacity: 1 } }
 
   /* EIP-4337 — aa-paymaster: arrows settle gas; bundler reimbursed */
   .ap-pm { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
@@ -2778,8 +2792,18 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes mg-flick { 0%,100% { opacity: 1 } 50% { opacity: 0.72 } }
   .mgm1 .mg-mrect { animation: mg-winglow 5s ease-in-out infinite; }
   @keyframes mg-winglow { 0%,60% { filter: none } 74% { filter: drop-shadow(0 0 7px var(--color-node-leaf)); stroke: var(--color-node-leaf) } 100% { filter: none } }
-  .mg-try { text-anchor: middle; fill: var(--color-ink-faint); }
-  .mg-energy { animation: mg-en 4s ease-in-out infinite; }
+  /* nonce hex churns rapidly — brute-forcing guesses */
+  .mg-na, .mg-nb { text-anchor: middle; fill: var(--color-ink-faint); }
+  .mg-na { animation: mg-na 0.5s steps(1) infinite; }
+  .mg-nb { animation: mg-nb 0.5s steps(1) infinite; }
+  @keyframes mg-na { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+  @keyframes mg-nb { 0%,49% { opacity: 0 } 50%,100% { opacity: 1 } }
+  /* energy meter climbs and never returns (sawtooth = each new batch of spend) */
+  .mg-elbl { fill: var(--color-ink-faint); font-size: 9px; }
+  .mg-etrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .mg-efill { fill: color-mix(in oklab, var(--color-changed) 42%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mg-efill 3s linear infinite; }
+  @keyframes mg-efill { 0% { transform: scaleX(0.06) } 92% { transform: scaleX(1) } 100% { transform: scaleX(0.06) } }
+  .mg-eclimb { animation: mg-en 3s ease-in-out infinite; }
   @keyframes mg-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
   .mg-win { opacity: 0; animation: mg-winin 5s ease-in-out infinite; }
   @keyframes mg-winin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
@@ -2875,8 +2899,24 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* EIP-1153 — ts-revert: rolled back on revert, cleared at tx end */
   .ts-frame { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); }
   .ts-frame2 { fill: color-mix(in oklab, var(--color-node-leaf) 6%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .ts-undo { opacity: 0; animation: ts-c2in 5s ease-in-out infinite; }
-  .ts-cleared { opacity: 0; animation: ts-c2in 5s ease-in-out 0.3s infinite; }
+  .ts-undo { opacity: 0; animation: tsr-undoin 5s ease-in-out infinite; }
+  @keyframes tsr-undoin { 0%,56% { opacity: 0 } 64%,100% { opacity: 1 } }
+  .ts-cleared { opacity: 0; animation: tsr-clearin 5s ease-in-out infinite; }
+  @keyframes tsr-clearin { 0%,72% { opacity: 0 } 80%,100% { opacity: 1 } }
+  /* the slot value snaps back (9→5) on revert, and flips to 0 at tx end */
+  .tsr-cell { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tsr-wrote, .tsr-during { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; opacity: 0; }
+  .tsr-undone, .tsr-zero { font-family: var(--font-mono); font-size: 12px; text-anchor: middle; opacity: 0; }
+  .tsr-undone { fill: var(--color-node-leaf); }
+  .tsr-zero { fill: var(--color-node-leaf); }
+  .tsr-wrote { animation: tsr-wrote 5s ease-in-out infinite; }
+  @keyframes tsr-wrote { 0%,20% { opacity: 0 } 28% { opacity: 1 } 50% { opacity: 1 } 56% { opacity: 0 } 100% { opacity: 0 } }
+  .tsr-undone { animation: tsr-undone 5s ease-in-out infinite; }
+  @keyframes tsr-undone { 0%,54% { opacity: 0 } 60%,100% { opacity: 1 } }
+  .tsr-during { animation: tsr-during 5s ease-in-out infinite; }
+  @keyframes tsr-during { 0%,20% { opacity: 0 } 28% { opacity: 1 } 66% { opacity: 1 } 72% { opacity: 0 } 100% { opacity: 0 } }
+  .tsr-zero { animation: tsr-zero 5s ease-in-out infinite; }
+  @keyframes tsr-zero { 0%,70% { opacity: 0 } 76%,100% { opacity: 1 } }
 
   /* EIP-4788 — br-blind: the EVM is walled off from CL state */
   .br-cl { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
@@ -2938,11 +2978,21 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ga-dos { animation: ga-en 4s ease-in-out infinite; }
   @keyframes ga-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
 
-  /* EIP-2929 — ga-raise: a flat-high price overcharges repeats */
-  .ga-acc { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); animation: ga-accp 4s ease-in-out infinite; }
-  @keyframes ga-accp { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
-  .ga-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .ga-ra { opacity: 0.5; }
+  /* EIP-2929 — ga-raise: charged 2100 vs real cost, the overcharge shown as a red gap (5s) */
+  .ga-rlbl { fill: var(--color-ink-muted); }
+  .ga-chlbl { fill: var(--color-changed); }
+  .ga-charged { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ga-real { fill: color-mix(in oklab, var(--color-node-leaf) 44%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; }
+  .ga-real0 { animation: ga-diskfill 5s ease-in-out infinite; }
+  .ga-real1 { animation: ga-cachefill 5s ease-out 0.4s infinite; }
+  .ga-real2 { animation: ga-cachefill 5s ease-out 0.8s infinite; }
+  @keyframes ga-diskfill { 0% { transform: scaleX(0) } 40% { transform: scaleX(1) } 100% { transform: scaleX(1) } }
+  @keyframes ga-cachefill { 0% { transform: scaleX(0) } 8% { transform: scaleX(1) } 100% { transform: scaleX(1) } }
+  .ga-over { fill: color-mix(in oklab, var(--color-changed) 44%, var(--color-surface)); opacity: 0; }
+  .ga-over1 { animation: ga-overin 5s ease-in-out 0.4s infinite; }
+  .ga-over2 { animation: ga-overin 5s ease-in-out 0.8s infinite; }
+  @keyframes ga-overin { 0%,16% { opacity: 0 } 30% { opacity: 0.75 } 45% { opacity: 0.4 } 60% { opacity: 0.75 } 100% { opacity: 0.6 } }
+  .ga-leg1 { font-size: 9px; } .ga-leg2 { font-size: 9px; }
 
   /* EIP-2929 — ga-coldwarm: cold first touch, warm repeats, access set */
   .ga-first { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); animation: ga-firstp 5s ease-in-out infinite; }
@@ -2971,12 +3021,14 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mb-load { animation: mb-en 4s ease-in-out infinite; }
   @keyframes mb-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
 
-  /* EIP-7251 — mb-raise: 32 → 2048 */
-  .mb-bar { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .mb-old { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .mb-new { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mb-newin 5s ease-in-out infinite; }
-  .mb-newt { opacity: 0; animation: mb-newin 5s ease-in-out infinite; }
-  @keyframes mb-newin { 0%,20% { opacity: 0 } 40%,100% { opacity: 1 } }
+  /* EIP-7251 — mb-raise: the earning bar grows 32 → 2048 in one motion (5s) */
+  .mb-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .mb-grow { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mb-grow 5s ease-in-out infinite; }
+  @keyframes mb-grow { 0%,15% { transform: scaleX(0.12) } 60%,100% { transform: scaleX(1) } }
+  .mb-32mark { stroke: var(--color-node-extension); stroke-width: 1.4; stroke-dasharray: 3 2; }
+  .mb-32lbl { fill: var(--color-node-extension); }
+  .mb-2048lbl { opacity: 0; animation: mb-2048in 5s ease-in-out infinite; }
+  @keyframes mb-2048in { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
 
   /* EIP-7251 — mb-consolidate: merge small validators into one */
   .mb-small { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
@@ -3111,8 +3163,12 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes st-draw { 0%,10% { stroke-dashoffset: 52 } 30%,100% { stroke-dashoffset: 0 } }
   .st-hash { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
   .st-root { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); }
-  .st-roothex { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: st-roothex 6s ease-in-out infinite; }
-  @keyframes st-roothex { 0%,58% { fill: var(--color-accent-strong) } 66%,88% { fill: var(--color-changed) } 100% { fill: var(--color-accent-strong) } }
+  .st-roothex { font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  /* the root hex literally flips to a different value when a leaf is tampered (6s) */
+  .st-rootorig { fill: var(--color-accent-strong); animation: st-rootorig 6s ease-in-out infinite; }
+  @keyframes st-rootorig { 0%,58% { opacity: 1 } 65%,88% { opacity: 0 } 94%,100% { opacity: 1 } }
+  .st-roottamp { fill: var(--color-changed); opacity: 0; animation: st-roottamp 6s ease-in-out infinite; }
+  @keyframes st-roottamp { 0%,60% { opacity: 0 } 66%,88% { opacity: 1 } 93%,100% { opacity: 0 } }
   .st-flip { opacity: 0; animation: st-flip 6s ease-in-out infinite; }
   @keyframes st-flip { 0%,56% { opacity: 0 } 66%,90% { opacity: 1 } 100% { opacity: 0 } }
 
@@ -3235,14 +3291,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes tw-crawl { 0% { transform: scaleX(0.04) } 100% { transform: scaleX(1) } }
   .tw-stall { animation: dc-dup 3s ease-in-out infinite; }
 
-  /* ── Tangerine Whistle — tw-reprice: raise IO opcode costs ── */
-  .tw-colh { fill: var(--color-ink-faint); }
-  .tw-rrow { opacity: 0; animation: tw-rowin 5s ease-out infinite; }
-  @keyframes tw-rowin { 0%,8% { opacity: 0 } 24%,100% { opacity: 1 } }
-  .tw-before { fill: var(--color-ink-faint); }
-  .tw-after { fill: var(--color-node-leaf); }
-  .tw-up { stroke-dasharray: 130; stroke-dashoffset: 130; animation: tw-updraw 5s ease-out infinite; }
-  @keyframes tw-updraw { 0%,12% { stroke-dashoffset: 130 } 40%,100% { stroke-dashoffset: 0 } }
+  /* ── Tangerine Whistle — tw-reprice: each price bar grows old → real cost (5s) ── */
+  @keyframes tw-rowin { 0%,8% { opacity: 0 } 24%,100% { opacity: 1 } }  /* kept: used by rev-revert */
+  .tw-bef { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 10px; }
+  .tw-barbg { fill: var(--color-surface); stroke: var(--color-border); }
+  .tw-bar { fill: color-mix(in oklab, var(--color-node-leaf) 42%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: tw-grow 5s ease-out infinite; }
+  .tw-bar0 { animation-delay: 0s; } .tw-bar1 { animation-delay: 0.2s; } .tw-bar2 { animation-delay: 0.4s; } .tw-bar3 { animation-delay: 0.6s; }
+  @keyframes tw-grow { 0%,10% { transform: scaleX(var(--frac)) } 55%,100% { transform: scaleX(1) } }
+  .tw-aft { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; opacity: 0; }
+  .tw-aft0 { animation: tw-aftin 5s ease-out infinite; } .tw-aft1 { animation: tw-aftin 5s ease-out 0.2s infinite; }
+  .tw-aft2 { animation: tw-aftin 5s ease-out 0.4s infinite; } .tw-aft3 { animation: tw-aftin 5s ease-out 0.6s infinite; }
+  @keyframes tw-aftin { 0%,46% { opacity: 0 } 58%,100% { opacity: 1 } }
 
   /* ── Tangerine Whistle — tw-6364: gas splits, 63/64 drains, 1/64 survives (6s) ── */
   .tw-glbl { fill: var(--color-ink-faint); }

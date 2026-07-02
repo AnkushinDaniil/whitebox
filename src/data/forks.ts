@@ -267,7 +267,7 @@ export const FORKS: Fork[] = [
     eips: [
       { eip: "2537", title: "BLS12-381 precompiles", category: "execution", slug: "eip-2537-bls-precompiles" },
       { eip: "2935", title: "Historical block hashes in state", category: "execution" },
-      { eip: "6110", title: "On-chain validator deposits", category: "consensus" },
+      { eip: "6110", title: "On-chain validator deposits", category: "consensus", slug: "eip-6110-onchain-deposits" },
       { eip: "7002", title: "EL-triggerable withdrawals", category: "consensus", slug: "eip-7002-el-withdrawals" },
       { eip: "7251", title: "Increase MAX_EFFECTIVE_BALANCE", category: "consensus", slug: ours("eip-7251-max-effective-balance") },
       { eip: "7549", title: "Move committee index out of attestation", category: "consensus" },

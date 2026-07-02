@@ -1,0 +1,99 @@
+---
+title: "EIP-6110: putting validator deposits in the block"
+dek: "To become a validator you deposit 32 ETH to a contract on the execution layer — but the consensus layer used to learn about that deposit by polling and voting on the contract's state, a fragile 'eth1 voting' dance that added ~12 hours before activation. EIP-6110 puts deposits directly in the block, so the consensus layer just reads them."
+summary: "A step-by-step derivation of EIP-6110 (validator deposits on chain), shipped in Prague/Electra (May 2025). Why the pre-merge deposit flow was slow and fragile — the consensus layer discovered deposits by polling the execution-layer deposit contract and voting on its state ('eth1 data' voting) with a long follow distance, delaying validator activation by roughly half a day — and how EIP-6110 instead includes deposit events directly in the execution block as a new request type, so the consensus layer reads them from the very block it is already processing, no polling and no voting; the payoff is activation time collapsing from hours to minutes, retirement of the fragile eth1-voting mechanism, and deposits joining withdrawals and consolidations in one uniform 'execution-layer request → consensus layer processes' framework."
+topic: EIPs
+order: 32
+spine: true
+prerequisites: ["the Merge & the beacon chain", "EIP-7002 (EL-triggerable withdrawals)"]
+updated: 2026-07-02
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Prague / Electra, May 2025.** Becoming a validator starts with a simple act: deposit 32 ETH to the **deposit contract** — an ordinary contract on the [execution layer](/the-evm). But the [consensus layer](/how-consensus-runs) doesn't execute that contract; it runs a *different* machine. So how does it find out a deposit happened? For years the answer was a surprisingly baroque one — the consensus layer **watched** the deposit contract from the outside, polling its state and having validators *vote* on what they saw. That worked, but it was slow and brittle, and after [the Merge](/eip-3675-the-merge) fused the two layers into one block, it made no sense at all. **EIP-6110** removes the middleman. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Watching from outside" },
+  { id: "step-2", label: "Put deposits in the block" },
+  { id: "step-3", label: "Activation in minutes" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Watching from outside">
+
+## The problem: the consensus layer polled and voted
+
+The deposit lives on the execution layer, but only the consensus layer can register a new validator. Pre-6110, it bridged that gap with <KeyTerm term="eth1 voting" def="The mechanism by which the beacon chain learned execution-layer state before EIP-6110: validators observed the deposit contract at a safe 'follow distance' behind the head and voted, over a voting period, on the deposit-contract state to adopt. Robust against reorgs, but slow and complex." />: validators observed the deposit contract at a conservative **follow distance** behind the chain head — far enough back that a reorg couldn't retract it — and then *voted*, over a voting period, on which deposit-contract state to accept. Only once that vote concluded were the deposits admitted and the validators queued for activation. The follow distance plus the voting period added up to roughly **half a day** of latency before the chain even acknowledged your deposit.
+
+<Scene name="dp-poll" caption="Before EIP-6110, the consensus layer learned about deposits by polling the execution-layer deposit contract and voting on its state ('eth1 voting'), waiting a long follow distance so a reorg couldn't retract them. Robust, but ~12+ hours of latency and a fragile mechanism — needless indirection now that the two layers share a block." />
+
+<Callout type="warning" title="What breaks">
+Nothing is *wrong* per se — deposits do get processed. But it's slow (a proposer knows the block; why wait hours to vote on it?), and the eth1-voting machinery is a fragile, consensus-critical subsystem. After the Merge, execution and consensus are produced together in one block. Why watch a contract from the outside when its events are right there in the block you're already processing?
+</Callout>
+
+**→ Step 2: stop watching — read the deposits straight out of the block.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Put deposits in the block">
+
+## EIP-6110: deposits become a block request
+
+The fix is to make the deposit part of the block itself. When the deposit contract emits a deposit, EIP-6110 has the execution client collect those events and include them in the block as a new <KeyTerm term="deposit request" def="A deposit event surfaced directly in the execution block (as part of the block's requests). The consensus layer reads deposits from the block it already processes, instead of polling the deposit contract and voting on its state." /> — part of the block's **requests** list. The consensus layer, which already ingests and validates every execution block, now simply **reads the deposits out of it**. No polling, no follow distance, no vote. Because a deposit is only in the block if the block is valid, and the block is only canonical once finalized, reorg safety comes for free from ordinary consensus — the very thing eth1 voting was hand-rolling.
+
+<Scene name="dp-inblock" caption="EIP-6110 surfaces deposit events directly in the execution block as 'deposit requests'. The consensus layer reads them from the block it already processes — no polling, no eth1 voting. It's the same 'execution-layer request → consensus layer processes' pattern as EIP-7002's withdrawals." />
+
+<SpecExcerpt
+  source="EIP-6110: Supply validator deposits on chain"
+  href="https://eips.ethereum.org/EIPS/eip-6110"
+  ref="the request"
+>
+Deposits are supplied to the beacon chain via the execution block, as a list of deposit
+requests, rather than being discovered through the eth1 deposit-contract voting mechanism.
+This removes the deposit-following delay and deprecates eth1 data voting for deposits.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks for the depositor — the deposit contract and the 32-ETH flow are unchanged. What changes is *how* the consensus layer hears about it: from the block, not from a vote. The eth1-voting subsystem for deposits can now be retired.
+</Callout>
+
+**→ Step 3: the deposit is recognized almost immediately.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Activation in minutes">
+
+## The payoff: fast activation, one uniform flow
+
+Because a deposit is now processed the moment its block is, the long eth1-voting delay disappears: recognition drops from **hours to minutes** (activation still passes through the validator **activation queue**, but the *discovery* latency is gone). Just as important, EIP-6110 deletes a fragile, consensus-critical subsystem — one fewer thing that can break the chain. And it slots deposits into the same <KeyTerm term="execution-layer request" def="A uniform mechanism (EIP-7685) where the execution layer emits typed requests in the block — deposits (6110), withdrawals (7002), and consolidations (7251) — that the consensus layer reads and acts on. One framework replaces several bespoke bridges between the layers." /> framework as [EIP-7002 withdrawals](/eip-7002-el-withdrawals) and [EIP-7251 consolidations](/eip-7251-max-effective-balance): deposits *in*, withdrawals *out*, consolidations *within* — all flowing through the block as requests, all read by the consensus layer the same way.
+
+<Scene name="dp-fast" caption="With deposits in the block, discovery latency collapses from ~12+ hours to minutes, and the fragile eth1-voting mechanism is retired. Deposits, withdrawals (7002), and consolidations (7251) now all flow through the block as execution-layer requests — one uniform bridge between the layers." />
+
+<Callout type="insight" title="And that is EIP-6110">
+You deposit 32 ETH to a contract on the execution layer, but only the consensus layer can register a validator → pre-merge it bridged the gap by **polling the deposit contract and voting on its state** (eth1 voting) at a long follow distance, adding ~12+ hours and a fragile subsystem → EIP-6110 instead puts **deposit requests directly in the block**, so the consensus layer reads them from the block it already processes → **activation latency collapses to minutes**, the eth1-voting mechanism is retired, and deposits join withdrawals and consolidations in one uniform **execution-layer-request** framework. The Merge merged block *production*; EIP-6110 finishes the job by merging how the two layers *communicate* — the outside-in watcher becomes an inside-the-block read.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-6110: Supply validator deposits on chain", note: "The spec — deposits as block requests", href: "https://eips.ethereum.org/EIPS/eip-6110" },
+    { kind: "eip", label: "EIP-7685: General purpose execution layer requests", note: "The request framework 6110/7002/7251 share", href: "https://eips.ethereum.org/EIPS/eip-7685" },
+    { kind: "post", label: "EIP-7002 — EL-triggerable withdrawals", note: "The exit half of the same request pattern", href: "/eip-7002-el-withdrawals" },
+    { kind: "post", label: "EIP-3675 — the Merge", note: "Why the two layers now share a block", href: "/eip-3675-the-merge" },
+    { kind: "post", label: "How consensus runs", note: "The activation queue a deposit joins", href: "/how-consensus-runs" },
+  ]}
+/>
+
+</DepthLayer>

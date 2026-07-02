@@ -143,7 +143,10 @@ interface Props {
     | "pr-caveat"
     | "bls-gap"
     | "bls-precompile"
-    | "bls-use";
+    | "bls-use"
+    | "dp-poll"
+    | "dp-inblock"
+    | "dp-fast";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2768,6 +2771,57 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-ok bls-align" x="240" y="168" text-anchor="middle">{L("the EVM and the consensus layer finally share a curve")}</text>
       </svg>
     )}
+
+    {/* ── EIP-6110: the CL learned about deposits by polling + voting ── */}
+    {name === "dp-poll" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="Before EIP-6110 the consensus layer learned about deposits by polling and voting on the deposit contract, adding a long delay">
+        <text class="t-cap" x="240" y="20">{L("deposit 32 ETH to become a validator")}</text>
+        <rect class="dp-dc" x="24" y="44" width="150" height="52" rx="8" />
+        <text class="t-cap" x="99" y="64">{L("deposit contract")}</text>
+        <text class="t-fld dp-c" x="99" y="82">{L("on the execution layer")}</text>
+        <path class="sarrow dp-poll1" d="M174 70 H240" /><text class="t-cap dp-pl" x="207" y="62">{L("poll + vote")}</text>
+        <rect class="dp-cl" x="240" y="44" width="216" height="52" rx="8" />
+        <text class="t-cap" x="348" y="64">{L("consensus layer")}</text>
+        <text class="t-fld dp-c2" x="348" y="82">{L("eth1 voting · follow distance")}</text>
+        <text class="t-x dp-slow" x="240" y="132" text-anchor="middle">{L("~12+ hours before the validator is even recognized")}</text>
+        <text class="t-cap" x="240" y="160" text-anchor="middle">{L("a fragile voting dance to watch a contract on the same chain")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("needless indirection now that the two layers are merged")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-6110: put deposits in the block; the CL just reads them ── */}
+    {name === "dp-inblock" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="EIP-6110 includes deposits directly in the execution block so the consensus layer reads them without polling">
+        <text class="t-cap" x="240" y="20">{L("put deposits right in the block the CL already reads")}</text>
+        <rect class="dp-block" x="120" y="38" width="240" height="70" rx="8" />
+        <text class="t-cap" x="240" y="56">{L("execution block")}</text>
+        <rect class="dp-txs" x="134" y="64" width="212" height="16" rx="3" />
+        <text class="t-fld dp-bt" x="240" y="76">transactions</text>
+        <rect class="dp-deps" x="134" y="84" width="212" height="16" rx="3" />
+        <text class="t-fld dp-bt dp-depsl" x="240" y="96">deposit requests</text>
+        <path class="sarrow dp-a2" d="M240 108 V134" />
+        <rect class="dp-clbox" x="150" y="136" width="180" height="30" rx="6" />
+        <text class="t-ok dp-clt" x="240" y="155">{L("CL reads them from the block")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("no polling, no eth1 voting — same 'EL request → CL processes' pattern")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-6110: activation drops from hours to minutes ── */}
+    {name === "dp-fast" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="Validator activation drops from many hours to minutes with in-block deposits">
+        <text class="t-cap" x="240" y="20">{L("activation time collapses")}</text>
+        <text class="t-fld dp-wl" x="24" y="58" text-anchor="start">{L("before")}</text>
+        <rect class="dp-track" x="90" y="46" width="360" height="20" rx="4" />
+        <rect class="dp-wbefore" x="90" y="46" width="360" height="20" rx="4" />
+        <text class="t-x dp-bl" x="446" y="61" text-anchor="end">~12+ hours</text>
+        <text class="t-fld dp-wl" x="24" y="98" text-anchor="start">{L("after")}</text>
+        <rect class="dp-track" x="90" y="86" width="360" height="20" rx="4" />
+        <rect class="dp-wafter" x="90" y="86" width="360" height="20" rx="4" />
+        <text class="t-ok dp-al" x="118" y="101" text-anchor="start">minutes</text>
+        <text class="t-ok dp-simpl" x="240" y="142" text-anchor="middle">{L("faster activation · the fragile eth1-voting mechanism retired")}</text>
+        <text class="t-cap" x="240" y="166" text-anchor="middle">{L("deposits, withdrawals, and consolidations now all flow the same way")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4569,4 +4623,34 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .bls-usebox1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .bls-uc { text-anchor: middle; fill: var(--color-ink-faint); }
   .bls-align { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-6110 — dp-poll: the CL polled+voted on the deposit contract ── */
+  .dp-dc { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .dp-cl { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .dp-c { text-anchor: middle; fill: var(--color-ink-faint); }
+  .dp-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
+  .dp-poll1 { stroke-dasharray: 6 6; animation: dp-trudge 5s linear infinite; }
+  @keyframes dp-trudge { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+  .dp-pl { text-anchor: middle; fill: var(--color-changed); }
+  .dp-slow { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-6110 — dp-inblock: deposits ride inside the block ── */
+  .dp-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .dp-txs { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .dp-deps { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .dp-bt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .dp-depsl { fill: var(--color-node-leaf); }
+  .dp-a2 { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+  .dp-clbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+  .dp-clt { text-anchor: middle; }
+
+  /* ── EIP-6110 — dp-fast: activation time collapses ── */
+  .dp-wl { fill: var(--color-ink-faint); }
+  .dp-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .dp-wbefore { fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)); stroke: var(--color-changed); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  @keyframes dp-fill { 0% { transform: scaleX(0); } 60%, 100% { transform: scaleX(1); } }
+  .dp-bl { fill: var(--color-changed); }
+  .dp-wafter { fill: color-mix(in oklab, var(--color-node-leaf) 55%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; transform: scaleX(0.03); }
+  .dp-al { fill: var(--color-node-leaf); }
+  .dp-simpl { opacity: 0; animation: dc-late 5s ease-in-out 0.5s infinite; }
 </style>

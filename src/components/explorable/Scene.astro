@@ -104,7 +104,10 @@ interface Props {
     | "tw-6364"
     | "rev-throw"
     | "rev-revert"
-    | "rev-catch";
+    | "rev-catch"
+    | "cr-nonce"
+    | "cr-create2"
+    | "cr-counterfactual";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2001,6 +2004,69 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("this is what require(reason), custom errors, and try/catch are built on")}</text>
       </svg>
     )}
+
+    {/* ── CREATE2: CREATE's address depends on the nonce — unpredictable ── */}
+    {name === "cr-nonce" && (
+      <svg viewBox="0 0 480 196" role="img" aria-label="With CREATE, a contract's address depends on the sender's nonce, so it changes with every deploy">
+        <text class="t-cap" x="240" y="20">{L("CREATE: address = keccak(sender, nonce)[12:]")}</text>
+        <rect class="cr-dep" x="24" y="44" width="120" height="52" rx="8" />
+        <text class="t-cap" x="84" y="66">{L("deployer")}</text>
+        <text class="t-fld cr-nonceval" x="84" y="84">nonce = 5 → 6 → 7</text>
+        <path class="sarrow cr-a1" d="M144 70 H196" />
+        <rect class="cr-kec" x="196" y="52" width="76" height="36" rx="7" />
+        <text class="t-cap" x="234" y="74">keccak</text>
+        <path class="sarrow cr-a2" d="M272 70 H324" />
+        {[["0x4b2…", 0], ["0x9f1…", 1], ["0xc07…", 2]].map(([addr, i]) => (
+          <text class={`t-addr cr-addr cr-addr${i}`} x="392" y="74">{addr}</text>
+        ))}
+        <text class="t-x cr-unknow" x="240" y="130" text-anchor="middle">{L("the nonce ticks every deploy → the address keeps changing")}</text>
+        <text class="t-cap" x="240" y="158" text-anchor="middle">{L("so you can't know a contract's address before you deploy it")}</text>
+        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("and once it's used, you can't redeploy to the same address")}</text>
+      </svg>
+    )}
+
+    {/* ── CREATE2: address from sender + salt + init code — no nonce ── */}
+    {name === "cr-create2" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="CREATE2 derives the address from the sender, a chosen salt, and the init code — no nonce">
+        <text class="t-cap" x="240" y="20">{L("CREATE2: drop the nonce, use inputs you control")}</text>
+        {[["sender", "0xYou", 0], ["salt", "your choice", 1], ["init code", "the bytecode", 2]].map(([lbl, val, i]) => (
+          <g class={`cr-in cr-in${i}`}>
+            <rect x="24" y={40 + Number(i) * 46} width="150" height="36" rx="6" />
+            <text class="t-cap" x="99" y={58 + Number(i) * 46}>{L(lbl)}</text>
+            <text class="t-fld cr-inv" x="99" y={73 + Number(i) * 46}>{val}</text>
+          </g>
+        ))}
+        <path class="sarrow cr-b1" d="M174 58 L232 96" />
+        <path class="sarrow cr-b2" d="M174 108 H232" />
+        <path class="sarrow cr-b3" d="M174 158 L232 120" />
+        <rect class="cr-kec" x="232" y="90" width="80" height="36" rx="7" />
+        <text class="t-cap" x="272" y="112">keccak</text>
+        <path class="sarrow cr-b4" d="M312 108 H360" />
+        <rect class="cr-det" x="360" y="90" width="104" height="36" rx="7" />
+        <text class="t-addr cr-detaddr" x="412" y="112">0x71c…</text>
+        <text class="t-ok cr-now" x="240" y="184" text-anchor="middle">{L("no nonce → the same inputs always give the same address, computable now")}</text>
+      </svg>
+    )}
+
+    {/* ── CREATE2: use & fund the address before the contract exists ── */}
+    {name === "cr-counterfactual" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Compute the address ahead, fund it while empty, then deploy the contract into exactly that address">
+        <text class="t-cap" x="240" y="18">{L("counterfactual: use the address before the contract exists")}</text>
+        <rect class="cr-slot" x="180" y="44" width="120" height="120" rx="10" />
+        <text class="t-addr cr-slotaddr" x="240" y="40" text-anchor="middle">0x71c…</text>
+
+        <text class="t-cap cr-s1" x="240" y="72" text-anchor="middle">{L("① address computed")}</text>
+        <text class="t-fld cr-s1b" x="240" y="88" text-anchor="middle">{L("(no code yet)")}</text>
+
+        <text class="t-ok cr-s2" x="240" y="112" text-anchor="middle">{L("② funded: 5 ETH")}</text>
+        <text class="t-fld cr-s2b" x="240" y="128" text-anchor="middle">{L("sent to an empty address")}</text>
+
+        <rect class="cr-deployed" x="192" y="138" width="96" height="20" rx="4" />
+        <text class="t-cap cr-s3" x="240" y="152" text-anchor="middle">{L("③ contract deployed")}</text>
+
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("CREATE2 lands the contract at exactly that address — already funded")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3365,4 +3431,47 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .rv-cl { fill: var(--color-ink-faint); }
   .rv-cl2 { fill: var(--color-changed); }
   .rv-catchl { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── CREATE2 — cr-nonce: the address keeps changing with the nonce ── */
+  .cr-dep { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .cr-nonceval { text-anchor: middle; fill: var(--color-changed); animation: cr-tick 1.5s ease-in-out infinite; }
+  @keyframes cr-tick { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
+  .cr-kec { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .cr-a1, .cr-a2 { stroke-dasharray: 54; stroke-dashoffset: 54; animation: st-draw 4s ease-in-out infinite; }
+  .cr-addr { text-anchor: middle; opacity: 0; }
+  .cr-addr0 { animation: cr-cyc0 1.5s steps(1) infinite; }
+  .cr-addr1 { animation: cr-cyc1 1.5s steps(1) infinite; }
+  .cr-addr2 { animation: cr-cyc2 1.5s steps(1) infinite; }
+  @keyframes cr-cyc0 { 0%,32% { opacity: 1 } 34%,100% { opacity: 0 } }
+  @keyframes cr-cyc1 { 0%,33% { opacity: 0 } 34%,65% { opacity: 1 } 67%,100% { opacity: 0 } }
+  @keyframes cr-cyc2 { 0%,66% { opacity: 0 } 67%,99% { opacity: 1 } 100% { opacity: 0 } }
+  .cr-unknow { animation: cr-tick 3s ease-in-out infinite; }
+
+  /* ── CREATE2 — cr-create2: deterministic inputs → one stable address ── */
+  .cr-in rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .cr-in { opacity: 0; }
+  .cr-in0 { animation: cr-inin 5s ease-out infinite; }
+  .cr-in1 { animation: cr-inin 5s ease-out 0.2s infinite; }
+  .cr-in2 { animation: cr-inin 5s ease-out 0.4s infinite; }
+  @keyframes cr-inin { 0%,6% { opacity: 0 } 20%,100% { opacity: 1 } }
+  .cr-inv { text-anchor: middle; fill: var(--color-accent-strong); }
+  .cr-b1, .cr-b2, .cr-b3 { stroke-dasharray: 80; stroke-dashoffset: 80; animation: cr-bdraw 5s ease-in-out infinite; }
+  .cr-b2 { animation-delay: 0.2s; } .cr-b3 { animation-delay: 0.4s; }
+  @keyframes cr-bdraw { 0%,30% { stroke-dashoffset: 80 } 50%,100% { stroke-dashoffset: 0 } }
+  .cr-b4 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: cr-bdraw 5s ease-in-out 0.5s infinite; }
+  .cr-det { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  .cr-detaddr { text-anchor: middle; opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  @keyframes cr-detin { 0%,58% { opacity: 0 } 70% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-node-leaf)) } 80% { filter: none } 100% { opacity: 1 } }
+  .cr-now { opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+
+  /* ── CREATE2 — cr-counterfactual: address known → funded → deployed (6s) ── */
+  .cr-slot { fill: color-mix(in oklab, var(--color-accent) 4%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-dasharray: 5 3; }
+  .cr-slotaddr { text-anchor: middle; }
+  .cr-s1, .cr-s1b { opacity: 0; animation: cr-p1 6s ease-in-out infinite; }
+  @keyframes cr-p1 { 0%,6% { opacity: 0 } 16%,100% { opacity: 1 } }
+  .cr-s2, .cr-s2b { opacity: 0; animation: cr-p2 6s ease-in-out infinite; }
+  @keyframes cr-p2 { 0%,34% { opacity: 0 } 44%,100% { opacity: 1 } }
+  .cr-deployed { fill: color-mix(in oklab, var(--color-node-leaf) 18%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-p3 6s ease-in-out infinite; }
+  .cr-s3 { opacity: 0; animation: cr-p3 6s ease-in-out infinite; }
+  @keyframes cr-p3 { 0%,62% { opacity: 0 } 74% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-node-leaf)) } 84% { filter: none } 100% { opacity: 1 } }
 </style>

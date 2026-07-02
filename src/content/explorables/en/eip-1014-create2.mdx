@@ -1,0 +1,111 @@
+---
+title: "EIP-1014: CREATE2 — knowing an address before the contract exists"
+dek: "A contract's address used to be derived from the deployer's nonce — a counter that changes with every deployment, so you could never predict where a contract would land. CREATE2 derives the address from the deployer, a salt you choose, and the code itself: no nonce. Now you can compute an address, fund it, and hand it out before the contract is deployed at all."
+summary: "A step-by-step derivation of EIP-1014 (CREATE2), shipped in Constantinople (February 2019). Why the original CREATE opcode derives a contract's address from keccak(sender, nonce) — making the address unpredictable (the nonce ticks with every deploy) and un-reusable; how CREATE2 instead computes the address as keccak256(0xff ‖ sender ‖ salt ‖ keccak256(init_code))[12:], depending only on the deployer, a chosen salt, and the init code — no nonce, so the same inputs always yield the same address and it can be computed before deployment; and what that unlocks: counterfactual deployment (fund and use an address before its contract exists — state channels, lazily-deployed wallets, account-abstraction addresses), deterministic factories, and the metamorphic-contract footgun of redeploying different code at the same address."
+topic: EIPs
+order: 19
+spine: true
+prerequisites: ["contract creation & addresses", "keccak256"]
+updated: 2026-06-24
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+
+**Constantinople, February 2019.** Among its opcodes was one that reads like a footnote — a second way to create a contract — but it quietly unlocked counterfactual wallets, state channels, deterministic factories, and much of how account abstraction assigns addresses. The problem it solves is a chicken-and-egg riddle: *can you know a contract's address before you've deployed it?* With the original `CREATE`, the answer was no, and that "no" blocked a whole class of designs. **EIP-1014** is `CREATE2`, and it turns that "no" into "yes." Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The nonce makes it unknowable" },
+  { id: "step-2", label: "Derive it from your inputs" },
+  { id: "step-3", label: "Use the address early" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The nonce makes it unknowable">
+
+## The problem: CREATE's address depends on the nonce
+
+When a contract (or account) deploys another with the original `CREATE`, the new contract's address is `keccak256(rlp(sender, nonce))[12:]` — a hash of *who* deployed it and their <KeyTerm term="nonce" def="A per-account counter: for an EOA it's the number of transactions sent; for a contract it's the number of contracts it has created. It increments with every deployment, so it's different each time and depends on ordering." />. The nonce is the catch: it ticks up with every deployment, so the same deployer creating two contracts gets two different, order-dependent addresses. You cannot compute the address ahead of time unless you know exactly how many contracts the deployer will have made first — and once a contract lives at an address, its nonce has moved on, so you can never put another there.
+
+<Scene name="cr-nonce" caption="CREATE derives the address from the deployer and its nonce, and the nonce increments on every deployment — so the resulting address keeps changing and can't be known in advance. It also means an address, once used, can't be reused." />
+
+<Callout type="warning" title="What breaks">
+Lots of designs want to *commit to an address before the code is live*: give someone a wallet address that will only be deployed when they first use it, or a channel address both parties fund up front. The nonce makes that impossible — the address isn't determined until the deploy actually happens. We need an address that depends only on things we can fix in advance.
+</Callout>
+
+**→ Step 2: replace the nonce with inputs you control.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Derive it from your inputs">
+
+## CREATE2: address from sender, salt, and code
+
+<KeyTerm term="CREATE2" def="The Constantinople opcode (0xf5) that deploys a contract at an address derived from the deployer, a caller-chosen salt, and the init code — deterministically, with no dependence on the nonce." /> drops the nonce entirely and derives the address from three things you can decide ahead of time: the **deployer**, a <KeyTerm term="salt" def="A 32-byte value the deployer chooses freely, mixed into the CREATE2 address derivation. Varying the salt yields a different address for the same code; fixing it makes the address reproducible." /> you pick, and the **init code** (the exact bytecode being deployed). Because none of these is a moving counter, the same inputs always produce the same address — and, crucially, you can compute it *without deploying anything*.
+
+<Scene name="cr-create2" caption="CREATE2 hashes the deployer, a chosen salt, and the init code — no nonce anywhere. Fix those three and the address is fixed too, so anyone can compute exactly where the contract will live before it's deployed." />
+
+<Formula
+  expr="address = keccak256( 0xff ‖ sender ‖ salt ‖ keccak256(init_code) )[12:]"
+  terms={[
+    { t: "0xff", note: "a constant prefix that keeps CREATE2 addresses from ever colliding with CREATE's" },
+    { t: "sender ‖ salt", note: "the deployer and a value you choose — both known ahead of time" },
+    { t: "keccak256(init_code)", note: "commits to the exact bytecode; change the code and the address changes" },
+  ]}
+  caption="Every input is something you fix in advance — so the address is a pure function you can evaluate before deploying."
+/>
+
+<SpecExcerpt
+  source="EIP-1014: Skinny CREATE2"
+  href="https://eips.ethereum.org/EIPS/eip-1014"
+  ref="address formula"
+>
+Adds `CREATE2` (`0xf5`). The address of the created contract is
+`keccak256(0xff ++ address ++ salt ++ keccak256(init_code))[12:]`, where `salt` is a
+32-byte value from the stack. Unlike `CREATE`, the address does not depend on the
+creator's nonce, so it is deterministic given the sender, salt, and init code.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — but a strange new power appears. If you can compute an address before any code exists there, what can you *do* with an address that points at nothing yet?
+</Callout>
+
+**→ Step 3: use the address before the contract is real.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Use the address early">
+
+## The payoff: counterfactual deployment
+
+Here's the move that CREATE2 makes possible. You compute the address, and then you **use it before deploying** — hand it out, send ETH to it, treat it as real — even though there's no contract there yet. This is <KeyTerm term="counterfactual deployment" def="Computing a contract's CREATE2 address ahead of time and interacting with it (funding it, referencing it) before deploying — then deploying only when needed. The contract's existence is 'counterfactual' until that moment." />. The address can be funded and referenced while it's empty; later, whoever needs it runs `CREATE2` with the same salt and init code, and the contract materializes at *exactly* that address — with the funds already waiting.
+
+<Scene name="cr-counterfactual" caption="Compute the address, fund it and hand it out while it's still empty, then deploy later with the same salt and code — the contract appears at precisely that address, already holding the ETH that was sent to it. The deploy can even be paid for by the first person to use it." />
+
+<Callout type="insight" title="And that is CREATE2">
+CREATE's address depended on the **nonce**, a moving counter, so it was unknowable in advance and un-reusable → CREATE2 derives it from the **deployer, a salt, and the init code** — all fixed ahead of time → so the address becomes a pure function you can compute, fund, and share **before the contract exists**. That single change underwrites **state channels** (fund a shared address, deploy on dispute), **lazily-deployed wallets** (your smart account gets an address immediately, but only deploys code when first used — central to account abstraction), and **deterministic factories** (a known address for a contract on any chain). The sharp edge: because you can put code at a chosen address, and `SELFDESTRUCT` used to free that address, contracts could be **metamorphic** — redeploy *different* code at the *same* address, breaking the assumption that an audited address stays what it was. ([EIP-6780](https://eips.ethereum.org/EIPS/eip-6780) later neutered SELFDESTRUCT, largely closing that trick.) A footnote opcode that quietly reshaped how Ethereum thinks about addresses.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-1014: Skinny CREATE2", note: "The spec — the address formula & opcode", href: "https://eips.ethereum.org/EIPS/eip-1014" },
+    { kind: "post", label: "Chapter 1 — accounts & addresses", note: "How addresses are derived in the first place", href: "/you-could-have-invented-ethereum#step-2" },
+    { kind: "post", label: "EIP-4337, derived", note: "Counterfactual smart-account addresses in practice", href: "/eip-4337-account-abstraction" },
+    { kind: "eip", label: "EIP-6780: SELFDESTRUCT restriction", note: "The change that closed the metamorphic-contract trick", href: "https://eips.ethereum.org/EIPS/eip-6780" },
+    { kind: "tool", label: "CREATE2 address calculator", note: "Compute an address from sender, salt & init code", href: "https://www.evm.codes/" },
+  ]}
+/>
+
+</DepthLayer>

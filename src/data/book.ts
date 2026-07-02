@@ -64,7 +64,14 @@ export const BOOK: BookPart[] = [
       { forkName: "Homestead", date: "Mar 2016", chapters: [{ slug: "eip-7-delegatecall", eip: "7" }] },
       { forkName: "Tangerine Whistle", date: "Oct 2016", chapters: [{ slug: "eip-150-io-repricing", eip: "150" }] },
       { forkName: "Spurious Dragon", date: "Nov 2016", chapters: [{ slug: "eip-155-replay-protection", eip: "155" }] },
-      { forkName: "Byzantium", date: "Oct 2017", chapters: [{ slug: "eip-140-revert", eip: "140" }] },
+      {
+        forkName: "Byzantium",
+        date: "Oct 2017",
+        chapters: [
+          { slug: "eip-140-revert", eip: "140" },
+          { slug: "eip-196-197-bn128-precompiles", eip: "196/197" },
+        ],
+      },
       { forkName: "Constantinople", date: "Feb 2019", chapters: [{ slug: "eip-1014-create2", eip: "1014" }] },
       { forkName: "Istanbul", date: "Dec 2019", chapters: [{ slug: "eip-1344-chainid", eip: "1344" }] },
       {

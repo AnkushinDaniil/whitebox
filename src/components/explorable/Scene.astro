@@ -122,7 +122,10 @@ interface Props {
     | "p0-savings"
     | "sd-danger"
     | "sd-restrict"
-    | "sd-result";
+    | "sd-result"
+    | "zk-cost"
+    | "zk-precompile"
+    | "zk-unlock";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2378,6 +2381,64 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="178" text-anchor="middle">{L("same-tx create-and-destroy still works, so nothing legitimate breaks")}</text>
       </svg>
     )}
+
+    {/* ── EIP-196/197: verifying a SNARK as bytecode is impossibly expensive ── */}
+    {name === "zk-cost" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="Verifying a zero-knowledge proof as EVM bytecode would cost far more than a block's entire gas limit">
+        <text class="t-cap" x="240" y="20">{L("verifying a zk proof needs elliptic-curve pairings")}</text>
+        <rect class="zk-proof" x="30" y="42" width="140" height="48" rx="8" />
+        <text class="t-cap" x="100" y="62">{L("zk proof")}</text>
+        <text class="t-fld zk-pc" x="100" y="80">{L("valid? verify it")}</text>
+        <path class="sarrow zk-a1" d="M170 66 H222" />
+        <rect class="zk-bytecode" x="222" y="42" width="150" height="48" rx="8" />
+        <text class="t-cap" x="297" y="62">{L("pairing in bytecode")}</text>
+        <text class="t-fld zk-pc" x="297" y="80">{L("thousands of ops")}</text>
+        <rect class="zk-gtrack" x="30" y="108" width="330" height="16" rx="4" />
+        <rect class="zk-gfill" x="30" y="108" width="330" height="16" rx="4" />
+        <line class="zk-limit" x1="240" y1="102" x2="240" y2="130" />
+        <text class="zk-limitlbl" x="240" y="140" text-anchor="middle">{L("block gas limit")}</text>
+        <text class="t-x zk-explode" x="380" y="120" text-anchor="start">{L("≫ blows past it")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("hundreds of millions of gas — on-chain proof verification is a non-starter")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-196/197: precompiles run the math natively ── */}
+    {name === "zk-precompile" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Precompiles at reserved addresses run the elliptic-curve math natively for a fixed cheap cost">
+        <text class="t-cap" x="240" y="20">{L("give the EVM native math at reserved addresses")}</text>
+        <rect class="zk-ctr" x="24" y="46" width="140" height="54" rx="8" />
+        <text class="t-cap" x="94" y="68">{L("verifier contract")}</text>
+        <text class="t-fld zk-call" x="94" y="86">CALL 0x08</text>
+        <path class="sarrow zk-a2" d="M164 73 H228" /><text class="t-cap zk-al" x="196" y="65">{L("like a call")}</text>
+        <rect class="zk-pre" x="228" y="38" width="228" height="70" rx="8" />
+        <text class="t-cap" x="342" y="58">{L("precompile · 0x08")}</text>
+        <text class="t-fld zk-pt" x="342" y="76">alt_bn128 pairing</text>
+        <text class="t-ok zk-native" x="342" y="94">{L("native C/Go · fixed cheap gas")}</text>
+        {[["0x06", "ecAdd"], ["0x07", "ecMul"], ["0x08", "ecPairing"]].map(([a, n], i) => (
+          <g><text class="t-fld zk-plist" x={70 + i * 150} y="134" text-anchor="middle">{a} · {n}</text></g>
+        ))}
+        <text class="t-cap" x="240" y="168" text-anchor="middle">{L("the protocol ships the hard crypto natively — priced at its real, low cost")}</text>
+        <text class="t-ok zk-verify" x="240" y="184" text-anchor="middle">{L("now a contract verifies a SNARK in a handful of cheap calls")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-196/197: on-chain SNARK verification unlocks privacy & zk-rollups ── */}
+    {name === "zk-unlock" && (
+      <svg viewBox="0 0 480 178" role="img" aria-label="On-chain proof verification unlocks private transactions and validity rollups">
+        <text class="t-cap" x="240" y="20">{L("on-chain proof verification, cheap enough to use")}</text>
+        <rect class="zk-prefix2" x="196" y="34" width="88" height="34" rx="8" />
+        <text class="t-cap" x="240" y="55">{L("verify SNARK")}</text>
+        <path class="sarrow zk-u1" d="M212 68 L120 98" />
+        <path class="sarrow zk-u2" d="M268 68 L360 98" />
+        <rect class="zk-use zk-use0" x="24" y="100" width="184" height="52" rx="8" />
+        <text class="t-cap" x="116" y="120">{L("private transactions")}</text>
+        <text class="t-fld zk-uc" x="116" y="138">{L("prove validity, hide details")}</text>
+        <rect class="zk-use zk-use1" x="272" y="100" width="184" height="52" rx="8" />
+        <text class="t-cap" x="364" y="120">{L("validity (zk) rollups")}</text>
+        <text class="t-fld zk-uc" x="364" y="138">{L("one proof = a whole batch")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("the pairing precompile seeded on-chain privacy and zk-rollup scaling")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3979,4 +4040,36 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sd-r1 { stroke-dasharray: 76; stroke-dashoffset: 76; animation: st-draw 5s ease-in-out infinite; }
   .sd-nometa { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
   .sd-simpl { opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
+
+  /* ── EIP-196/197 — zk-cost: pairing in bytecode blows past the gas limit ── */
+  .zk-proof { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
+  .zk-pc { text-anchor: middle; fill: var(--color-ink-muted); }
+  .zk-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 5s ease-in-out infinite; }
+  .zk-bytecode { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
+  .zk-gtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .zk-gfill { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: zk-explode 4s ease-in-out infinite; }
+  @keyframes zk-explode { 0% { transform: scaleX(0.05) } 90%,100% { transform: scaleX(1) } }
+  .zk-limit { stroke: var(--color-hash); stroke-width: 1.4; stroke-dasharray: 3 2; }
+  .zk-limitlbl { fill: var(--color-hash); font-family: var(--font-mono); font-size: 9px; }
+  .zk-explode { animation: mg-en 4s ease-in-out infinite; }
+
+  /* ── EIP-196/197 — zk-precompile: native math at reserved addresses ── */
+  .zk-ctr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .zk-call { text-anchor: middle; fill: var(--color-accent-strong); }
+  .zk-a2 { stroke-dasharray: 66; stroke-dashoffset: 66; animation: st-draw 5s ease-in-out infinite; }
+  .zk-al { fill: var(--color-ink-faint); }
+  .zk-pre { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .zk-pt { text-anchor: middle; fill: var(--color-accent-strong); }
+  .zk-native { text-anchor: middle; }
+  .zk-plist { fill: var(--color-ink-muted); }
+  .zk-verify { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-196/197 — zk-unlock: privacy & zk-rollups ── */
+  .zk-prefix2 { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); animation: tt-pulse 5s ease-in-out infinite; }
+  .zk-u1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out infinite; }
+  .zk-u2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out 0.3s infinite; }
+  .zk-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .zk-use0 { animation: tw-rowin 5s ease-out infinite; }
+  .zk-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .zk-uc { text-anchor: middle; fill: var(--color-ink-faint); }
 </style>

@@ -1,0 +1,101 @@
+---
+title: "EIP-196/197: putting zero-knowledge proofs on-chain"
+dek: "Verifying a zk-SNARK means doing elliptic-curve pairing math — thousands of field operations that, written as EVM bytecode, would cost more gas than an entire block holds. EIP-196 and 197 add that math as native precompiles, so a contract can check a proof in a few cheap calls. It's the quiet enabler of on-chain privacy and every validity rollup."
+summary: "A step-by-step derivation of EIP-196 and EIP-197 (the alt_bn128 elliptic-curve precompiles), shipped in Byzantium (October 2017). Why verifying a zk-SNARK on-chain requires elliptic-curve addition, scalar multiplication, and pairing checks that are astronomically expensive as EVM bytecode — far beyond a block's gas limit; and how precompiles solve it: the protocol provides native implementations of these operations on the alt_bn128 curve at reserved addresses (0x06 ecAdd, 0x07 ecMul, 0x08 ecPairing), callable like a contract but priced at their real, low cost — so a verifier contract can check a SNARK in a handful of calls, which seeded on-chain privacy (mixers like Tornado Cash) and validity/zk-rollups (verify one proof for a whole batch of L2 transactions)."
+topic: EIPs
+order: 25
+spine: true
+prerequisites: ["contracts & the EVM", "precompiles (the idea)"]
+updated: 2026-06-24
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Byzantium, October 2017.** The [REVERT chapter](/eip-140-revert) is the change from that fork you feel every day; this is the one that reshaped Ethereum's *future*. It sounds narrow — two opcodes' worth of elliptic-curve arithmetic — but it's what first made **verifying a zero-knowledge proof on-chain** affordable, and from that one capability came private transactions and every validity (zk) rollup. The problem it solves is a brutal cost wall, and the tool it uses — the **precompile** — is one of Ethereum's most important escape hatches. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The math is too expensive" },
+  { id: "step-2", label: "Ship it natively" },
+  { id: "step-3", label: "Proofs on-chain" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The math is too expensive">
+
+## The problem: pairings don't fit in a block
+
+A <KeyTerm term="zk-SNARK" def="A zero-knowledge proof that a statement is true (e.g. 'this batch of transactions is valid') which is tiny and fast to check, revealing nothing else. Verifying one requires elliptic-curve operations — in particular a pairing check." /> is wonderful because it's *small and fast to verify* — but "fast" is relative to the operation it needs: an **elliptic-curve pairing**, plus curve additions and scalar multiplications. Those are heavy number-theory computations over large fields. Written as ordinary EVM bytecode — looping over field arithmetic opcode by opcode — a single verification would run to **hundreds of millions of gas**, far more than an entire block's gas limit. On-chain proof verification simply doesn't fit.
+
+<Scene name="zk-cost" caption="Verifying a zk proof needs elliptic-curve pairings — thousands of field operations. Implemented as EVM bytecode, one verification costs hundreds of millions of gas, blowing past the entire block gas limit. So checking a proof on-chain is a non-starter." />
+
+<Callout type="warning" title="What breaks">
+The EVM is general-purpose but slow; some computations are just too expensive to express as bytecode at any reasonable gas price. We need a way to run *specific*, heavily-used crypto at its true (much lower) cost — without making the EVM itself understand elliptic curves.
+</Callout>
+
+**→ Step 2: let the protocol run the hard part.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Ship it natively">
+
+## Precompiles: native crypto at reserved addresses
+
+The escape hatch is a <KeyTerm term="precompile" def="A built-in operation exposed at a reserved low address (0x01, 0x02, …). It's called exactly like a contract, but instead of running EVM bytecode the client executes an optimized native implementation, priced at a fixed gas cost reflecting its real work." />. Instead of forcing the pairing through the EVM, the protocol provides an optimized native (C/Go) implementation at a **reserved address**, callable like any contract. EIP-196 adds addition and scalar multiplication on the <KeyTerm term="alt_bn128 curve" def="The elliptic curve (also called BN254) whose operations Byzantium made available: ecAdd at 0x06, ecMul at 0x07, and the ecPairing check at 0x08. Chosen because efficient SNARK systems target it." /> (`ecAdd` at `0x06`, `ecMul` at `0x07`), and EIP-197 adds the crucial **pairing check** (`ecPairing` at `0x08`). Each is billed a fixed, modest gas cost matching what the operation actually takes a node — not what it would cost as bytecode.
+
+<Scene name="zk-precompile" caption="A verifier contract CALLs a precompile (e.g. 0x08 for the alt_bn128 pairing) just like calling a contract, but the client runs a fast native implementation and charges a fixed low gas cost. EIP-196 adds ecAdd/ecMul (0x06/0x07); EIP-197 adds the ecPairing check (0x08)." />
+
+<SpecExcerpt
+  source="EIP-197: Precompiled contracts for optimal ate pairing check on bn128"
+  href="https://eips.ethereum.org/EIPS/eip-197"
+  ref="the pairing precompile"
+>
+Adds a precompile at address `0x08` that performs an optimal ate pairing check on the
+alt_bn128 curve: given pairs of points, it returns 1 if the product of pairings equals the
+identity, else 0. Together with the `0x06` (addition) and `0x07` (scalar multiplication)
+precompiles from EIP-196, this makes zk-SNARK verification feasible within block gas
+limits.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — we've just made an impossible computation affordable. The interesting part is what a contract can now *do* once it can check a proof for a few thousand gas.
+</Callout>
+
+**→ Step 3: verify anything, reveal nothing.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Proofs on-chain">
+
+## The payoff: privacy and validity rollups
+
+With the pairing check affordable, a contract can **verify a SNARK in a handful of calls** — and a SNARK can attest to almost anything while revealing nothing beyond "it's true." Two enormous applications grew directly from this. **Privacy**: a mixer contract can accept a proof that *"I own a deposit in this set and haven't withdrawn it"* without revealing *which* deposit, enabling private transfers (the design behind Tornado Cash and Zcash-style schemes). And **scaling**: a <KeyTerm term="validity rollup" def="A layer-2 that executes transactions off-chain and posts a single succinct proof to L1 that the whole batch was valid. The L1 contract verifies the proof — cheaply, thanks to the pairing precompile — instead of re-executing every transaction." /> (zk-rollup) can prove that an entire batch of thousands of L2 transactions was executed correctly, and the L1 contract verifies that *one* proof instead of re-running the batch.
+
+<Scene name="zk-unlock" caption="Once a contract can verify a SNARK cheaply, it can accept a proof that something is true while learning nothing else — powering private transactions (prove validity, hide the details) and validity rollups (one proof stands in for a whole batch of L2 transactions)." />
+
+<Callout type="insight" title="And that is EIP-196/197">
+Verifying a zk-SNARK needs elliptic-curve **pairings**, which as EVM bytecode cost more gas than a block holds → so ship the math **natively**: precompiles at reserved addresses (`0x06` ecAdd, `0x07` ecMul, `0x08` ecPairing on alt_bn128), called like contracts but priced at their real, low cost → now a contract verifies a proof in a few cheap calls. That single capability — **cheap on-chain proof verification** — is the seed of on-chain **privacy** and every **validity (zk) rollup**, and thus a load-bearing pillar of Ethereum's entire scaling roadmap. A pair of "just add some curve math" EIPs turned out to be one of the most consequential things Byzantium ever shipped. (Newer curves and precompiles, like [EIP-2537's BLS12-381](https://eips.ethereum.org/EIPS/eip-2537), continue the pattern.)
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-197: bn128 pairing precompile", note: "The spec — the 0x08 pairing check", href: "https://eips.ethereum.org/EIPS/eip-197" },
+    { kind: "eip", label: "EIP-196: bn128 add & mul", note: "The 0x06 / 0x07 curve precompiles", href: "https://eips.ethereum.org/EIPS/eip-196" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "Why some math is too costly as bytecode", href: "/the-evm" },
+    { kind: "post", label: "EIP-4844, derived", note: "The blob lane that scaled the rollups this enabled", href: "/eip-4844-blobs" },
+    { kind: "tool", label: "evm.codes — precompiles", note: "The reserved-address precompile table", href: "https://www.evm.codes/precompiled" },
+  ]}
+/>
+
+</DepthLayer>

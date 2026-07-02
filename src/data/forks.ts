@@ -96,8 +96,8 @@ export const FORKS: Fork[] = [
     eips: [
       { eip: "100", title: "Average-block-time difficulty", category: "consensus" },
       { eip: "140", title: "REVERT instruction", category: "execution", slug: "eip-140-revert" },
-      { eip: "196", title: "alt_bn128 add/mul precompiles", category: "execution" },
-      { eip: "197", title: "alt_bn128 pairing precompile", category: "execution" },
+      { eip: "196", title: "alt_bn128 add/mul precompiles", category: "execution", slug: "eip-196-197-bn128-precompiles" },
+      { eip: "197", title: "alt_bn128 pairing precompile", category: "execution", slug: "eip-196-197-bn128-precompiles" },
       { eip: "198", title: "Big-integer modexp", category: "execution" },
       { eip: "211", title: "RETURNDATASIZE / RETURNDATACOPY", category: "execution" },
       { eip: "214", title: "STATICCALL", category: "execution" },

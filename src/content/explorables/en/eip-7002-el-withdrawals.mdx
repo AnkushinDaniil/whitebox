@@ -1,0 +1,100 @@
+---
+title: "EIP-7002: letting the owner, not the operator, exit a validator"
+dek: "After the Merge, only a validator's consensus-layer signing key could trigger its exit — but the person who actually owns the stake often holds an execution-layer withdrawal credential, not that key. So a staking pool couldn't force out a rogue operator, and delegated staking rested on trust. EIP-7002 lets the withdrawal-credential holder trigger an exit from the execution layer."
+summary: "A step-by-step derivation of EIP-7002 (execution-layer triggerable exits and withdrawals), shipped in Prague/Electra (May 2025). Why validator exits could originally be initiated only by the validator's active consensus-layer signing key, leaving the execution-layer withdrawal-credential holder — the actual economic owner, often a staking-pool or smart contract — unable to withdraw or force-exit; and how EIP-7002 fixes it: the 0x01/0x02 withdrawal-credential address submits a request to a predeployed withdrawal-request system contract, which the consensus layer reads each block and processes as a partial withdrawal or full exit — using the same 'execution-layer request → system contract → consensus layer acts' pattern as beacon-chain withdrawals — making staking trustless and programmable from the execution layer (a pool can force out a rogue operator), and composing with EIP-7251 and EIP-7702."
+topic: EIPs
+order: 29
+spine: true
+prerequisites: ["beacon-chain withdrawals (4895)", "validators & withdrawal credentials"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Prague / Electra, May 2025.** [EIP-4895](/eip-4895-withdrawals) let staked ETH flow *out* of the consensus layer — but it left a gap in *who controls that flow*. A validator can only be told to exit by its **active signing key** on the consensus layer. Yet the party who actually owns the stake is usually whoever holds the validator's **withdrawal credential**, which points at an execution-layer address — a staking pool's contract, a smart account, a custody setup. Those owners could receive withdrawals but couldn't *initiate* an exit; they had to rely on the operator running the validator to do it. **EIP-7002** closes that gap by letting the execution-layer owner trigger the exit. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Only the key can exit" },
+  { id: "step-2", label: "Ask from the EL" },
+  { id: "step-3", label: "Trustless staking" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Only the key can exit">
+
+## The problem: the owner can't trigger their own exit
+
+A validator has two keys: an active **signing key** (on the consensus layer, used to attest and propose) and a <KeyTerm term="withdrawal credential" def="A value in the validator's record naming where its funds go and who controls withdrawals. A 0x01 (or 0x02) credential points at an execution-layer address — a wallet, a staking-pool contract, a smart account — which is the stake's economic owner." /> naming where the funds go. After the Merge, an **exit** could be initiated *only* by the signing key. But in delegated staking — pools like Lido or Rocket Pool, or any smart-contract staker — the operator holds the signing key while the *owner* holds the withdrawal credential at the execution layer. So the owner could *receive* a withdrawal but couldn't *trigger* one. If a node operator went offline or rogue and refused to exit, the pool had no way to force it and reclaim the stake.
+
+<Scene name="wr-clonly" caption="A validator exits only when its consensus-layer signing key says so. But the stake's real owner holds an execution-layer withdrawal credential, not that key — so a staking pool couldn't force out a rogue operator, and delegated staking rested on trusting the operator to exit." />
+
+<Callout type="warning" title="What breaks">
+The economic owner of the stake (the withdrawal-credential holder, on the execution layer) has no way to control its own funds' exit — it depends on the operator's signing key. For trustless, contract-governed staking, that's backwards. The owner needs a way to trigger an exit from where it actually lives: the execution layer.
+</Callout>
+
+**→ Step 2: let the EL side ask.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Ask from the EL">
+
+## EIP-7002: a request the consensus layer processes
+
+EIP-7002 adds a path from the execution layer to the consensus layer. The withdrawal-credential address submits a <KeyTerm term="withdrawal request" def="A request to partially withdraw or fully exit a validator, submitted by its 0x01/0x02 withdrawal-credential address to a predeployed system contract. The consensus layer reads these each block and processes them." /> to a **predeployed system contract** (the withdrawal-request contract, at a fixed address). Each block, the consensus layer **reads the queued requests** from that contract and processes them — as a partial withdrawal or a full exit — provided they come from the validator's actual withdrawal-credential address. It's the mirror image of [4895's push withdrawals](/eip-4895-withdrawals), and it reuses the same clean pattern: an **execution-layer request goes into a system contract, and the consensus layer acts on it**.
+
+<Scene name="wr-request" caption="The withdrawal-credential address (0x01/0x02) submits a request to a predeployed withdrawal-request contract; the consensus layer reads the queue each block and processes the exit or partial withdrawal. It's the same 'EL request → system contract → CL acts' pattern as beacon-chain withdrawals." />
+
+<SpecExcerpt
+  source="EIP-7002: Execution layer triggerable withdrawals"
+  href="https://eips.ethereum.org/EIPS/eip-7002"
+  ref="the request mechanism"
+>
+Adds a predeploy that accepts withdrawal (and full-exit) requests from a validator's
+execution-layer withdrawal-credential address. The consensus layer dequeues these requests
+each block and processes them, so an exit or partial withdrawal can be initiated from the
+execution layer — not only by the validator's active (signing) key.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — a new, safe path to exit appears, gated to the credential holder. The interesting part is what contract-controlled staking can now do.
+</Callout>
+
+**→ Step 3: staking you don't have to trust an operator for.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Trustless staking">
+
+## The payoff: the owner is in control
+
+With exits triggerable from the execution layer, control follows ownership. A <KeyTerm term="staking pool" def="A contract that pools users' ETH into validators run by operators. With EL-triggerable exits, the pool contract — not the operator — can force a validator to exit, so users' funds aren't hostage to operator behaviour." /> can now **force-exit** a validator whose operator has gone rogue or offline, reclaiming the stake without the operator's cooperation. Smart-account stakers can govern exits with arbitrary execution-layer logic. And it composes with the rest of Pectra's staking work — [raising the balance cap (7251)](/eip-7251-max-effective-balance) and [smart-account EOAs (7702)](/eip-7702-set-eoa-code) — to make staking genuinely programmable and safer to delegate.
+
+<Scene name="wr-trustless" caption="With EL-triggerable exits, the withdrawal-credential owner controls the exit: a staking-pool contract can force out a rogue operator, and smart-account stakers can govern exits with their own logic — composing with EIP-7251 and EIP-7702 to make delegated staking trustless." />
+
+<Callout type="insight" title="And that is EIP-7002">
+Exits could be triggered only by the validator's **signing key**, so the execution-layer **withdrawal-credential owner** — the real economic owner, often a pool or smart contract — couldn't force one → add an **EL request path**: the credential address submits to a predeployed system contract, and the **consensus layer** dequeues and processes it each block → so a pool can **force-exit a rogue operator** and smart accounts can govern exits, making delegated staking trustless from the execution layer. It's the withdrawal side of a broader Pectra theme — moving control of staking from opaque operator keys into transparent execution-layer logic — and it rides the same request-predeploy machinery that [4788](/eip-4788-beacon-root) and [4895](/eip-4895-withdrawals) established for bridging the two layers.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-7002: EL-triggerable withdrawals", note: "The spec — the request predeploy", href: "https://eips.ethereum.org/EIPS/eip-7002" },
+    { kind: "post", label: "EIP-4895, derived", note: "The push-withdrawal side of the CL↔EL bridge", href: "/eip-4895-withdrawals" },
+    { kind: "post", label: "EIP-7251, derived", note: "Pectra's other staking upgrade it composes with", href: "/eip-7251-max-effective-balance" },
+    { kind: "post", label: "EIP-7702, derived", note: "Smart-account EOAs that can govern staking", href: "/eip-7702-set-eoa-code" },
+    { kind: "tool", label: "Pectra — what changed", note: "The 2025 fork that shipped 7002", href: "https://ethereum.org/en/roadmap/pectra/" },
+  ]}
+/>
+
+</DepthLayer>

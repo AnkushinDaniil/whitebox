@@ -134,7 +134,10 @@ interface Props {
     | "sc-handoff"
     | "cd-cost"
     | "cd-reduce"
-    | "cd-rollup";
+    | "cd-rollup"
+    | "wr-clonly"
+    | "wr-request"
+    | "wr-trustless";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2602,6 +2605,58 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-ok cd-blob" x="240" y="168" text-anchor="middle">{L("which EIP-4844 blobs later cut much further")}</text>
       </svg>
     )}
+
+    {/* ── EIP-7002: only the CL signing key could exit — the EL owner can't ── */}
+    {name === "wr-clonly" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Before EIP-7002 only a validator's consensus-layer signing key could trigger an exit, locking out the execution-layer owner">
+        <text class="t-cap" x="240" y="20">{L("only the validator's signing key could trigger an exit")}</text>
+        <rect class="wr-owner" x="24" y="46" width="150" height="60" rx="8" />
+        <text class="t-cap" x="99" y="68">{L("EL owner / pool")}</text>
+        <text class="t-fld wr-c" x="99" y="86">{L("holds withdrawal creds")}</text>
+        <line class="wr-wall" x1="200" y1="40" x2="200" y2="120" />
+        <text class="t-x wr-blocked" x="200" y="132" text-anchor="middle">{L("✗ can't exit")}</text>
+        <rect class="wr-val" x="240" y="46" width="216" height="60" rx="8" />
+        <text class="t-cap" x="348" y="68">{L("validator (consensus layer)")}</text>
+        <text class="t-fld wr-c2" x="348" y="86">{L("only the signing key exits")}</text>
+        <text class="t-x wr-trap" x="240" y="158" text-anchor="middle">{L("if the operator won't exit, the pool can't get its stake back")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("the economic owner depends on the operator's key — misplaced trust")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7002: an EL request the CL reads and processes ── */}
+    {name === "wr-request" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="EIP-7002 lets the withdrawal-credential holder submit a request to a predeploy that the consensus layer processes">
+        <text class="t-cap" x="240" y="20">{L("let the withdrawal-credential holder ask, from the EL")}</text>
+        <rect class="wr-owner" x="24" y="44" width="130" height="50" rx="8" />
+        <text class="t-cap" x="89" y="64">{L("0x01/0x02 creds")}</text>
+        <text class="t-fld wr-c" x="89" y="82">{L("submit request")}</text>
+        <path class="sarrow wr-a1" d="M154 69 H210" />
+        <rect class="wr-pre" x="210" y="44" width="150" height="50" rx="8" />
+        <text class="t-cap" x="285" y="64">{L("withdrawal-request")}</text>
+        <text class="t-fld wr-c" x="285" y="82">{L("predeploy contract")}</text>
+        <path class="sarrow wr-a2" d="M285 94 V122" />
+        <rect class="wr-cl" x="150" y="124" width="270" height="30" rx="6" />
+        <text class="t-ok wr-clt" x="285" y="143">{L("the CL reads it each block → processes the exit")}</text>
+        <text class="t-cap" x="240" y="178" text-anchor="middle">{L("same 'EL request → system contract → CL acts' pattern as withdrawals")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-7002: trustless staking pools & smart-account stakers ── */}
+    {name === "wr-trustless" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="With EL-triggerable exits, a staking pool contract can force out a rogue operator and smart-account stakers work">
+        <text class="t-cap" x="240" y="20">{L("now the owner — not the operator — controls the exit")}</text>
+        <rect class="wr-use wr-use0" x="30" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="130" y="66">{L("trustless staking pools")}</text>
+        <text class="t-fld wr-uc" x="130" y="86">{L("the pool can force-exit")}</text>
+        <text class="t-fld wr-uc" x="130" y="104">{L("a rogue operator")}</text>
+        <rect class="wr-use wr-use1" x="250" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="350" y="66">{L("smart-account stakers")}</text>
+        <text class="t-fld wr-uc" x="350" y="86">{L("EL logic governs the exit")}</text>
+        <text class="t-fld wr-uc" x="350" y="104">{L("composes with 7251, 7702")}</text>
+        <text class="t-cap" x="240" y="146" text-anchor="middle">{L("staking becomes programmable & trustless from the execution layer")}</text>
+        <text class="t-ok wr-pectra" x="240" y="168" text-anchor="middle">{L("part of Pectra's push to make staking safer to delegate")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4323,4 +4378,27 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .cd-era1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .cd-ec { text-anchor: middle; fill: var(--color-ink-faint); }
   .cd-blob { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-7002 — wr-clonly: only the signing key could exit ── */
+  .wr-owner { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .wr-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .wr-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
+  .wr-wall { stroke: var(--color-changed); stroke-width: 2.4; stroke-dasharray: 4 4; }
+  .wr-blocked { animation: rv-pulse 5s ease-in-out infinite; }
+  .wr-val { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .wr-trap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-7002 — wr-request: an EL request the CL processes ── */
+  .wr-a1 { stroke-dasharray: 56; stroke-dashoffset: 56; animation: st-draw 5s ease-in-out infinite; }
+  .wr-a2 { stroke-dasharray: 28; stroke-dashoffset: 28; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .wr-pre { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
+  .wr-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  .wr-clt { text-anchor: middle; opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+
+  /* ── EIP-7002 — wr-trustless: trustless pools & smart-account stakers ── */
+  .wr-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .wr-use0 { animation: tw-rowin 5s ease-out infinite; }
+  .wr-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .wr-uc { text-anchor: middle; fill: var(--color-ink-faint); }
+  .wr-pectra { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

@@ -132,6 +132,7 @@ export const BOOK: BookPart[] = [
         date: "May 2025",
         chapters: [
           { slug: "eip-7702-set-eoa-code", eip: "7702" },
+          { slug: "eip-2537-bls-precompiles", eip: "2537" },
           { slug: "eip-7002-el-withdrawals", eip: "7002" },
           { slug: "eip-7251-max-effective-balance", eip: "7251" },
         ],

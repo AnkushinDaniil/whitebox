@@ -1,0 +1,99 @@
+---
+title: "EIP-2537: teaching the EVM the consensus layer's own signatures"
+dek: "Ethereum's validators sign with BLS12-381 — a curve chosen for aggregatable signatures and strong security. But the EVM only knew the older, weaker bn128 curve, so a contract couldn't verify a beacon-chain signature at all. EIP-2537 adds native BLS12-381 precompiles, letting contracts check the consensus layer's own signatures — the missing piece for trust-minimized bridges."
+summary: "A step-by-step derivation of EIP-2537 (BLS12-381 precompiles), shipped in Prague/Electra (May 2025). Why Ethereum's consensus layer signs with BLS12-381 (aggregatable, ~128-bit-secure) while the EVM only had the Byzantium-era bn128 curve — too weak and the wrong curve for verifying beacon-chain signatures — and why implementing BLS12-381 as bytecode is infeasible for the same reason any pairing is; and how EIP-2537 adds native precompiles for BLS12-381 (G1/G2 addition and multiplication, the pairing check, and map-to-curve), so a contract can verify a BLS signature — including a sync committee's — in one cheap call, enabling trust-minimized bridges that verify Ethereum's consensus on another chain, on-chain aggregate-signature schemes, and finally aligning the EVM with the curve the consensus layer already uses."
+topic: EIPs
+order: 31
+spine: true
+prerequisites: ["precompiles (EIP-196/197)", "the beacon chain & BLS signatures"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Prague / Electra, May 2025.** [Byzantium's bn128 precompiles](/eip-196-197-bn128-precompiles) taught the EVM enough curve math to verify zk-SNARKs. But there's a curve the EVM conspicuously *didn't* understand: the one Ethereum's own **consensus layer** signs with. Every validator attestation, every [sync-committee signature](/altair-sync-committees), is a **BLS12-381** signature — and a contract had no way to verify one, because the EVM only knew the older, weaker bn128 curve. That gap meant the EVM couldn't check its own chain's consensus. **EIP-2537** closes it. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The wrong curve" },
+  { id: "step-2", label: "Add BLS12-381" },
+  { id: "step-3", label: "Verify consensus" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The wrong curve">
+
+## The problem: the EVM knew bn128, not BLS12-381
+
+Ethereum's consensus uses <KeyTerm term="BLS12-381" def="An elliptic curve pairing offering ~128-bit security and, crucially, signature aggregation — many validators' signatures combine into one. It's the curve the beacon chain signs with; the EVM had no native support for it until EIP-2537." /> because its signatures **aggregate** (a whole committee's signatures fold into one) and it's strong enough for consensus-grade security. The EVM, meanwhile, only had precompiles for **bn128** — a curve that's fine for many zk applications but weaker (its effective security had eroded below the comfort zone) and, more to the point, *the wrong curve*. So a contract simply had no way to verify a BLS12-381 signature, and implementing the curve's math in bytecode is infeasible for exactly the reason [any pairing is](/eip-196-197-bn128-precompiles) — it would cost more gas than a block holds.
+
+<Scene name="bls-gap" caption="The beacon chain signs everything with BLS12-381, but the EVM only had precompiles for the older, weaker bn128 curve — and BLS12-381 in bytecode is as infeasible as any pairing. So a contract couldn't verify the consensus layer's own signatures." />
+
+<Callout type="warning" title="What breaks">
+The chain verifies its consensus in its own clients, but *smart contracts* — and other chains reading Ethereum — can't check a beacon-chain signature at all. Anything that wants to trustlessly confirm "Ethereum's validators signed this" is stuck. We need the consensus curve inside the EVM.
+</Callout>
+
+**→ Step 2: give the EVM the right curve, natively.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Add BLS12-381">
+
+## EIP-2537: native BLS12-381 precompiles
+
+The fix follows the bn128 template exactly, one curve over: EIP-2537 adds a family of **precompiles** for BLS12-381 — point addition and scalar multiplication on both groups (G1 and G2), the **pairing** check, and <KeyTerm term="map-to-curve" def="A precompile that deterministically hashes an arbitrary input to a point on the curve — the 'hash-to-curve' step needed to turn a message into something a BLS signature scheme can sign and verify." /> for hashing messages onto the curve — each run natively and priced at its real, low cost. With these, a contract can perform the operations that a BLS **signature verification** requires, so it can check a BLS12-381 signature in a single cheap call, on the same curve the consensus layer uses.
+
+<Scene name="bls-precompile" caption="EIP-2537 adds native precompiles for BLS12-381 — G1/G2 add and mul, the pairing check, and map-to-curve — priced at real cost. It's the exact curve the consensus layer signs with, so a contract can now verify a BLS signature in one cheap call." />
+
+<SpecExcerpt
+  source="EIP-2537: Precompiles for BLS12-381 curve operations"
+  href="https://eips.ethereum.org/EIPS/eip-2537"
+  ref="the precompiles"
+>
+Adds precompiles for BLS12-381: G1 and G2 point addition and multiplication, multi-scalar
+multiplication, the pairing check, and map-fp/fp2-to-G1/G2. Together they let contracts
+verify BLS signatures — the scheme used by the beacon chain — at feasible gas cost.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — the EVM just learned to speak the consensus layer's signature language. The point is what a contract can verify once it can check a BLS signature.
+</Callout>
+
+**→ Step 3: verify Ethereum's own consensus, from a contract.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Verify consensus">
+
+## The payoff: bridges, aggregation, and one shared curve
+
+Once a contract can verify a BLS12-381 signature, it can verify the **beacon chain's own signatures** — most powerfully, a <KeyTerm term="sync committee" def="Altair's 512-validator group that signs each block with an aggregate BLS signature. With BLS12-381 precompiles, a contract (on Ethereum or another chain) can verify that signature directly." /> signature. That's the missing piece for a truly <KeyTerm term="trust-minimized bridge" def="A bridge where the destination chain verifies the source chain's consensus signatures directly, rather than trusting a multisig of relayers. On-chain BLS12-381 verification lets a contract check that Ethereum's sync committee signed a state, making Ethereum-to-anywhere bridges trust-minimized." />: another chain (or an L2) can run a contract that checks Ethereum's sync-committee signature and thereby confirm Ethereum's state *cryptographically*, not on the say-so of a relayer multisig. It also enables efficient on-chain **aggregate-signature** schemes for staking, DAOs, and rollups. And at last, the EVM and the consensus layer share a curve.
+
+<Scene name="bls-use" caption="With on-chain BLS12-381, a contract can verify the beacon chain's own signatures — enabling trust-minimized bridges (verify a sync committee's aggregate signature on another chain) and efficient aggregate-signature schemes. It pairs directly with Altair's sync committees." />
+
+<Callout type="insight" title="And that is EIP-2537">
+The consensus layer signs with **BLS12-381**, but the EVM only knew the weaker **bn128** curve, so contracts couldn't verify Ethereum's own signatures → add native **BLS12-381 precompiles** (G1/G2 ops, pairing, map-to-curve) at real cost → a contract verifies a BLS signature in one cheap call → unlocking **trust-minimized bridges** (verify a sync committee's aggregate signature), on-chain **aggregate signatures**, and alignment between the execution and consensus layers. It's the same precompile pattern as Byzantium's zk curves, aimed at a different, load-bearing target: letting the EVM check the very signatures that secure the chain. Together with [Altair's sync committees](/altair-sync-committees), it makes verifying Ethereum's consensus something a *contract* can do — the cryptographic backbone of the light-client-and-bridge future.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2537: BLS12-381 precompiles", note: "The spec — the curve operations", href: "https://eips.ethereum.org/EIPS/eip-2537" },
+    { kind: "post", label: "EIP-196/197 — bn128 precompiles", note: "The Byzantium template this follows", href: "/eip-196-197-bn128-precompiles" },
+    { kind: "post", label: "Altair — sync committees", note: "The BLS signatures this lets contracts verify", href: "/altair-sync-committees" },
+    { kind: "post", label: "EIP-4788 — beacon root in the EVM", note: "The other bridge from the CL into the EVM", href: "/eip-4788-beacon-root" },
+    { kind: "tool", label: "BLS signatures — an overview", note: "Why the beacon chain uses BLS12-381", href: "https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/keys/" },
+  ]}
+/>
+
+</DepthLayer>

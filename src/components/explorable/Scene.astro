@@ -140,7 +140,10 @@ interface Props {
     | "wr-trustless"
     | "pr-det"
     | "pr-randao"
-    | "pr-caveat";
+    | "pr-caveat"
+    | "bls-gap"
+    | "bls-precompile"
+    | "bls-use";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2716,6 +2719,55 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="170" text-anchor="middle">{L("post-Merge, this is where on-chain 'randomness' comes from")}</text>
       </svg>
     )}
+
+    {/* ── EIP-2537: the EVM couldn't verify the consensus curve's signatures ── */}
+    {name === "bls-gap" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="Ethereum's consensus uses BLS12-381 signatures, but the EVM only had the weaker bn128 curve, so it couldn't verify beacon-chain signatures">
+        <text class="t-cap" x="240" y="20">{L("consensus signs with BLS12-381 — the EVM couldn't check it")}</text>
+        <rect class="bls-cl" x="24" y="44" width="160" height="56" rx="8" />
+        <text class="t-cap" x="104" y="66">{L("beacon chain")}</text>
+        <text class="t-fld bls-c" x="104" y="84">{L("BLS12-381 signatures")}</text>
+        <line class="bls-wall" x1="212" y1="38" x2="212" y2="106" />
+        <text class="t-x bls-blocked" x="212" y="120" text-anchor="middle">{L("✗ can't verify")}</text>
+        <rect class="bls-evm" x="240" y="44" width="216" height="56" rx="8" />
+        <text class="t-cap" x="348" y="66">{L("EVM precompiles")}</text>
+        <text class="t-fld bls-c2" x="348" y="84">{L("only bn128 — a weaker curve")}</text>
+        <text class="t-x bls-gap2" x="240" y="150" text-anchor="middle">{L("BLS12-381 in bytecode is infeasible — same cost wall as any pairing")}</text>
+        <text class="t-cap" x="240" y="174" text-anchor="middle">{L("so a contract couldn't check the beacon chain's own signatures")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2537: add BLS12-381 precompiles ── */}
+    {name === "bls-precompile" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="EIP-2537 adds native BLS12-381 precompiles for curve operations, pairing, and map-to-curve">
+        <text class="t-cap" x="240" y="20">{L("ship BLS12-381 natively, like the bn128 precompiles")}</text>
+        <rect class="bls-pre" x="90" y="40" width="300" height="52" rx="8" />
+        <text class="t-cap" x="240" y="60">{L("BLS12-381 precompiles")}</text>
+        <text class="t-ok bls-pt" x="240" y="80">{L("native C/Go · fixed cheap gas")}</text>
+        {[["G1/G2", "add · mul"], ["pairing", "the check"], ["map-to-curve", "hash-to-point"]].map(([a, n], i) => (
+          <g class={`bls-op bls-op${i}`}><rect x={40 + i * 140} y="106" width="120" height="34" rx="6" /><text class="t-fld bls-opt" x={100 + i * 140} y="122">{a}</text><text class="t-fld bls-opn" x={100 + i * 140} y="134">{n}</text></g>
+        ))}
+        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("the exact curve the consensus layer uses — now verifiable on-chain")}</text>
+        <text class="t-ok bls-cheap" x="240" y="180" text-anchor="middle">{L("a contract verifies a BLS signature in one cheap call")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2537: verify consensus signatures → trustless bridges ── */}
+    {name === "bls-use" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="On-chain BLS verification lets contracts check beacon-chain signatures, enabling trust-minimized bridges and aggregate signatures">
+        <text class="t-cap" x="240" y="20">{L("verify Ethereum's own consensus, from a contract")}</text>
+        <rect class="bls-usebox bls-usebox0" x="30" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="130" y="66">{L("trust-minimized bridges")}</text>
+        <text class="t-fld bls-uc" x="130" y="86">{L("verify a sync committee")}</text>
+        <text class="t-fld bls-uc" x="130" y="104">{L("BLS signature on L1/L2")}</text>
+        <rect class="bls-usebox bls-usebox1" x="250" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="350" y="66">{L("aggregate signatures")}</text>
+        <text class="t-fld bls-uc" x="350" y="86">{L("many signers → one check")}</text>
+        <text class="t-fld bls-uc" x="350" y="104">{L("staking, DAOs, rollups")}</text>
+        <text class="t-cap" x="240" y="146" text-anchor="middle">{L("pairs with Altair — a contract can now check what a sync committee signed")}</text>
+        <text class="t-ok bls-align" x="240" y="168" text-anchor="middle">{L("the EVM and the consensus layer finally share a curve")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4489,4 +4541,32 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .pr-w2 { animation: rv-pulse 5s ease-in-out infinite; }
   .pr-safe { fill: color-mix(in oklab, var(--color-node-leaf) 5%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .pr-sc { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── EIP-2537 — bls-gap: EVM couldn't verify the consensus curve ── */
+  .bls-cl { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .bls-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .bls-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
+  .bls-wall { stroke: var(--color-changed); stroke-width: 2.4; stroke-dasharray: 4 4; }
+  .bls-blocked { animation: rv-pulse 5s ease-in-out infinite; }
+  .bls-evm { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .bls-gap2 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-2537 — bls-precompile: native BLS12-381 ── */
+  .bls-pre { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .bls-pt { text-anchor: middle; }
+  .bls-op rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .bls-op { opacity: 0; }
+  .bls-op0 { animation: tw-rowin 5s ease-out infinite; }
+  .bls-op1 { animation: tw-rowin 5s ease-out 0.2s infinite; }
+  .bls-op2 { animation: tw-rowin 5s ease-out 0.4s infinite; }
+  .bls-opt { text-anchor: middle; fill: var(--color-accent-strong); }
+  .bls-opn { text-anchor: middle; fill: var(--color-ink-faint); }
+  .bls-cheap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-2537 — bls-use: trustless bridges & aggregation ── */
+  .bls-usebox { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .bls-usebox0 { animation: tw-rowin 5s ease-out infinite; }
+  .bls-usebox1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .bls-uc { text-anchor: middle; fill: var(--color-ink-faint); }
+  .bls-align { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

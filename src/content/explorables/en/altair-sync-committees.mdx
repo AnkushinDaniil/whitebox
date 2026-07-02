@@ -1,0 +1,100 @@
+---
+title: "Altair: sync committees, or how a phone verifies Ethereum"
+dek: "Proof-of-stake is secured by hundreds of thousands of validators — wonderful for security, hopeless for a light client that can't track them all. Altair adds a sync committee: a small, rotating group of 512 validators that signs each block, so a resource-limited client verifies one aggregate signature instead of a million attestations. It's what makes trustless light clients — and the bridges built on them — possible."
+summary: "A step-by-step derivation of Ethereum's Altair upgrade (October 2021), which introduced sync committees for light-client support. Why a light client (phone, browser, another chain) can't verify proof-of-stake the full way — checking attestations from a constantly-changing set of ~1,000,000 validators is far too heavy — leaving it to trust an RPC provider; and how a sync committee fixes it: a randomly-sampled subset of 512 validators, rotating each ~27-hour period, signs every block header, so a light client verifies a single aggregate BLS signature against 512 known public keys; and how the next period's committee is committed in the current beacon state so the client hops forward period-to-period via a Merkle proof, following the head trustlessly from a single weak-subjectivity checkpoint — with the tradeoff that 512 is a smaller trust set than full consensus."
+topic: EIPs
+order: 27
+spine: true
+prerequisites: ["proof of stake & the beacon chain", "Merkle proofs"]
+updated: 2026-06-24
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Altair, October 2021** — the beacon chain's first upgrade, and the book's first purely *consensus-layer* chapter. Everything so far has verified Ethereum the heavyweight way: run a full node, track all the state, check everything. But most devices can't do that. A phone wallet, an in-browser client, or *another blockchain* wanting to read Ethereum's state needs to be convinced of the chain's head **without** downloading the world or following a million validators. Before Altair, they couldn't — so they trusted an RPC provider, quietly reintroducing the middleman a blockchain exists to remove. Altair's fix is the **sync committee**. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Too heavy to verify" },
+  { id: "step-2", label: "A small signing committee" },
+  { id: "step-3", label: "Hop forward, trustlessly" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Too heavy to verify">
+
+## The problem: a light client can't check a million validators
+
+Under proof of stake, a block is made canonical by <KeyTerm term="attestations" def="Signed votes from validators on the head of the chain and the justified/finalized checkpoints. Every active validator attests each epoch, so verifying the chain the full way means processing votes from the entire validator set." /> from the validator set — and that set is enormous (hundreds of thousands, heading past a million) and changes constantly. To verify the head the full way, you'd have to know every validator's key and process a mountain of aggregated votes each epoch. A <KeyTerm term="light client" def="A client that follows and verifies the chain with minimal resources — a phone, a browser tab, or a smart contract on another chain — without storing all state or running full consensus." /> — a phone, a browser, a contract on another chain — simply can't. So it falls back on **trusting an RPC provider** to tell it the truth.
+
+<Scene name="sc-heavy" caption="Verifying proof-of-stake means checking attestations from a constantly-changing set of ~1,000,000 validators — far too heavy for a phone or a browser. So light clients fall back to trusting an RPC provider, reintroducing the trusted third party a blockchain is meant to remove." />
+
+<Callout type="warning" title="What breaks">
+Trusting an RPC is exactly the middleman we're trying to avoid. We need a way for a resource-constrained client to be *convinced* of the head — cryptographically, not on faith — but checking the whole validator set is out of reach. What if it only had to check a small, fixed-size group?
+</Callout>
+
+**→ Step 2: sample a committee small enough to check.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A small signing committee">
+
+## Sync committees: 512 signers, one signature to check
+
+Altair adds a <KeyTerm term="sync committee" def="A randomly-sampled subset of 512 validators, selected for a ~27-hour period. During that period the committee members sign each block header; a light client verifies their aggregate signature to be convinced of the head." />: a randomly-sampled group of **512 validators**, fixed for a period of about **27 hours**. During that period, the committee members sign each block's header. Because Ethereum uses <KeyTerm term="BLS signatures" def="A signature scheme whose signatures can be aggregated: many validators' signatures over the same message combine into one, verifiable against the aggregate of their public keys in a single check." />, all their signatures over a block combine into **one aggregate signature**. So a light client's job collapses to: hold the 512 committee public keys, and verify that a supermajority of them signed the head — a *single* signature check against 512 known keys. That's light enough for a phone.
+
+<Scene name="sc-committee" caption="A sync committee is 512 validators sampled from the full set for a ~27-hour period; they sign each block header, and BLS aggregation combines those into one signature. A light client verifies that single aggregate signature against 512 known keys — cheap enough for a phone, with no RPC to trust." />
+
+<SpecExcerpt
+  source="Ethereum consensus specs — Altair, sync committees"
+  href="https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md"
+  ref="the sync committee"
+>
+A `SyncCommittee` consists of `SYNC_COMMITTEE_SIZE = 512` validators, sampled from the
+active set and rotating every `EPOCHS_PER_SYNC_COMMITTEE_PERIOD` (~27 hours). Members sign
+the block root each slot; the aggregate BLS signature, plus a participation bitfield, lets
+a light client verify the head against the committee's aggregate public key.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+A phone can verify *this* period's blocks against *this* committee's keys. But committees rotate every 27 hours — so how does the client learn the *next* committee's keys without, once again, trusting someone to hand them over?
+</Callout>
+
+**→ Step 3: let each committee vouch for the next.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Hop forward, trustlessly">
+
+## The payoff: follow the head from a single checkpoint
+
+The elegant part: the **next** period's sync committee is committed in the **current** beacon state. So a light client that trusts the current committee can obtain the next committee's keys along with a <KeyTerm term="Merkle proof" def="A short proof that a value (here, the next sync committee) is part of the beacon state, checkable against the state root the current committee already signed. It lets the client accept the next committee without a new trust assumption." /> that they're genuinely in the state the current committee signed — and thereby hop from period *N* to period *N+1* with no new trust. Chain those hops and a client that starts from a single trusted <KeyTerm term="weak subjectivity checkpoint" def="A recent, trusted starting point (a finalized block root) a light client is given once, out of band. From there it can verify everything forward on its own." /> can follow Ethereum's head **trustlessly, forever**. This is what makes real light clients (like Helios) and, crucially, **trust-minimized bridges** — where one chain runs an Ethereum light client to verify Ethereum's state — possible.
+
+<Scene name="sc-handoff" caption="Each committee period commits the next committee in the beacon state, so a light client hops from period N to N+1 by verifying a Merkle proof against the root the current committee already signed. From one trusted checkpoint, it follows the head forever — no RPC required." />
+
+<Callout type="insight" title="And that is Altair's sync committee">
+A light client can't verify proof-of-stake the full way — a million-strong, ever-changing validator set is too heavy — so it trusted an **RPC** → instead, sample a small **sync committee** of 512 validators per ~27-hour period that signs each block, so the client verifies **one aggregate BLS signature** against 512 known keys → and because each committee **commits the next** in state, the client **hops period-to-period** via Merkle proofs, following the head trustlessly from a single checkpoint. The one caveat: 512 is a far smaller trust set than full consensus, so a light client's security rests on that committee not being overwhelmingly corrupted — a weaker assumption than a full node's, but a world apart from "trust Infura." Sync committees are the unglamorous plumbing that lets Ethereum be verified on a phone, in a browser, and by other chains — the foundation of the light-client and bridging ecosystem.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "spec", label: "Altair light-client sync protocol", note: "The consensus spec for sync committees", href: "https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md" },
+    { kind: "post", label: "How consensus runs", note: "Validators, attestations & finality", href: "/how-consensus-runs" },
+    { kind: "post", label: "EIP-4788 — beacon root in the EVM", note: "The other trust-minimized bridge into the CL", href: "/eip-4788-beacon-root" },
+    { kind: "code", label: "Helios — a light client", note: "A real Ethereum light client built on sync committees", href: "https://github.com/a16z/helios" },
+    { kind: "tool", label: "Light clients — ethereum.org", note: "Why light clients matter", href: "https://ethereum.org/en/developers/docs/nodes-and-clients/light-clients/" },
+  ]}
+/>
+
+</DepthLayer>

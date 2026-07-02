@@ -128,7 +128,10 @@ interface Props {
     | "zk-unlock"
     | "stc-danger"
     | "stc-static"
-    | "stc-use";
+    | "stc-use"
+    | "sc-heavy"
+    | "sc-committee"
+    | "sc-handoff";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2492,6 +2495,60 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="158" text-anchor="middle">{L("'this call may read but not write' — a small guarantee with wide reach")}</text>
       </svg>
     )}
+
+    {/* ── Altair: a light client can't verify PoS the full way ── */}
+    {name === "sc-heavy" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="A light client can't verify proof-of-stake by tracking a million validators, so it's forced to trust an RPC">
+        <text class="t-cap" x="240" y="20">{L("a phone can't verify a million-validator chain")}</text>
+        <rect class="sc-lc" x="24" y="52" width="120" height="52" rx="8" />
+        <text class="t-cap" x="84" y="74">{L("light client")}</text>
+        <text class="t-fld sc-lcsub" x="84" y="92">{L("phone · browser")}</text>
+        <path class="sarrow sc-a1" d="M144 78 H210" />
+        <rect class="sc-vset" x="210" y="40" width="246" height="76" rx="8" />
+        <text class="t-cap" x="333" y="60">{L("~1,000,000 validators")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (<rect class="sc-vdot" x={226 + (i % 12) * 18} y="72" width="12" height="12" rx="2" style={`animation-delay:${(i * 0.08).toFixed(2)}s`} />))}
+        <text class="t-x sc-heavy2" x="333" y="104">{L("too many attestations to check")}</text>
+        <text class="t-x sc-trust" x="240" y="150" text-anchor="middle">{L("so it falls back to trusting an RPC provider ✗")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a trusted third party — the very thing a blockchain is meant to avoid")}</text>
+      </svg>
+    )}
+
+    {/* ── Altair: a small rotating committee signs each block ── */}
+    {name === "sc-committee" && (
+      <svg viewBox="0 0 480 192" role="img" aria-label="A sync committee of 512 sampled validators signs each block, so a light client checks one aggregate signature">
+        <text class="t-cap" x="240" y="20">{L("sample a small committee to sign each block")}</text>
+        <rect class="sc-pool" x="24" y="40" width="150" height="80" rx="8" />
+        <text class="t-cap" x="99" y="58">{L("all validators")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (<rect class={`sc-pdot${i === 3 || i === 7 ? " sc-picked" : ""}`} x={38 + (i % 5) * 26} y={70 + Math.floor(i / 5) * 22} width="14" height="14" rx="2" />))}
+        <path class="sarrow sc-a2" d="M174 80 H232" /><text class="t-cap sc-al" x="203" y="72">{L("sample 512")}</text>
+        <rect class="sc-comm" x="232" y="40" width="224" height="52" rx="8" />
+        <text class="t-cap" x="344" y="60">{L("sync committee · 512")}</text>
+        <text class="t-ok sc-sign" x="344" y="78">{L("they sign each block header")}</text>
+        <rect class="sc-sigbox" x="232" y="100" width="224" height="30" rx="6" />
+        <text class="t-ok sc-agg" x="344" y="119">{L("one aggregate BLS signature")}</text>
+        <text class="t-cap" x="240" y="158" text-anchor="middle">{L("the light client checks ONE signature against 512 known keys")}</text>
+        <text class="t-ok sc-cheap" x="240" y="182" text-anchor="middle">{L("cheap enough for a phone — no RPC to trust")}</text>
+      </svg>
+    )}
+
+    {/* ── Altair: hop period to period via the committed next committee ── */}
+    {name === "sc-handoff" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="Each committee commits the next one in state, so a light client hops forward from period to period">
+        <text class="t-cap" x="240" y="20">{L("each committee commits the next — so the client hops forward")}</text>
+        {[["committee N", 30], ["committee N+1", 190], ["committee N+2", 350]].map(([lbl, x], i) => (
+          <g>
+            <rect class={`sc-period sc-p${i}`} x={x} y="52" width="110" height="46" rx="8" />
+            <text class="t-cap" x={Number(x) + 55} y="72">{lbl}</text>
+            <text class="t-fld sc-psub" x={Number(x) + 55} y="88">~27h period</text>
+            {i < 2 && <path class={`sarrow sc-h${i}`} d={`M${Number(x) + 110} 75 H${Number(x) + 160}`} />}
+            {i < 2 && <text class="t-fld sc-hlbl" x={Number(x) + 135} y="66" text-anchor="middle">commits</text>}
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="130" text-anchor="middle">{L("the next committee sits in the current state — verified by a Merkle proof")}</text>
+        <text class="t-ok sc-boot" x="240" y="156" text-anchor="middle">{L("from one trusted checkpoint, follow the head trustlessly forever")}</text>
+        <text class="t-cap sc-caveat" x="240" y="176" text-anchor="middle">{L("(512 is a smaller trust set than full consensus — but far better than an RPC)")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4152,4 +4209,38 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .stc-card1 { animation: tw-rowin 5s ease-out 0.2s infinite; }
   .stc-card2 { animation: tw-rowin 5s ease-out 0.4s infinite; }
   .stc-cardsub { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── Altair — sc-heavy: too many validators for a light client ── */
+  .sc-lc { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .sc-lcsub { text-anchor: middle; fill: var(--color-ink-faint); }
+  .sc-a1 { stroke-dasharray: 66; stroke-dashoffset: 66; animation: st-draw 5s ease-in-out infinite; }
+  .sc-vset { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .sc-vdot { fill: color-mix(in oklab, var(--color-node-extension) 30%, var(--color-surface)); stroke: var(--color-node-extension); animation: sc-vdot 3s ease-in-out infinite; }
+  @keyframes sc-vdot { 0%,100% { opacity: 0.4 } 50% { opacity: 1 } }
+  .sc-heavy2 { text-anchor: middle; }
+  .sc-trust { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── Altair — sc-committee: a sampled committee signs ── */
+  .sc-pool { fill: var(--color-surface); stroke: var(--color-node-extension); }
+  .sc-pdot { fill: color-mix(in oklab, var(--color-node-extension) 20%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .sc-picked { fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)); stroke: var(--color-accent); animation: sc-picked 4s ease-in-out infinite; }
+  @keyframes sc-picked { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
+  .sc-a2 { stroke-dasharray: 58; stroke-dashoffset: 58; animation: st-draw 5s ease-in-out infinite; }
+  .sc-al { fill: var(--color-ink-faint); }
+  .sc-comm { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .sc-sign { text-anchor: middle; }
+  .sc-sigbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  .sc-agg { text-anchor: middle; opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  .sc-cheap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── Altair — sc-handoff: hop period to period ── */
+  .sc-period { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .sc-p1 { opacity: 0; animation: tw-rowin 6s ease-out 0.4s infinite; }
+  .sc-p2 { opacity: 0; animation: tw-rowin 6s ease-out 0.9s infinite; }
+  .sc-psub { text-anchor: middle; fill: var(--color-ink-faint); }
+  .sc-h0 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out 0.2s infinite; }
+  .sc-h1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out 0.7s infinite; }
+  .sc-hlbl { fill: var(--color-ink-faint); }
+  .sc-boot { opacity: 0; animation: dc-late 6s ease-in-out infinite; }
+  .sc-caveat { fill: var(--color-ink-faint); }
 </style>

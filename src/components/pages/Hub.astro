@@ -31,6 +31,7 @@ const forks = [...FORKS].reverse();
 const eipNum = (e: string) => e.split("/")[0];
 const specHref = (e: string) =>
   /^\d/.test(e) ? `https://eips.ethereum.org/EIPS/eip-${eipNum(e)}` : null;
+const eipTag = (e: string) => (/^\d/.test(e) ? `EIP-${e}` : null);
 ---
 
 <BaseLayout title={t.hub.h1} description={t.hub.lede} lang={lang}>
@@ -113,7 +114,7 @@ const specHref = (e: string) =>
                     e.slug ? (
                       <a class="chip covered" href={`/${e.slug}`}>
                         <span class={`dot ${e.category}`} />
-                        <b>EIP-{e.eip}</b> {e.title}
+                        {eipTag(e.eip) && <b>{eipTag(e.eip)}</b>} {e.title}
                       </a>
                     ) : specHref(e.eip) ? (
                       <a class="chip" href={specHref(e.eip)!} target="_blank" rel="noopener noreferrer">

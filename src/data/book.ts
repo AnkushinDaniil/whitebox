@@ -92,6 +92,7 @@ export const BOOK: BookPart[] = [
           { slug: "eip-3541-ef-reservation", eip: "3541" },
         ],
       },
+      { forkName: "Altair", date: "Oct 2021", chapters: [{ slug: "altair-sync-committees" }] },
       { forkName: "Paris · The Merge", date: "Sep 2022", chapters: [{ slug: "eip-3675-the-merge", eip: "3675" }] },
       {
         forkName: "Shanghai · Capella",

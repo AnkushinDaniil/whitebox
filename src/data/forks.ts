@@ -193,7 +193,7 @@ export const FORKS: Fork[] = [
     display: "Oct 2021",
     layer: "consensus",
     blurb: "First beacon-chain upgrade: sync committees, light clients.",
-    eips: [{ eip: "—", title: "Sync committees · light-client support", category: "consensus" }],
+    eips: [{ eip: "—", title: "Sync committees · light-client support", category: "consensus", slug: "altair-sync-committees" }],
   },
   {
     name: "Arrow Glacier",

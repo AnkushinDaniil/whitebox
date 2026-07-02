@@ -114,7 +114,7 @@ export const FORKS: Fork[] = [
     eips: [
       { eip: "145", title: "Bitwise shifting (SHL/SHR/SAR)", category: "execution" },
       { eip: "1014", title: "CREATE2", category: "execution", slug: "eip-1014-create2" },
-      { eip: "1052", title: "EXTCODEHASH", category: "execution" },
+      { eip: "1052", title: "EXTCODEHASH", category: "execution", slug: "eip-1052-extcodehash" },
       { eip: "1234", title: "Difficulty bomb delay + 2 ETH reward", category: "consensus" },
       { eip: "1283", title: "SSTORE net gas metering", category: "execution" },
     ],

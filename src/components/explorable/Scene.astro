@@ -158,7 +158,10 @@ interface Props {
     | "bh-payoff"
     | "mc-loop"
     | "mc-op"
-    | "mc-result";
+    | "mc-result"
+    | "ec-copy"
+    | "ec-hash"
+    | "ec-use";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -3031,6 +3034,49 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="148" text-anchor="middle">{L("and the identity-precompile memcpy hack is retired")}</text>
       </svg>
     )}
+
+    {/* ── EIP-1052: fingerprinting code the old way copied all of it ── */}
+    {name === "ec-copy" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="Before EIP-1052 getting another contract's code hash meant copying the whole code into memory and hashing it">
+        <text class="t-cap" x="240" y="20">{L("want: a 32-byte fingerprint of another contract's code")}</text>
+        <rect class="ec-code" x="24" y="40" width="220" height="30" rx="5" />
+        <text class="t-fld ec-ct" x="134" y="59" text-anchor="middle">{L("other contract's code (could be huge)")}</text>
+        <path class="sarrow ec-a1" d="M244 55 H300" /><text class="t-cap ec-al" x="272" y="46">EXTCODECOPY</text>
+        <rect class="ec-mem" x="300" y="40" width="156" height="30" rx="5" />
+        <text class="t-cap ec-mt" x="378" y="59" text-anchor="middle">{L("copy all of it → memory")}</text>
+        <path class="sarrow ec-a2" d="M378 70 V96" /><text class="t-cap ec-kl" x="378" y="90" text-anchor="middle">KECCAK256</text>
+        <rect class="ec-hashbox" x="300" y="98" width="156" height="26" rx="5" />
+        <text class="t-ok ec-ht" x="378" y="115" text-anchor="middle">{L("32-byte hash")}</text>
+        <text class="t-x ec-cost" x="240" y="152" text-anchor="middle">{L("O(code size) + memory expansion — just to get 32 bytes")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("expensive and wasteful for a simple identity check")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-1052: EXTCODEHASH returns it directly ── */}
+    {name === "ec-hash" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="EXTCODEHASH returns an account's code hash in one opcode">
+        <text class="t-cap" x="240" y="20">{L("EXTCODEHASH(addr): the code hash, in one opcode")}</text>
+        <rect class="ec-addr" x="150" y="36" width="180" height="26" rx="5" />
+        <text class="t-fld ec-at" x="240" y="53">addr</text>
+        <path class="sarrow ec-a3" d="M240 62 V86" />
+        <rect class="ec-out" x="120" y="88" width="240" height="28" rx="6" />
+        <text class="t-ok ec-ot" x="240" y="107" text-anchor="middle">{L("keccak256(code) — O(1), no copying")}</text>
+        <text class="t-cap ec-edge" x="240" y="140" text-anchor="middle">{L("non-existent account → 0")}</text>
+        <text class="t-cap ec-edge2" x="240" y="160" text-anchor="middle">{L("exists but no code (EOA) → hash of the empty string")}</text>
+        <text class="t-cap" x="240" y="180" text-anchor="middle">{L("two 'no code' cases to tell apart with care")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-1052: cheap identity checks ── */}
+    {name === "ec-use" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="EXTCODEHASH enables cheap code-identity checks">
+        <text class="t-cap" x="240" y="20">{L("cheap code-identity checks")}</text>
+        <g class="ec-row ec-r0"><rect class="ec-chip" x="40" y="38" width="400" height="26" rx="5" /><text class="t-cap ec-cl" x="60" y="55" text-anchor="start">{L("is the counterparty exactly the known-safe bytecode?")}</text></g>
+        <g class="ec-row ec-r1"><rect class="ec-chip" x="40" y="70" width="400" height="26" rx="5" /><text class="t-cap ec-cl" x="60" y="87" text-anchor="start">{L("contract or EOA? (mind the empty-code & construction cases)")}</text></g>
+        <g class="ec-row ec-r2"><rect class="ec-chip" x="40" y="102" width="400" height="26" rx="5" /><text class="t-cap ec-cl" x="60" y="119" text-anchor="start">{L("verify a CREATE2 deployment matches the expected code")}</text></g>
+        <text class="t-ok ec-fast" x="240" y="152" text-anchor="middle">{L("an O(code-size) operation becomes O(1)")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4984,4 +5030,35 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mc-before { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke: var(--color-changed); }
   .mc-after { fill: color-mix(in oklab, var(--color-node-leaf) 50%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
   .mc-emit { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+
+  /* ── EIP-1052 — ec-copy: the copy-then-hash detour ── */
+  .ec-code { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .ec-ct { fill: var(--color-ink-muted); }
+  .ec-a1 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .ec-al { text-anchor: middle; fill: var(--color-ink-faint); }
+  .ec-mem { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
+  .ec-mt { fill: var(--color-ink-muted); }
+  .ec-a2 { opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
+  .ec-kl { fill: var(--color-ink-faint); }
+  .ec-hashbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+  .ec-ht { text-anchor: middle; }
+  .ec-cost { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+
+  /* ── EIP-1052 — ec-hash: one opcode ── */
+  .ec-addr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .ec-at { text-anchor: middle; fill: var(--color-ink-muted); }
+  .ec-a3 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .ec-out { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
+  .ec-ot { text-anchor: middle; }
+  .ec-edge { fill: var(--color-ink-muted); opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+  .ec-edge2 { fill: var(--color-ink-muted); opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
+
+  /* ── EIP-1052 — ec-use: cheap identity checks ── */
+  .ec-chip { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .ec-cl { fill: var(--color-ink-muted); text-anchor: start; }
+  .ec-row { opacity: 0; }
+  .ec-r0 { animation: tw-rowin 5s ease-out infinite; }
+  .ec-r1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .ec-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
+  .ec-fast { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
 </style>

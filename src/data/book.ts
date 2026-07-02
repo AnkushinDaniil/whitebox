@@ -73,7 +73,14 @@ export const BOOK: BookPart[] = [
           { slug: "eip-196-197-bn128-precompiles", eip: "196/197" },
         ],
       },
-      { forkName: "Constantinople", date: "Feb 2019", chapters: [{ slug: "eip-1014-create2", eip: "1014" }] },
+      {
+        forkName: "Constantinople",
+        date: "Feb 2019",
+        chapters: [
+          { slug: "eip-1014-create2", eip: "1014" },
+          { slug: "eip-1052-extcodehash", eip: "1052" },
+        ],
+      },
       {
         forkName: "Istanbul",
         date: "Dec 2019",

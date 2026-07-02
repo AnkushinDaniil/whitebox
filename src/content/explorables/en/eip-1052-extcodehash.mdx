@@ -1,0 +1,98 @@
+---
+title: "EIP-1052: fingerprinting a contract in one opcode"
+dek: "To check whether another address runs exactly the bytecode you expect, you used to copy its entire code into memory and hash it yourself — an O(code-size) operation just to get a 32-byte fingerprint. EIP-1052 adds EXTCODEHASH, which returns that hash directly, in constant time."
+summary: "A step-by-step derivation of EIP-1052 (the EXTCODEHASH opcode), shipped in Constantinople (February 2019). Why obtaining a fingerprint of another account's code was expensive — the only tools were EXTCODESIZE and EXTCODECOPY, so to hash a contract's code you had to copy the whole thing into memory (cost proportional to its size, plus memory expansion) and then run KECCAK256, all to produce a single 32-byte identity — and how EIP-1052 adds EXTCODEHASH (0x3f), which returns the keccak256 of an account's code in one constant-time opcode; plus the sharp edges to handle: a non-existent account hashes to zero while an existing account with no code (an externally owned account) hashes to the well-known empty-string hash, and the classic 'code size is zero' contract-detection trick remains defeatable during a contract's constructor; the payoff is cheap code-identity checks — verifying a counterparty runs known-safe bytecode, distinguishing contracts from EOAs, and confirming a CREATE2 deployment matches its expected code."
+topic: EIPs
+order: 37
+spine: true
+prerequisites: ["accounts & code (EXTCODECOPY)", "keccak256 hashing"]
+updated: 2026-07-02
+readingMinutes: 7
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Constantinople, February 2019.** A contract often needs to know *what another account is made of*. Is this address a contract or a plain wallet? Is it running the exact bytecode I audited, or something I don't recognize? The cleanest way to answer is with a **fingerprint** — a hash of the account's code you can compare against a known value. The EVM could already hash things and could already read other accounts' code, but it had no way to get that fingerprint *cheaply*: you had to haul the entire code into memory and hash it yourself. **EIP-1052** adds the one opcode that skips the haul. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Copy-then-hash" },
+  { id: "step-2", label: "Add EXTCODEHASH" },
+  { id: "step-3", label: "Cheap identity checks" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Copy-then-hash">
+
+## The problem: to hash the code, you first had to copy all of it
+
+Before EIP-1052, the EVM's tools for inspecting another account's code were <KeyTerm term="EXTCODESIZE" def="Returns the length in bytes of the code at a given address. Useful, but a length isn't an identity — two different contracts can share a size." /> (its length) and <KeyTerm term="EXTCODECOPY" def="Copies a range of another account's code into the caller's memory. To fingerprint the code you had to copy all of it, then hash the copy — cost proportional to the code's size, plus memory-expansion gas." /> (its bytes). Neither gives you a fingerprint directly. So to obtain the keccak256 of a contract's code — the thing you actually want for an identity check — you had to `EXTCODECOPY` **the whole code** into your own memory and then run `KECCAK256` over it. The cost scales with the code's size and pays memory-expansion gas on top, all to produce a single 32-byte value. For a large contract, that's a lot of work for a comparison.
+
+<Scene name="ec-copy" caption="Before EIP-1052, fingerprinting another contract's code meant EXTCODECOPY-ing all of it into memory and then KECCAK256-ing the copy — cost proportional to the code's size plus memory expansion, just to produce a 32-byte identity. Expensive and wasteful for a simple check." />
+
+<Callout type="warning" title="What breaks">
+The operation you want is O(1) — read a hash the node can compute or already knows — but the only path is O(code size). The account's code hash is a natural, bounded quantity; the EVM should just expose it.
+</Callout>
+
+**→ Step 2: expose the code hash as its own opcode.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Add EXTCODEHASH">
+
+## EIP-1052: EXTCODEHASH returns the hash directly
+
+The fix adds <KeyTerm term="EXTCODEHASH" def="Opcode 0x3f. Given an address, returns the keccak256 hash of that account's code in constant time — no copying. The node can serve it directly, since the code hash is part of an account's stored representation." /> (`0x3f`): give it an address, get back the **keccak256 of that account's code** in a single, constant-time instruction — no copying, no memory expansion. But it comes with edges you must respect, all about the *absence* of code. A <KeyTerm term="non-existent account" def="An address that has never been touched — no balance, nonce, or code. EXTCODEHASH returns 0 for it, distinguishing 'nothing here' from 'here but codeless'." /> returns **0**. An account that *exists* but has no code — a plain EOA, or a contract mid-construction — returns the <KeyTerm term="empty-code hash" def="keccak256 of the empty byte string (0xc5d2460186…), the code hash of any existing account with no deployed code. EXTCODEHASH returns this for EOAs, which is different from the 0 returned for non-existent accounts." />, `keccak256("")`. Two distinct "no code" answers, and using the opcode correctly means telling them apart.
+
+<Scene name="ec-hash" caption="EXTCODEHASH(addr) returns keccak256 of the account's code in one constant-time opcode — no copying. The sharp edges: a non-existent account returns 0, while an existing account with no code (an EOA) returns the empty-string hash. Two 'no code' cases to distinguish carefully." />
+
+<SpecExcerpt
+  source="EIP-1052: EXTCODEHASH opcode"
+  href="https://eips.ethereum.org/EIPS/eip-1052"
+  ref="the opcode"
+>
+Adds EXTCODEHASH (0x3f), returning the keccak256 hash of an account's code. It returns 0 for
+an account that does not exist, and the hash of the empty string for an account that exists
+but has no code. This avoids copying a contract's code merely to hash it.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+One old habit stays broken the same way it always was: detecting "is this a contract?" by checking code size (or now, code hash) is **defeatable during construction** — a contract's constructor runs before its code is deposited, so mid-creation it looks codeless. EXTCODEHASH is faster, not a new security oracle; the construction caveat still applies.
+</Callout>
+
+**→ Step 3: what the cheap fingerprint unlocks.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Cheap identity checks">
+
+## The payoff: verifying what you're talking to
+
+A constant-time code hash makes a whole family of checks practical. A contract can confirm a counterparty is running **exactly the known-safe bytecode** it expects before trusting it. It can distinguish contracts from EOAs (with the empty-code and construction caveats in mind). And it pairs naturally with [CREATE2](/eip-1014-create2): after deploying to a deterministic address, a contract can `EXTCODEHASH` it to confirm the deployed code is precisely what was intended — a real safety check for factories and upgrade patterns. What used to be an O(code-size) copy-and-hash is now one O(1) opcode, cheap enough to do inline on a hot path.
+
+<Scene name="ec-use" caption="EXTCODEHASH makes code-identity checks cheap: is a counterparty the exact known-safe bytecode? contract or EOA? does a CREATE2 deployment match the expected code? An O(code-size) copy-and-hash becomes an O(1) opcode you can afford on a hot path." />
+
+<Callout type="insight" title="And that is EIP-1052">
+Fingerprinting another account's code meant `EXTCODECOPY`-ing all of it into memory and hashing the copy — **O(code size)** plus memory expansion, just for 32 bytes → EIP-1052 adds **EXTCODEHASH (0x3f)**, returning `keccak256(code)` in **one constant-time opcode** → so code-identity checks (known-safe bytecode, contract-vs-EOA, CREATE2 verification) become cheap — with the caveats that a **non-existent account hashes to 0**, an **existing codeless account hashes to keccak256("")**, and construction-time detection is still defeatable. A modest opcode that turns a common, expensive pattern into a one-instruction primitive, and a good reminder that in the EVM even "just hash that" can be a design decision with sharp corners.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-1052: EXTCODEHASH opcode", note: "The spec — 0x3f and its edge cases", href: "https://eips.ethereum.org/EIPS/eip-1052" },
+    { kind: "post", label: "EIP-1014 — CREATE2", note: "Verifying a deterministic deployment's code", href: "/eip-1014-create2" },
+    { kind: "post", label: "State & the trie", note: "Where an account's code hash is stored", href: "/state-and-the-trie" },
+    { kind: "post", label: "EIP-7702 — set EOA code", note: "When 'is this an EOA?' gets more subtle", href: "/eip-7702-set-eoa-code" },
+  ]}
+/>
+
+</DepthLayer>

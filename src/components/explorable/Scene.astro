@@ -1172,19 +1172,20 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-4895: partial skim vs full exit, both automatic ── */}
     {name === "wd-flavors" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Two automatic withdrawal flavors: partial skimming and full exit">
-        <text class="t-cap" x="240" y="20">{L("two automatic flavors, no withdraw button")}</text>
-        <rect class="wd-part" x="30" y="36" width="200" height="120" rx="8" />
-        <text class="t-cap" x="130" y="56">{L("partial · skim")}</text>
-        <text class="t-ok" x="130" y="80">{L("rewards above 32 ETH")}</text>
-        <text class="t-cap" x="130" y="100">{L("swept automatically")}</text>
-        <text class="t-cap" x="130" y="126">{L("the 32 ETH stays at work")}</text>
-        <rect class="wd-full" x="250" y="36" width="200" height="120" rx="8" />
-        <text class="t-cap" x="350" y="56">{L("full · exit")}</text>
-        <text class="t-ok" x="350" y="80">{L("validator has exited")}</text>
-        <text class="t-cap" x="350" y="100">{L("entire balance returns")}</text>
-        <text class="t-cap" x="350" y="126">{L("needs an 0x01 credential")}</text>
-        <text class="t-cap" x="240" y="190">{L("both are swept by the CL on a rolling sweep — they simply arrive")}</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="A sweep cursor skims the excess off over-32 validators and empties an exited one">
+        <text class="t-cap" x="240" y="18">{L("the CL sweeps the validator set automatically — no withdraw button")}</text>
+        <line class="wf-32line" x1="44" y1="118" x2="430" y2="118" />
+        <text class="wf-32lbl" x="44" y="112">32 ETH</text>
+        {[[80, "skim", 0], [180, "skim", 1], [280, "exit", 2], [380, "skim", 3]].map(([x, kind, i]) => (
+          <g>
+            <rect class={`wf-base${kind === "exit" ? " wf-exitbar" : ""}`} x={Number(x) - 18} y="118" width="36" height="34" rx="2" />
+            {kind === "skim" && <rect class={`wf-excess wf-ex${i}`} x={Number(x) - 18} y="98" width="36" height="18" rx="2" />}
+            <text class="wf-vlbl" x={x} y="166">{kind === "exit" ? L("exited") : "32+"}</text>
+          </g>
+        ))}
+        <rect class="wf-cursor" x="42" y="90" width="3" height="84" rx="1.5" />
+        <text class="t-cap" x="240" y="188" text-anchor="middle">{L("excess above 32 is skimmed off; an exited validator's whole stake returns")}</text>
+        <text class="t-ok" x="240" y="204" text-anchor="middle">{L("both just arrive on the rolling sweep — you never press a button")}</text>
       </svg>
     )}
 
@@ -1231,19 +1232,25 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-3675: the Terminal Total Difficulty handoff ── */}
     {name === "mg-ttd" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="At the Terminal Total Difficulty, mining stops and the beacon fork-choice picks the head">
-        <text class="t-cap" x="240" y="18">{L("at the Terminal Total Difficulty, mining stops")}</text>
-        <rect class="mg-last" x="24" y="40" width="150" height="60" rx="8" />
-        <text class="t-cap" x="99" y="62">{L("last PoW block")}</text>
-        <text class="t-cap" x="99" y="80">{L("TTD reached")}</text>
-        <path class="sarrow mg-ha" d="M174 70 H214" />
-        <rect class="mg-first" x="214" y="40" width="242" height="60" rx="8" />
-        <text class="t-cap" x="335" y="62">{L("first PoS block")}</text>
-        <text class="t-cap" x="335" y="80">{L("beacon fork-choice picks the head")}</text>
-        <text class="t-cap" x="240" y="128">{L("PoW header fields, neutralized:")}</text>
-        <text class="t-fld mg-fld mg-f0" x="240" y="152">difficulty → 0 · nonce → 0 · ommers → ∅</text>
-        <text class="t-fld mg-fld mg-f1" x="240" y="170">mixHash → prevRandao · block reward → 0</text>
-        <text class="t-cap" x="240" y="202">{L("same chain, same state — only how the head is chosen changes")}</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="Total difficulty accumulates block by block until it crosses the TTD line, triggering the handoff">
+        <text class="t-cap" x="240" y="16">{L("the TTD is an accumulated-work line — it can't be rushed or faked")}</text>
+        <text class="t-fld mg-tdlbl" x="30" y="42" text-anchor="start">{L("total difficulty — each PoW block adds to it")}</text>
+        <rect class="mg-tdtrack" x="30" y="50" width="420" height="18" rx="4" />
+        <rect class="mg-tdfill" x="30" y="50" width="420" height="18" rx="4" />
+        <line class="mg-ttdline" x1="358" y1="44" x2="358" y2="74" />
+        <text class="mg-ttdlbl" x="358" y="40" text-anchor="middle">TTD</text>
+        <text class="t-ok mg-crossed" x="240" y="92" text-anchor="middle">{L("✓ TTD crossed — mining stops, hand off")}</text>
+        <g class="mg-handoff">
+          <rect class="mg-last" x="24" y="104" width="150" height="46" rx="8" />
+          <text class="t-cap" x="99" y="124">{L("last PoW block")}</text>
+          <text class="t-cap mg-sub" x="99" y="140">difficulty → 0</text>
+          <path class="sarrow mg-ha2" d="M174 127 H214" />
+          <rect class="mg-first" x="214" y="104" width="242" height="46" rx="8" />
+          <text class="t-cap" x="335" y="124">{L("first PoS block")}</text>
+          <text class="t-cap mg-sub" x="335" y="140">{L("beacon fork-choice picks the head")}</text>
+        </g>
+        <text class="t-fld mg-fld mg-f0" x="240" y="174">mixHash → prevRandao · nonce → 0 · reward → 0</text>
+        <text class="t-cap" x="240" y="200" text-anchor="middle">{L("same chain, same state — only how the head is chosen changes")}</text>
       </svg>
     )}
 
@@ -1290,19 +1297,24 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-1153: persistent (disk) vs transient (discarded) ── */}
     {name === "ts-scratch" && (
-      <svg viewBox="0 0 480 196" role="img" aria-label="Persistent storage is written to disk; transient storage is discarded at transaction end">
-        <text class="t-cap" x="240" y="20">{L("two stores — one kept, one for this tx only")}</text>
-        <rect class="ts-pers" x="30" y="38" width="190" height="100" rx="8" />
-        <text class="t-cap" x="125" y="60">{L("persistent storage")}</text>
-        <text class="t-fld ts-c" x="125" y="80">SSTORE / SLOAD</text>
-        <text class="t-cap" x="125" y="104">{L("→ written to disk")}</text>
-        <text class="t-cap" x="125" y="122">{L("kept forever")}</text>
-        <rect class="ts-tran" x="260" y="38" width="190" height="100" rx="8" />
-        <text class="t-cap" x="355" y="60">{L("transient storage")}</text>
-        <text class="t-fld ts-c" x="355" y="80">TSTORE / TLOAD</text>
-        <text class="t-ok" x="355" y="104">{L("never touches disk")}</text>
-        <text class="t-x ts-discard" x="355" y="122">{L("discarded at tx end")}</text>
-        <text class="t-cap" x="240" y="186">{L("transient storage is a per-transaction scratchpad — gone when the tx ends")}</text>
+      <svg viewBox="0 0 480 202" role="img" aria-label="At the transaction-end boundary the persistent value survives while the transient value is wiped">
+        <text class="t-cap" x="240" y="18">{L("watch what 'tx ends' does to each store")}</text>
+        <line class="ts-bound" x1="278" y1="42" x2="278" y2="164" />
+        <text class="ts-boundlbl" x="278" y="36" text-anchor="middle">{L("tx ends")}</text>
+        <text class="ts-region" x="196" y="54" text-anchor="middle">{L("during the tx")}</text>
+        <text class="ts-region" x="370" y="54" text-anchor="middle">{L("after")}</text>
+
+        <text class="t-fld ts-rowlbl" x="20" y="82" text-anchor="start">{L("persistent")}</text>
+        <text class="t-fld ts-rc" x="20" y="96" text-anchor="start">SSTORE → disk</text>
+        <g class="ts-pt"><rect class="ts-tok" x="126" y="70" width="40" height="22" rx="4" /><text class="ts-tokt" x="146" y="86">42</text></g>
+        <text class="t-ok ts-survives" x="360" y="86" text-anchor="middle">{L("✓ survives")}</text>
+
+        <text class="t-fld ts-rowlbl" x="20" y="138" text-anchor="start">{L("transient")}</text>
+        <text class="t-fld ts-rc" x="20" y="152" text-anchor="start">TSTORE → RAM</text>
+        <g class="ts-tt"><rect class="ts-tok ts-tokt2" x="126" y="126" width="40" height="22" rx="4" /><text class="ts-tokt" x="146" y="142">42</text></g>
+        <text class="t-x ts-wiped" x="360" y="142" text-anchor="middle">{L("→ 0 · wiped")}</text>
+
+        <text class="t-cap" x="240" y="188" text-anchor="middle">{L("same slot model — only the lifetime differs: transient dies at tx end")}</text>
       </svg>
     )}
 
@@ -2743,11 +2755,20 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes wd-plusin { 0%,46% { opacity: 0; transform: translateY(4px) } 60%,100% { opacity: 1; transform: translateY(0) } }
   .wd-nocall { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
 
-  /* EIP-4895 — wd-flavors: partial skim vs full exit */
-  .wd-part { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); animation: wd-hl1 7s ease-in-out infinite; }
-  .wd-full { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); animation: wd-hl2 7s ease-in-out infinite; }
-  @keyframes wd-hl1 { 0%,20% { filter: none } 32%,42% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 54%,100% { filter: none } }
-  @keyframes wd-hl2 { 0%,56% { filter: none } 68%,82% { filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { filter: none } }
+  /* EIP-4895 — wd-flavors: a sweep cursor skims excess / empties an exit (8s loop) */
+  .wf-32line { stroke: var(--color-border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
+  .wf-32lbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; }
+  .wf-base { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .wf-exitbar { fill: color-mix(in oklab, var(--color-node-extension) 26%, var(--color-surface)); stroke: var(--color-node-extension); animation: wf-exit 8s ease-in-out infinite; }
+  @keyframes wf-exit { 0%,56% { opacity: 1; transform: translateY(0) } 64% { opacity: 0.5; transform: translateY(-18px) } 72%,96% { opacity: 0; transform: translateY(-28px) } 100% { opacity: 1; transform: translateY(0) } }
+  .wf-excess { fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)); stroke: var(--color-accent); }
+  .wf-ex0 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 0s; }
+  .wf-ex1 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 2s; }
+  .wf-ex3 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 6s; }
+  @keyframes wf-skim { 0%,4% { opacity: 1; transform: translateY(0) } 10% { opacity: 0.6; transform: translateY(-16px) } 18%,92% { opacity: 0; transform: translateY(-24px) } 100% { opacity: 1; transform: translateY(0) } }
+  .wf-vlbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8.5px; text-anchor: middle; }
+  .wf-cursor { fill: var(--color-accent-strong); animation: wf-cursor 8s linear infinite; }
+  @keyframes wf-cursor { 0% { transform: translateX(0); opacity: 0.9 } 96% { transform: translateX(338px); opacity: 0.9 } 100% { transform: translateX(338px); opacity: 0 } }
 
   /* EIP-3675 — mg-pow: miners race for a nonce, burning energy */
   .mg-mrect { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
@@ -2770,16 +2791,33 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mgb3, .mgp3 { opacity: 0; animation: mg-grow 5s ease-in-out infinite; }
   @keyframes mg-grow { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
 
-  /* EIP-3675 — mg-ttd: the TTD handoff, PoW fields neutralized */
+  /* EIP-3675 — mg-ttd: total difficulty climbs, crosses TTD, triggers handoff (8s) */
+  .mg-tdlbl { fill: var(--color-ink-faint); font-size: 9px; }
+  .mg-tdtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .mg-tdfill { fill: color-mix(in oklab, var(--color-node-extension) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mg-tdfill 8s ease-in-out infinite; }
+  @keyframes mg-tdfill {
+    0%,6% { transform: scaleX(0.06) }
+    9% { transform: scaleX(0.20) } 18% { transform: scaleX(0.20) }
+    21% { transform: scaleX(0.36) } 30% { transform: scaleX(0.36) }
+    33% { transform: scaleX(0.52) } 42% { transform: scaleX(0.52) }
+    45% { transform: scaleX(0.66) } 50% { transform: scaleX(0.66) }
+    53% { transform: scaleX(0.82); fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)) }
+    100% { transform: scaleX(0.82); fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)) }
+  }
+  .mg-ttdline { stroke: var(--color-changed); stroke-width: 1.6; stroke-dasharray: 3 2; }
+  .mg-ttdlbl { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9px; }
+  .mg-crossed { opacity: 0; animation: mg-crossed 8s ease-in-out infinite; }
+  @keyframes mg-crossed { 0%,53% { opacity: 0 } 60%,92% { opacity: 1 } 100% { opacity: 0 } }
+  .mg-handoff { opacity: 0; animation: mg-handoff 8s ease-in-out infinite; }
+  @keyframes mg-handoff { 0%,56% { opacity: 0 } 64%,100% { opacity: 1 } }
   .mg-last { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .mg-first { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mg-firstin 6s ease-in-out infinite; }
-  @keyframes mg-firstin { 0%,30% { opacity: 0 } 46%,100% { opacity: 1 } }
-  .mg-ha { stroke-dasharray: 44; stroke-dashoffset: 44; animation: mg-hadraw 6s ease-in-out infinite; }
-  @keyframes mg-hadraw { 0%,18% { stroke-dashoffset: 44 } 38%,100% { stroke-dashoffset: 0 } }
+  .mg-first { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .mg-sub { fill: var(--color-ink-faint); }
+  .mg-ha2 { stroke-dasharray: 44; stroke-dashoffset: 44; animation: mg-ha2 8s ease-in-out infinite; }
+  @keyframes mg-ha2 { 0%,60% { stroke-dashoffset: 44 } 72%,100% { stroke-dashoffset: 0 } }
   .mg-fld { text-anchor: middle; }
-  .mg-f0 { opacity: 0; animation: mg-fin 6s ease-in-out infinite; }
-  .mg-f1 { opacity: 0; animation: mg-fin 6s ease-in-out 0.3s infinite; }
-  @keyframes mg-fin { 0%,48% { opacity: 0 } 62%,100% { opacity: 1 } }
+  .mg-f0 { opacity: 0; animation: mg-fin 8s ease-in-out infinite; }
+  @keyframes mg-fin { 0%,64% { opacity: 0 } 74%,100% { opacity: 1 } }
 
   /* EIP-3675 — mg-loop: the CL drives the EL over the Engine API */
   .mg-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
@@ -2805,12 +2843,24 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ts-forever { animation: ts-en 4s ease-in-out infinite; }
   @keyframes ts-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
 
-  /* EIP-1153 — ts-scratch: persistent (disk) vs transient (discarded) */
-  .ts-pers { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-hash); }
-  .ts-tran { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  /* EIP-1153 — ts-scratch: a value crosses the 'tx ends' line; transient is wiped (7s) */
+  .ts-bound { stroke: var(--color-changed); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .ts-boundlbl { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9px; }
+  .ts-region { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8.5px; }
+  .ts-rowlbl { fill: var(--color-ink-muted); }
   .ts-c { text-anchor: middle; fill: var(--color-accent-strong); }
-  .ts-discard { animation: ts-disc 5s ease-in-out infinite; }
-  @keyframes ts-disc { 0%,50% { opacity: 1 } 66% { opacity: 0.25 } 100% { opacity: 1 } }
+  .ts-rc { fill: var(--color-ink-faint); font-size: 8px; }
+  .ts-tok { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); }
+  .ts-tokt2 { fill: color-mix(in oklab, var(--color-node-leaf) 22%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ts-tokt { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; font-weight: 600; }
+  .ts-pt { animation: ts-pt 7s ease-in-out infinite; }
+  @keyframes ts-pt { 0%,8% { opacity: 0; transform: translateX(0) } 14% { opacity: 1; transform: translateX(0) } 78% { opacity: 1; transform: translateX(214px) } 90% { opacity: 1; transform: translateX(214px) } 97%,100% { opacity: 0; transform: translateX(214px) } }
+  .ts-tt { animation: ts-tt 7s ease-in-out infinite; }
+  @keyframes ts-tt { 0%,8% { opacity: 0; transform: translateX(0) } 14% { opacity: 1; transform: translateX(0) } 48% { opacity: 1; transform: translateX(140px) } 54% { opacity: 0; transform: translateX(140px) } 100% { opacity: 0; transform: translateX(140px) } }
+  .ts-survives { opacity: 0; animation: ts-survives 7s ease-in-out infinite; }
+  @keyframes ts-survives { 0%,66% { opacity: 0 } 76%,94% { opacity: 1 } 100% { opacity: 0 } }
+  .ts-wiped { opacity: 0; animation: ts-wiped 7s ease-in-out infinite; }
+  @keyframes ts-wiped { 0%,52% { opacity: 0 } 62%,94% { opacity: 1 } 100% { opacity: 0 } }
 
   /* EIP-1153 — ts-opcodes: TSTORE in caller, TLOAD in sub-call */
   .ts-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }

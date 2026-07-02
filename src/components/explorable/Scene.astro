@@ -116,7 +116,10 @@ interface Props {
     | "rf-cap"
     | "ef-nomark"
     | "ef-reserve"
-    | "ef-unlock";
+    | "ef-unlock"
+    | "p0-hacks"
+    | "p0-opcode"
+    | "p0-savings";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2264,6 +2267,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="180" text-anchor="middle">{L("one reserved byte — the groundwork for EOF and 7702's delegation")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3855: pushing 0 had no opcode — waste or hack ── */}
+    {name === "p0-hacks" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Before PUSH0 there was no clean way to put zero on the stack: PUSH1 0 wastes a byte, RETURNDATASIZE is a hack">
+        <text class="t-cap" x="240" y="20">{L("pushing 0 is everywhere — but there was no opcode for it")}</text>
+        <rect class="p0-way" x="30" y="40" width="200" height="66" rx="8" />
+        <text class="t-fld p0-code" x="130" y="62">PUSH1 0x00</text>
+        <text class="t-x p0-cost" x="130" y="82">2 bytes · 3 gas</text>
+        <text class="t-cap p0-note" x="130" y="98">{L("wastes a byte of code")}</text>
+        <rect class="p0-way" x="250" y="40" width="200" height="66" rx="8" />
+        <text class="t-fld p0-code" x="350" y="62">RETURNDATASIZE</text>
+        <text class="t-cap p0-cost2" x="350" y="82">1 byte · 2 gas</text>
+        <text class="t-x p0-note" x="350" y="98">{L("a hack — it just happens to be 0")}</text>
+        <text class="t-ok p0-both" x="240" y="134" text-anchor="middle">{L("both leave 0 on the stack — but neither is a clean, cheap 'push zero'")}</text>
+        <text class="t-cap" x="240" y="168" text-anchor="middle">{L("and 0 is pushed constantly, so the waste is everywhere")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3855: PUSH0 — one byte, pushes zero ── */}
+    {name === "p0-opcode" && (
+      <svg viewBox="0 0 480 180" role="img" aria-label="PUSH0 is a one-byte opcode that pushes the constant zero for two gas">
+        <text class="t-cap" x="240" y="22">{L("add a dedicated opcode: PUSH0 (0x5F)")}</text>
+        <rect class="p0-op" x="60" y="52" width="120" height="44" rx="8" />
+        <text class="t-addr" x="120" y="72">PUSH0</text>
+        <text class="t-fld p0-opsub" x="120" y="88">0x5F</text>
+        <path class="sarrow p0-a" d="M180 74 H262" />
+        <rect class="p0-stackslot" x="300" y="98" width="80" height="26" rx="5" />
+        <g class="p0-cell"><rect x="300" y="98" width="80" height="26" rx="5" /><text x="340" y="116">0</text></g>
+        <text class="t-cap" x="340" y="88">{L("the stack")}</text>
+        <text class="t-ok p0-spec" x="240" y="150" text-anchor="middle">{L("1 byte of code · 2 gas · pushes the constant 0")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("smaller and cheaper than PUSH1 0, and no hack needed")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3855: smaller bytecode, cheaper deploy ── */}
+    {name === "p0-savings" && (
+      <svg viewBox="0 0 480 182" role="img" aria-label="Replacing PUSH1 0 with PUSH0 shrinks contract bytecode and its deployment cost">
+        <text class="t-cap" x="240" y="20">{L("zero is everywhere, so the savings add up")}</text>
+        <text class="t-fld p0-bl" x="24" y="56" text-anchor="start">{L("before")}</text>
+        <rect class="p0-track" x="96" y="44" width="360" height="20" rx="4" />
+        <rect class="p0-bar p0-barbefore" x="96" y="44" width="360" height="20" rx="4" />
+        <text class="t-fld p0-blbl" x="200" y="59">PUSH1 0 · PUSH1 0 · …</text>
+        <text class="t-fld p0-bl" x="24" y="98" text-anchor="start">{L("after")}</text>
+        <rect class="p0-track" x="96" y="86" width="360" height="20" rx="4" />
+        <rect class="p0-bar p0-barafter" x="96" y="86" width="360" height="20" rx="4" />
+        <text class="t-ok p0-albl" x="180" y="101">PUSH0 · PUSH0 · …</text>
+        <text class="t-ok p0-save" x="240" y="140" text-anchor="middle">{L("smaller code → cheaper to deploy · more room under the 24KB limit")}</text>
+        <text class="t-cap" x="240" y="166" text-anchor="middle">{L("and the RETURNDATASIZE hack can finally be retired")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3807,4 +3860,35 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ef-use0 { animation: tw-rowin 5s ease-out infinite; }
   .ef-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .ef-uc { text-anchor: middle; fill: var(--color-accent-strong); }
+
+  /* ── EIP-3855 — p0-hacks: the old ways to push zero ── */
+  .p0-way { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .p0-code { text-anchor: middle; fill: var(--color-accent-strong); }
+  .p0-cost { text-anchor: middle; }
+  .p0-cost2 { text-anchor: middle; fill: var(--color-ink-muted); }
+  .p0-note { text-anchor: middle; fill: var(--color-ink-faint); }
+  .p0-both { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-3855 — p0-opcode: PUSH0 puts 0 on the stack ── */
+  .p0-op { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
+  .p0-opsub { text-anchor: middle; fill: var(--color-accent-strong); }
+  .p0-a { stroke-dasharray: 84; stroke-dashoffset: 84; animation: st-draw 5s ease-in-out infinite; }
+  .p0-stackslot { fill: none; stroke: var(--color-border); stroke-dasharray: 3 3; }
+  .p0-cell { transform-box: fill-box; transform-origin: center; opacity: 0; animation: p0-cell 5s ease-in-out infinite; }
+  .p0-cell rect { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .p0-cell text { fill: var(--color-ink); font-family: var(--font-mono); font-size: 13px; text-anchor: middle; font-weight: 600; }
+  @keyframes p0-cell { 0%,40% { opacity: 0; transform: scale(0.5) } 55% { opacity: 1; transform: scale(1) } 100% { opacity: 1; transform: scale(1) } }
+  .p0-spec { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-3855 — p0-savings: smaller bytecode (5s) ── */
+  .p0-bl { fill: var(--color-ink-faint); }
+  .p0-track { fill: var(--color-surface); stroke: var(--color-border); }
+  .p0-bar { transform-box: fill-box; transform-origin: left center; }
+  .p0-barbefore { fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)); }
+  .p0-barafter { fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)); animation: p0-shrink 5s ease-in-out infinite; }
+  @keyframes p0-shrink { 0%,20% { transform: scaleX(1) } 55%,100% { transform: scaleX(0.62) } }
+  .p0-blbl { fill: var(--color-ink-muted); }
+  .p0-albl { animation: p0-albl 5s ease-in-out infinite; }
+  @keyframes p0-albl { 0%,20% { opacity: 0.5 } 55%,100% { opacity: 1 } }
+  .p0-save { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

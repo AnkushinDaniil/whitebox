@@ -85,7 +85,14 @@ export const BOOK: BookPart[] = [
         ],
       },
       { forkName: "Paris · The Merge", date: "Sep 2022", chapters: [{ slug: "eip-3675-the-merge", eip: "3675" }] },
-      { forkName: "Shanghai · Capella", date: "Apr 2023", chapters: [{ slug: "eip-4895-withdrawals", eip: "4895" }] },
+      {
+        forkName: "Shanghai · Capella",
+        date: "Apr 2023",
+        chapters: [
+          { slug: "eip-3855-push0", eip: "3855" },
+          { slug: "eip-4895-withdrawals", eip: "4895" },
+        ],
+      },
       { label: "Application layer", date: "2023", chapters: [{ slug: "eip-4337-account-abstraction", eip: "4337" }] },
       {
         forkName: "Cancun · Deneb",

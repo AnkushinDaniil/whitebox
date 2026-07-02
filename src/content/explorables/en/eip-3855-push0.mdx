@@ -1,0 +1,99 @@
+---
+title: "EIP-3855: PUSH0 — the opcode for the number everyone needed"
+dek: "Putting the constant zero on the stack is one of the most common things EVM code does — and until 2023 there was no instruction for it. Compilers either spent an extra byte on PUSH1 0 or reached for a hack. PUSH0 is a one-byte opcode that does exactly one thing, and because zero is everywhere, that tiny win adds up across every contract."
+summary: "A step-by-step derivation of EIP-3855 (the PUSH0 opcode), shipped in Shanghai (April 2023). Why pushing the constant zero — ubiquitous in EVM code — had no dedicated opcode, forcing compilers to use PUSH1 0x00 (two bytes, three gas) or hacks like RETURNDATASIZE (one byte, but relying on returndata being empty); and how PUSH0 (0x5F) fixes it as a one-byte, two-gas instruction that pushes zero, shrinking contract bytecode (cheaper deployment, more headroom under the 24KB code-size limit), trimming execution cost, and letting the fragile RETURNDATASIZE trick be retired."
+topic: EIPs
+order: 23
+spine: true
+prerequisites: ["the EVM stack & opcodes", "gas & code size"]
+updated: 2026-06-24
+readingMinutes: 7
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Shanghai, April 2023.** Not every consequential upgrade is grand; some just fix a paper cut that every contract has been feeling for years. Here's the paper cut: putting the number **zero** on the [stack](/the-evm) is one of the most frequent operations in all of EVM code — initializing variables, comparisons, zeroing memory, the boilerplate around every function — and the EVM had *no opcode for it*. There are opcodes to push any 1-to-32-byte constant, but not a clean one for the single most-used constant of all. **EIP-3855** adds `PUSH0`. It's about as small as an EIP gets, and it's a nice lesson in why "small × everywhere" is worth a hard fork.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "No opcode for zero" },
+  { id: "step-2", label: "Add PUSH0" },
+  { id: "step-3", label: "Small × everywhere" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="No opcode for zero">
+
+## The problem: two bad ways to push zero
+
+To get a zero onto the stack, EVM code had two options, and neither was good. The obvious one is `PUSH1 0x00` — but that's **two bytes** (the `PUSH1` opcode plus its `0x00` immediate) and costs 3 gas, spending a byte of precious contract code just to encode a constant the machine could produce for free. So compilers got clever and abused <KeyTerm term="RETURNDATASIZE trick" def="Using the RETURNDATASIZE opcode (1 byte, 2 gas) to push zero, exploiting the fact that returndata is empty (size 0) at points where compilers knew it would be. Smaller than PUSH1 0, but a hack that relies on context, not intent." />: a **one-byte** opcode that happens to return 0 in the right context. It saves a byte, but it's a hack — you're reading a value that *means* "size of the last call's return data," relying on it being zero, instead of saying what you mean.
+
+<Scene name="p0-hacks" caption="Two ways to put zero on the stack, both bad: PUSH1 0x00 spends two bytes and 3 gas, while the RETURNDATASIZE hack is one byte but relies on returndata happening to be empty. Both leave a 0, but neither is a clean 'push zero' — and zero is pushed constantly." />
+
+<Callout type="warning" title="What breaks">
+Nothing is broken, exactly — but the most common constant in the machine has no honest, minimal encoding. Every contract pays for that in code size (which is deployment cost, and is capped) or in readability. The fix is almost too obvious: just add the opcode.
+</Callout>
+
+**→ Step 2: give zero its own instruction.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Add PUSH0">
+
+## PUSH0: one byte, one job
+
+<KeyTerm term="PUSH0" def="The Shanghai opcode 0x5F. It pushes the constant 0 onto the stack. One byte of code, 2 gas (the base tier), and it says exactly what it does." /> (opcode `0x5F`) does precisely one thing: it pushes the value `0`. It's **one byte** of code and costs **2 gas** — smaller than `PUSH1 0` and cheaper, and unlike the `RETURNDATASIZE` trick it's honest about its intent, so it can't be broken by a change in context. It slots neatly into the opcode space right before `PUSH1` (`0x60`), completing the "push a constant" family with the zero-length case.
+
+<Scene name="p0-opcode" caption="PUSH0 (0x5F) pushes the constant 0 in a single byte for 2 gas. It's smaller and cheaper than PUSH1 0x00, and it means what it says — no reliance on returndata being empty." />
+
+<SpecExcerpt
+  source="EIP-3855: PUSH0 instruction"
+  href="https://eips.ethereum.org/EIPS/eip-3855"
+  ref="the opcode"
+>
+Introduces `PUSH0` (`0x5F`), which pushes the constant `0` onto the stack. It costs 2 gas
+(base) and occupies a single byte. It reduces contract code size versus `PUSH1 0` and
+removes the need for the `RETURNDATASIZE`-based zero-pushing trick used by compilers.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+This clearly helps one contract a little. The real question is whether "a little" is worth a hard fork — which comes down to how *often* it happens.
+</Callout>
+
+**→ Step 3: multiply by everywhere.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Small × everywhere">
+
+## The payoff: a byte saved millions of times
+
+A single byte of code is nothing; a byte saved on *every zero-push in every contract* is a lot. Because zero is pushed constantly, swapping `PUSH1 0` for `PUSH0` measurably **shrinks contract bytecode** — and code size is the dominant cost of deploying a contract, as well as being capped at 24KB, so smaller code means cheaper deployments and more headroom for complex contracts. Execution gets a touch cheaper too, and compilers can drop the `RETURNDATASIZE` hack for something that actually says "push zero."
+
+<Scene name="p0-savings" caption="Swapping PUSH1 0 for PUSH0 across a contract shrinks its bytecode — cheaper to deploy, and more room under the 24KB code-size limit. Because zero is pushed everywhere, a one-byte saving compounds across every contract on the chain." />
+
+<Callout type="insight" title="And that is PUSH0">
+Pushing zero — the EVM's most common constant — had no opcode, so code used **PUSH1 0** (two bytes, 3 gas) or the **RETURNDATASIZE** hack (one byte, but fragile) → add **PUSH0** (0x5F): one byte, 2 gas, and honest about its intent → and because zero is everywhere, that tiny per-use saving compounds into smaller bytecode, cheaper deployments, more room under the code-size cap, and cleaner compiler output. It's the smallest kind of EIP and a good reminder that at Ethereum's scale, optimizing the *most frequent* operation — even by a single byte — is worth a fork. The unglamorous opcode you now use without noticing.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3855: PUSH0 instruction", note: "The spec — 0x5F, one byte, 2 gas", href: "https://eips.ethereum.org/EIPS/eip-3855" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "The stack and the PUSH family this joins", href: "/the-evm" },
+    { kind: "eip", label: "EIP-170: Contract code size limit", note: "Why smaller bytecode buys real headroom", href: "https://eips.ethereum.org/EIPS/eip-170" },
+    { kind: "tool", label: "evm.codes — PUSH0 (0x5F)", note: "The opcode in the interactive reference", href: "https://www.evm.codes/#5f" },
+    { kind: "post", label: "EIP-3529, derived", note: "London's other 'tune a cost' change", href: "/eip-3529-refund-reduction" },
+  ]}
+/>
+
+</DepthLayer>

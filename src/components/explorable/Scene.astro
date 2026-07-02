@@ -1068,15 +1068,29 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-155: the chainId is carried in v ── */}
     {name === "r155-vencode" && (
-      <svg viewBox="0 0 480 184" role="img" aria-label="The chain id is encoded into the signature's v value">
-        <text class="t-cap" x="240" y="22">{L("carry the chain in v")}</text>
-        <rect class="rv-formula" x="80" y="38" width="320" height="40" rx="8" />
-        <text class="t-addr rv-ftext" x="240" y="63">v = chainId·2 + 35 + parity</text>
-        <text class="t-cap" x="120" y="108">{L("mainnet · chainId 1")}</text>
-        <text class="t-ok rv-ex1" x="120" y="126">v = 37 or 38</text>
-        <text class="t-cap" x="360" y="108">{L("legacy · pre-155")}</text>
-        <text class="t-cap" x="360" y="126">v = 27 or 28 — still ok</text>
-        <text class="t-cap" x="240" y="168">{L("the receiver reads the chain from v; old txs stay valid, unprotected")}</text>
+      <svg viewBox="0 0 480 196" role="img" aria-label="A number line of v showing the legacy 27/28 zone and the protected 37/38 zone never overlap">
+        <text class="t-cap" x="240" y="20">{L("why it's backward-compatible: the v ranges can't overlap")}</text>
+        <rect class="rvn-in" x="46" y="32" width="182" height="26" rx="6" />
+        <text class="t-fld rvn-int" x="137" y="49">chainId·2 + 35 + parity</text>
+        <path class="sarrow rvn-arrow" d="M228 45 H270" />
+        <rect class="rvn-out" x="270" y="32" width="118" height="26" rx="6" />
+        <text class="t-ok rvn-outt" x="329" y="49">→ 37 or 38</text>
+
+        <line class="rvn-axis" x1="60" y1="128" x2="420" y2="128" />
+        {[[27, 86], [28, 112], [37, 343], [38, 369]].map(([v, x]) => (
+          <g><line class="rvn-tick" x1={x} y1="124" x2={x} y2="132" /><text class="rvn-num" x={x} y="146">{v}</text></g>
+        ))}
+        <rect class="rvn-legacy" x="80" y="112" width="38" height="16" rx="3" />
+        <text class="t-cap rvn-zl" x="99" y="106">{L("legacy")}</text>
+        <text class="t-cap rvn-sub" x="99" y="164">{L("unprotected")}</text>
+        <rect class="rvn-gap" x="140" y="114" width="180" height="12" rx="3" />
+        <text class="t-cap rvn-gapt" x="230" y="123">{L("29–36 · empty gap")}</text>
+        <rect class="rvn-new" x="337" y="112" width="38" height="16" rx="3" />
+        <text class="t-cap rvn-zl2" x="356" y="106">{L("chainId 1")}</text>
+        <text class="t-cap rvn-sub" x="356" y="164">{L("protected")}</text>
+        <circle class="rvn-mark" cx="329" cy="60" r="5" />
+
+        <text class="t-cap" x="240" y="188" text-anchor="middle">{L("chainId·2+35 always lands past 28 — read v and you know the scheme")}</text>
       </svg>
     )}
 
@@ -1883,19 +1897,22 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── Tangerine Whistle: the 63/64 call-gas rule ── */}
     {name === "tw-6364" && (
-      <svg viewBox="0 0 480 188" role="img" aria-label="EIP-150's 63 over 64 rule caps the gas a call can forward">
-        <text class="t-cap" x="240" y="20">{L("and cap forwarded gas: keep 1/64 back")}</text>
-        <rect class="tw-caller" x="30" y="40" width="140" height="54" rx="8" />
-        <text class="t-cap" x="100" y="62">{L("caller · gas G")}</text>
-        <text class="t-fld tw-keep" x="100" y="80">keeps ≥ G/64</text>
-        <path class="sarrow tw-fwd" d="M170 67 H300" />
-        <text class="t-cap tw-fwdl" x="235" y="59">{L("forwards ≤ 63/64")}</text>
-        <rect class="tw-callee" x="300" y="40" width="150" height="54" rx="8" />
-        <text class="t-cap" x="375" y="62">{L("callee")}</text>
-        <text class="t-fld tw-calleet" x="375" y="80">can't drain it all</text>
-        <text class="t-cap" x="240" y="128" text-anchor="middle">{L("even if the callee burns everything it's given, the caller keeps a sliver…")}</text>
-        <text class="t-ok tw-handle" x="240" y="150" text-anchor="middle">{L("…enough gas to handle the failure cleanly")}</text>
-        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so deep nested calls can't leave a caller stranded with zero gas")}</text>
+      <svg viewBox="0 0 480 192" role="img" aria-label="The caller's gas splits: 63/64 forwarded and burned, a 1/64 sliver kept to survive">
+        <text class="t-cap" x="240" y="20">{L("cap forwarded gas — always keep 1/64 back")}</text>
+        <text class="t-fld tw-glbl" x="40" y="44" text-anchor="start">{L("caller's gas budget G")}</text>
+        <rect class="tw-gbg" x="40" y="52" width="400" height="24" rx="5" />
+        <rect class="tw-fwdchunk" x="40" y="52" width="342" height="24" rx="4" />
+        <rect class="tw-sliver" x="386" y="52" width="54" height="24" rx="4" />
+        <text class="t-fld tw-fwdlbl" x="211" y="68" text-anchor="middle">forwarded ≤ 63/64</text>
+        <text class="t-fld tw-slivlbl" x="413" y="68" text-anchor="middle">1/64</text>
+        <path class="sarrow tw-fwd2" d="M211 84 V104" />
+        <rect class="tw-callee2" x="118" y="106" width="186" height="34" rx="7" />
+        <text class="t-cap tw-recv" x="211" y="127" text-anchor="middle">{L("callee runs…")}</text>
+        <text class="t-x tw-burned" x="211" y="127" text-anchor="middle">{L("callee burned it all")}</text>
+        <path class="sarrow tw-slivarrow" d="M413 84 V104" />
+        <text class="t-ok tw-survive" x="413" y="120" text-anchor="middle">{L("survives ✓")}</text>
+        <text class="t-ok tw-handle2" x="240" y="164" text-anchor="middle">{L("the kept 1/64 lets the caller handle the failure cleanly")}</text>
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("so a deep call can never strand the caller with zero gas")}</text>
       </svg>
     )}
 
@@ -1927,18 +1944,21 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <path class="sarrow rv-b2" d="M240 68 V98" />
         <path class="sarrow rv-b3" d="M270 68 L384 98" />
         <rect class="rv-eff rv-e1" x="24" y="100" width="144" height="70" rx="8" />
-        <text class="t-cap" x="96" y="122">{L("① state")}</text>
-        <text class="t-ok" x="96" y="142">↩ rolled back</text>
-        <text class="t-cap rv-sub" x="96" y="160">{L("atomic — as if untouched")}</text>
+        <text class="t-cap" x="96" y="120">{L("① state — undone")}</text>
+        <rect class="rvr-cell" x="50" y="128" width="92" height="22" rx="4" />
+        <text class="rvr-changed" x="96" y="143">slot = 9</text>
+        <text class="rvr-restored" x="96" y="143">slot = 14 ✓</text>
+        <text class="t-cap rv-sub" x="96" y="163">{L("snaps back, atomic")}</text>
         <rect class="rv-eff rv-e2" x="180" y="100" width="120" height="70" rx="8" />
-        <text class="t-cap" x="240" y="122">{L("② gas")}</text>
-        <text class="t-ok" x="240" y="142">↩ refunded</text>
-        <text class="t-cap rv-sub" x="240" y="160">{L("not burned")}</text>
+        <text class="t-cap" x="240" y="120">{L("② gas — kept")}</text>
+        <rect class="rvr-gbg" x="196" y="130" width="88" height="16" rx="4" />
+        <rect class="rvr-gfull" x="196" y="130" width="88" height="16" rx="4" />
+        <text class="t-ok rv-sub" x="240" y="163">{L("refunded, not burned")}</text>
         <rect class="rv-eff rv-e3" x="312" y="100" width="150" height="70" rx="8" />
-        <text class="t-cap" x="387" y="122">{L("③ return data")}</text>
-        <text class="t-ok" x="387" y="142">"InsufficientBal"</text>
-        <text class="t-cap rv-sub" x="387" y="160">{L("a reason bubbles up")}</text>
-        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("undo the frame · give the gas back · hand back an error blob")}</text>
+        <text class="t-cap" x="387" y="120">{L("③ reason — returned")}</text>
+        <text class="rvr-blob" x="387" y="146">"InsufficientBal"</text>
+        <text class="t-cap rv-sub" x="387" y="163">{L("bubbles up to the caller")}</text>
+        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("undo the frame · give the gas back · hand back an error — unlike a raw throw")}</text>
       </svg>
     )}
 
@@ -2656,12 +2676,29 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .rv-hash { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: rv-hashin 6s ease-in-out infinite; }
   @keyframes rv-hashin { 0%,56% { opacity: 0 } 70%,100% { opacity: 1 } }
 
-  /* EIP-155 — r155-vencode: chainId carried in v */
-  .rv-formula { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .rv-ftext { animation: rv-fpulse 6s ease-in-out infinite; }
-  @keyframes rv-fpulse { 0%,30% { opacity: 0.55 } 46%,100% { opacity: 1 } }
-  .rv-ex1 { opacity: 0; animation: rv-exin 6s ease-out infinite; }
-  @keyframes rv-exin { 0%,50% { opacity: 0 } 64%,100% { opacity: 1 } }
+  /* EIP-155 — r155-vencode: a v number line; the two ranges never overlap */
+  .rvn-in { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .rvn-int { fill: var(--color-accent-strong); text-anchor: middle; }
+  .rvn-arrow { stroke-dasharray: 42; stroke-dashoffset: 42; animation: st-draw 6s ease-in-out infinite; }
+  .rvn-out { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .rvn-outt { text-anchor: middle; }
+  .rvn-axis { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .rvn-tick { stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .rvn-num { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .rvn-legacy { fill: color-mix(in oklab, var(--color-node-extension) 30%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .rvn-zl { fill: var(--color-node-extension); }
+  .rvn-zl2 { fill: var(--color-node-leaf); }
+  .rvn-sub { fill: var(--color-ink-faint); }
+  .rvn-gap { fill: color-mix(in oklab, var(--color-border) 40%, transparent); stroke: var(--color-border); stroke-dasharray: 3 2; }
+  .rvn-gapt { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8.5px; text-anchor: middle; }
+  .rvn-new { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); stroke: var(--color-node-leaf); animation: rvn-newpulse 5s ease-in-out infinite; }
+  @keyframes rvn-newpulse { 0%,60% { filter: none } 72% { filter: drop-shadow(0 0 7px var(--color-node-leaf)) } 84%,100% { filter: none } }
+  .rvn-mark { fill: var(--color-node-leaf); animation: rvn-drop 5s ease-in-out infinite; }
+  @keyframes rvn-drop {
+    0%,20% { transform: translate(0,0); opacity: 0 }
+    30% { opacity: 1 }
+    64%,100% { transform: translate(27px, 60px); opacity: 1 }
+  }
 
   /* EIP-155 — r155-reject: replay on the wrong chain fails recovery */
   .rv-tx2 { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
@@ -3157,15 +3194,25 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .tw-up { stroke-dasharray: 130; stroke-dashoffset: 130; animation: tw-updraw 5s ease-out infinite; }
   @keyframes tw-updraw { 0%,12% { stroke-dashoffset: 130 } 40%,100% { stroke-dashoffset: 0 } }
 
-  /* ── Tangerine Whistle — tw-6364: keep 1/64 of gas back ── */
-  .tw-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .tw-keep { fill: var(--color-node-leaf); text-anchor: middle; }
-  .tw-fwd { stroke-dasharray: 128; stroke-dashoffset: 128; animation: tw-fwddraw 5s ease-in-out infinite; }
-  @keyframes tw-fwddraw { 0%,16% { stroke-dashoffset: 128 } 44%,100% { stroke-dashoffset: 0 } }
-  .tw-fwdl { fill: var(--color-ink-faint); }
-  .tw-callee { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .tw-calleet { fill: var(--color-ink-muted); text-anchor: middle; }
-  .tw-handle { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  /* ── Tangerine Whistle — tw-6364: gas splits, 63/64 drains, 1/64 survives (6s) ── */
+  .tw-glbl { fill: var(--color-ink-faint); }
+  .tw-gbg { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tw-fwdchunk { fill: color-mix(in oklab, var(--color-accent) 34%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: tw-drain 6s ease-in-out infinite; }
+  @keyframes tw-drain { 0%,22% { transform: scaleX(1); fill: color-mix(in oklab, var(--color-accent) 34%, var(--color-surface)) } 58%,100% { transform: scaleX(0.01); fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)) } }
+  .tw-sliver { fill: color-mix(in oklab, var(--color-node-leaf) 40%, var(--color-surface)); stroke: var(--color-node-leaf); animation: tw-slivglow 6s ease-in-out infinite; }
+  @keyframes tw-slivglow { 0%,58% { filter: none } 68% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 80%,100% { filter: none } }
+  .tw-fwdlbl { fill: var(--color-ink-muted); }
+  .tw-slivlbl { fill: var(--color-node-leaf); font-size: 8px; }
+  .tw-fwd2 { stroke-dasharray: 22; stroke-dashoffset: 22; animation: st-draw 6s ease-in-out infinite; }
+  .tw-slivarrow { stroke-dasharray: 22; stroke-dashoffset: 22; animation: st-draw 6s ease-in-out infinite; }
+  .tw-callee2 { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .tw-recv { fill: var(--color-ink-muted); animation: tw-recv 6s ease-in-out infinite; }
+  @keyframes tw-recv { 0%,45% { opacity: 1 } 55%,100% { opacity: 0 } }
+  .tw-burned { fill: var(--color-changed); opacity: 0; animation: tw-burned 6s ease-in-out infinite; }
+  @keyframes tw-burned { 0%,50% { opacity: 0 } 60%,100% { opacity: 1 } }
+  .tw-survive { opacity: 0; animation: tw-survive 6s ease-in-out infinite; }
+  .tw-handle2 { opacity: 0; animation: tw-survive 6s ease-in-out infinite; }
+  @keyframes tw-survive { 0%,60% { opacity: 0 } 72%,100% { opacity: 1 } }
 
   /* ── REVERT — rev-throw: throw burns all gas, silent ── */
   .rv-txbox { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
@@ -3188,6 +3235,18 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .rv-e2 { animation: tw-rowin 5s ease-out 0.25s infinite; }
   .rv-e3 { animation: tw-rowin 5s ease-out 0.5s infinite; }
   .rv-sub { fill: var(--color-ink-faint); }
+  /* the three effects, enacted (5s loop, synced to the boxes' tw-rowin) */
+  .rvr-cell { fill: var(--color-surface); stroke: var(--color-border-strong); animation: rvr-cellflash 5s ease-in-out infinite; }
+  @keyframes rvr-cellflash { 0%,50% { stroke: var(--color-border-strong) } 58% { stroke: var(--color-node-leaf) } 72%,100% { stroke: var(--color-border-strong) } }
+  .rvr-changed { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; opacity: 0; animation: rvr-changed 5s ease-in-out infinite; }
+  @keyframes rvr-changed { 0%,20% { opacity: 0 } 26% { opacity: 1 } 44% { opacity: 1 } 52% { opacity: 0 } 100% { opacity: 0 } }
+  .rvr-restored { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; opacity: 0; animation: rvr-restored 5s ease-in-out infinite; }
+  @keyframes rvr-restored { 0%,50% { opacity: 0 } 58%,100% { opacity: 1 } }
+  .rvr-gbg { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .rvr-gfull { fill: color-mix(in oklab, var(--color-node-leaf) 40%, var(--color-surface)); animation: rvr-gfull 5s ease-in-out infinite; }
+  @keyframes rvr-gfull { 0%,30% { filter: none } 45% { filter: drop-shadow(0 0 6px var(--color-node-leaf)) } 60%,100% { filter: none } }
+  .rvr-blob { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; opacity: 0; animation: rvr-blob 5s ease-in-out infinite; }
+  @keyframes rvr-blob { 0%,28% { opacity: 0; transform: translateY(6px) } 42% { opacity: 1; transform: translateY(0) } 74% { opacity: 1; transform: translateY(-7px) } 88%,100% { opacity: 0; transform: translateY(-11px) } }
 
   /* ── REVERT — rev-catch: catchable sub-call revert ── */
   .rv-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }

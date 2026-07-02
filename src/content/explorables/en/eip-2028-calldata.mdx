@@ -1,0 +1,100 @@
+---
+title: "EIP-2028: the price cut that made rollups possible"
+dek: "A rollup's whole security rests on posting its transaction data to L1, and that data was priced at 68 gas a byte — so expensive it was the dominant cost of every L2 and kept rollups from adding up. EIP-2028 cut it to 16. That one repricing, in 2019, is what opened the door to the rollup era — the door that blobs later widened."
+summary: "A step-by-step derivation of EIP-2028 (calldata gas cost reduction), shipped in Istanbul (December 2019). Why rollups must publish their compressed batch data on L1 as calldata so anyone can reconstruct and verify L2 state — and why, at 68 gas per non-zero byte, that data was a rollup's dominant cost and kept L2 fees high; how EIP-2028 lowered the non-zero calldata cost from 68 to 16 gas (zero bytes stayed 4), roughly a 4× reduction, chosen as a safe balance against the larger worst-case block size cheaper data allows; and how that made optimistic and zk rollups economically viable, opening the L2 scaling era — the precursor to EIP-4844, which later moved rollup data off calldata into far cheaper blobs."
+topic: EIPs
+order: 28
+spine: true
+prerequisites: ["gas & calldata", "rollups (the idea)"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Istanbul, December 2019.** Some upgrades change what Ethereum *can do*; this one changed what became *economically possible* — and in doing so it quietly started the rollup era. A [rollup](/eip-4844-blobs) scales Ethereum by executing transactions off-chain but publishing their data *on*-chain, so anyone can reconstruct and check the L2. That published data is the rollup's security, and it lives in **calldata**. The catch: calldata was priced at **68 gas per byte**, which made posting data the single biggest cost of running an L2 — expensive enough that rollups barely penciled out. **EIP-2028** is a one-line price change with outsized consequences. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Data is the cost" },
+  { id: "step-2", label: "Cut 68 to 16" },
+  { id: "step-3", label: "The rollup era" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Data is the cost">
+
+## The problem: publishing data dominated rollup fees
+
+A rollup's guarantee is <KeyTerm term="data availability" def="The property that a rollup's transaction data is published somewhere anyone can retrieve, so they can independently reconstruct and verify L2 state. Rollups get it by posting compressed batch data to Ethereum L1 as calldata." />: it posts its compressed batch of L2 transactions to L1 so that anyone can rebuild the L2's state and check it. On L1, that batch rides in <KeyTerm term="calldata" def="The input data of a transaction — read-only bytes the EVM can access. It's where rollups put their batch data. Its gas cost is per-byte: originally 68 gas for a non-zero byte, 4 for a zero byte." />, and calldata was billed **68 gas for every non-zero byte**. Since a rollup's whole job is to publish lots of bytes, that per-byte cost dominated everything else — it, not execution, set L2 fees. Rollups were the community's scaling plan, but at 68 gas a byte the numbers barely worked.
+
+<Scene name="cd-cost" caption="A rollup posts its batch of thousands of L2 transactions to L1 as calldata so anyone can verify it — and at 68 gas per non-zero byte, that data was the dominant cost, keeping L2 fees high. Rollups were the scaling plan, but the price of data made them barely viable." />
+
+<Callout type="warning" title="What breaks">
+The 68-gas price was a conservative old estimate of what a byte of calldata costs the network to propagate and store. If it was set too high relative to reality, then rollups — the thing that most needs cheap data — were being overcharged for no good reason. The question is whether it *can* safely come down.
+</Callout>
+
+**→ Step 2: reprice it to reality.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Cut 68 to 16">
+
+## EIP-2028: a non-zero calldata byte drops to 16 gas
+
+Analysis of the real bandwidth and worst-case block-size impact showed 68 was far higher than necessary. EIP-2028 lowered the cost of a **non-zero** calldata byte from **68 to 16 gas** — roughly a **4× reduction** — leaving zero bytes at 4 gas. The reason it's a *balance* and not "make it free": cheaper calldata means a transaction can pack in more bytes for the same gas, so a maliciously data-heavy block could be *larger* and take longer to propagate. `16` was chosen as the point where the worst-case block still propagates safely, while data gets dramatically cheaper for everyone who uses it honestly.
+
+<Scene name="cd-reduce" caption="EIP-2028 cuts a non-zero calldata byte from 68 to 16 gas — about 4× cheaper (zero bytes stay 4). It's a balance, not free: cheaper data lets blocks carry more bytes, so 16 was picked as the point where the worst-case block still propagates safely." />
+
+<SpecExcerpt
+  source="EIP-2028: Transaction data gas cost reduction"
+  href="https://eips.ethereum.org/EIPS/eip-2028"
+  ref="the new cost"
+>
+Reduces the gas cost of a non-zero byte of transaction calldata from 68 to 16. The value is
+chosen based on an analysis of network bandwidth and the worst-case block size, keeping
+block propagation safe while substantially lowering the cost of data-heavy transactions —
+notably the batch data posted by layer-2 rollups.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — data just got ~4× cheaper. The question is whether "4× cheaper data" was enough to change what could be built.
+</Callout>
+
+**→ Step 3: it opened a scaling era.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="The rollup era">
+
+## The payoff: rollups start to add up
+
+With the dominant cost cut roughly fourfold, the rollup math finally worked. **Optimistic rollups** (Arbitrum, Optimism) — which post batch data and rely on fraud proofs — and **zk rollups** (zkSync, Starknet) — which post data plus a [validity proof](/eip-196-197-bn128-precompiles) — became genuinely cheaper than doing the same transactions on L1, and the L2 ecosystem took off. EIP-2028 didn't invent rollups, but it's the repricing that made them *economical*, kicking off Ethereum's rollup-centric scaling roadmap.
+
+<Scene name="cd-rollup" caption="With data ~4× cheaper, optimistic rollups (post data + fraud proofs) and zk rollups (post data + validity proofs) became economical, opening the L2 era. Data was still the bottleneck — which EIP-4844's blobs would later cut much further." />
+
+<Callout type="insight" title="And that is EIP-2028">
+A rollup's security is its **published data**, which lives in **calldata** priced at 68 gas/byte — so data was the dominant L2 cost and rollups barely added up → analysis showed 68 was too high, so **cut a non-zero byte to 16** (~4× cheaper), balanced against worst-case block size → and that made **optimistic and zk rollups economical**, launching Ethereum's rollup-centric scaling era. It's a reminder that a single well-chosen constant can unlock a whole ecosystem. And the story continues: data was still a rollup's biggest expense, so [EIP-4844](/eip-4844-blobs) later moved it off calldata entirely into cheap, ephemeral **blobs** — 2028 opened the door; 4844 widened it.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-2028: Calldata gas cost reduction", note: "The spec — 68 → 16 and the reasoning", href: "https://eips.ethereum.org/EIPS/eip-2028" },
+    { kind: "post", label: "EIP-4844, derived", note: "The blob lane that took rollup data further", href: "/eip-4844-blobs" },
+    { kind: "post", label: "EIP-196/197 — zk precompiles", note: "What lets zk rollups verify their proofs on L1", href: "/eip-196-197-bn128-precompiles" },
+    { kind: "post", label: "EIP-2929/2930, derived", note: "Berlin's other gas-cost recalibration", href: "/eip-2929-2930-access-lists" },
+    { kind: "tool", label: "L2BEAT", note: "The rollups this repricing made possible", href: "https://l2beat.com/" },
+  ]}
+/>
+
+</DepthLayer>

@@ -131,7 +131,10 @@ interface Props {
     | "stc-use"
     | "sc-heavy"
     | "sc-committee"
-    | "sc-handoff";
+    | "sc-handoff"
+    | "cd-cost"
+    | "cd-reduce"
+    | "cd-rollup";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2549,6 +2552,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap sc-caveat" x="240" y="176" text-anchor="middle">{L("(512 is a smaller trust set than full consensus — but far better than an RPC)")}</text>
       </svg>
     )}
+
+    {/* ── EIP-2028: rollups post data as calldata, and it was expensive ── */}
+    {name === "cd-cost" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="Rollups post their batch data on L1 as calldata, which at 68 gas per byte was their dominant cost">
+        <text class="t-cap" x="240" y="20">{L("a rollup must post its data on L1 so anyone can verify")}</text>
+        <rect class="cd-l2" x="24" y="46" width="140" height="56" rx="8" />
+        <text class="t-cap" x="94" y="68">{L("rollup · L2")}</text>
+        <text class="t-fld cd-c" x="94" y="86">{L("1000s of txns")}</text>
+        <path class="sarrow cd-a1" d="M164 74 H228" /><text class="t-cap cd-al" x="196" y="66">{L("post batch")}</text>
+        <rect class="cd-l1" x="228" y="46" width="228" height="56" rx="8" />
+        <text class="t-cap" x="342" y="68">{L("L1 calldata")}</text>
+        <text class="t-x cd-price" x="342" y="86">68 gas / non-zero byte</text>
+        <text class="t-x cd-dom" x="240" y="136" text-anchor="middle">{L("posting the data was the dominant cost — L2 fees stayed high")}</text>
+        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("rollups were the scaling plan, but data costs made them barely viable")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2028: cut non-zero calldata 68 → 16 ── */}
+    {name === "cd-reduce" && (
+      <svg viewBox="0 0 480 184" role="img" aria-label="EIP-2028 cuts the cost of a non-zero calldata byte from 68 gas to 16">
+        <text class="t-cap" x="240" y="20">{L("reprice calldata down — analysis showed 68 was too high")}</text>
+        <text class="t-fld cd-bl" x="24" y="60" text-anchor="start">{L("before")}</text>
+        <rect class="cd-track" x="96" y="48" width="340" height="20" rx="4" />
+        <rect class="cd-bar cd-barbefore" x="96" y="48" width="340" height="20" rx="4" />
+        <text class="t-x cd-blbl" x="440" y="63" text-anchor="end">68 gas/byte</text>
+        <text class="t-fld cd-bl" x="24" y="104" text-anchor="start">{L("after")}</text>
+        <rect class="cd-track" x="96" y="92" width="340" height="20" rx="4" />
+        <rect class="cd-bar cd-barafter" x="96" y="92" width="340" height="20" rx="4" />
+        <text class="t-ok cd-albl" x="188" y="107">16 gas/byte</text>
+        <text class="t-ok cd-save" x="240" y="146" text-anchor="middle">{L("~4× cheaper data (zero bytes stay 4 gas)")}</text>
+        <text class="t-cap" x="240" y="170" text-anchor="middle">{L("the tradeoff: cheaper data means bigger blocks — 16 was the safe balance")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-2028: cheaper data made rollups viable → the L2 era ── */}
+    {name === "cd-rollup" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="Cheaper calldata made rollups economically viable, opening the L2 scaling era">
+        <text class="t-cap" x="240" y="20">{L("4× cheaper data → rollups finally add up")}</text>
+        <rect class="cd-era cd-era0" x="30" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="130" y="66">{L("optimistic rollups")}</text>
+        <text class="t-fld cd-ec" x="130" y="86">{L("post data + fraud proofs")}</text>
+        <text class="t-fld cd-ec" x="130" y="104">Arbitrum · Optimism</text>
+        <rect class="cd-era cd-era1" x="250" y="42" width="200" height="76" rx="8" />
+        <text class="t-cap" x="350" y="66">{L("zk rollups")}</text>
+        <text class="t-fld cd-ec" x="350" y="86">{L("post data + validity proofs")}</text>
+        <text class="t-fld cd-ec" x="350" y="104">zkSync · Starknet</text>
+        <text class="t-cap" x="240" y="146" text-anchor="middle">{L("the 2019 step that opened the L2 era — data was still the bottleneck")}</text>
+        <text class="t-ok cd-blob" x="240" y="168" text-anchor="middle">{L("which EIP-4844 blobs later cut much further")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4243,4 +4296,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sc-hlbl { fill: var(--color-ink-faint); }
   .sc-boot { opacity: 0; animation: dc-late 6s ease-in-out infinite; }
   .sc-caveat { fill: var(--color-ink-faint); }
+
+  /* ── EIP-2028 — cd-cost: calldata was the dominant rollup cost ── */
+  .cd-l2 { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .cd-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .cd-a1 { stroke-dasharray: 64; stroke-dashoffset: 64; animation: st-draw 5s ease-in-out infinite; }
+  .cd-al { fill: var(--color-ink-faint); }
+  .cd-l1 { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
+  .cd-price { text-anchor: middle; }
+  .cd-dom { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-2028 — cd-reduce: 68 → 16 gas per byte (5s) ── */
+  .cd-bl { fill: var(--color-ink-faint); }
+  .cd-track { fill: var(--color-surface); stroke: var(--color-border); }
+  .cd-bar { transform-box: fill-box; transform-origin: left center; }
+  .cd-barbefore { fill: color-mix(in oklab, var(--color-changed) 34%, var(--color-surface)); }
+  .cd-barafter { fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)); animation: cd-shrink 5s ease-in-out infinite; }
+  @keyframes cd-shrink { 0%,20% { transform: scaleX(1) } 55%,100% { transform: scaleX(0.235) } }
+  .cd-blbl { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; }
+  .cd-albl { font-family: var(--font-mono); font-size: 10px; animation: p0-albl 5s ease-in-out infinite; }
+  .cd-save { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-2028 — cd-rollup: the L2 era ── */
+  .cd-era { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
+  .cd-era0 { animation: tw-rowin 5s ease-out infinite; }
+  .cd-era1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .cd-ec { text-anchor: middle; fill: var(--color-ink-faint); }
+  .cd-blob { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

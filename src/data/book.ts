@@ -74,7 +74,14 @@ export const BOOK: BookPart[] = [
         ],
       },
       { forkName: "Constantinople", date: "Feb 2019", chapters: [{ slug: "eip-1014-create2", eip: "1014" }] },
-      { forkName: "Istanbul", date: "Dec 2019", chapters: [{ slug: "eip-1344-chainid", eip: "1344" }] },
+      {
+        forkName: "Istanbul",
+        date: "Dec 2019",
+        chapters: [
+          { slug: "eip-2028-calldata", eip: "2028" },
+          { slug: "eip-1344-chainid", eip: "1344" },
+        ],
+      },
       {
         forkName: "Berlin",
         date: "Apr 2021",

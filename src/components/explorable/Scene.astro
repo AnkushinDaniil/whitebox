@@ -1637,30 +1637,33 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EVM: three places for data — stack, memory, storage ── */}
     {name === "evm-regions" && (
-      <svg viewBox="0 0 480 196" role="img" aria-label="The EVM's three data locations: stack, memory, and storage">
-        <text class="t-cap" x="240" y="20">{L("three places to put data — each a different lifetime & price")}</text>
+      <svg viewBox="0 0 480 214" role="img" aria-label="Watch a call fill stack and memory then end: stack and memory are wiped while storage survives">
+        <text class="t-cap" x="240" y="18">{L("three places to put data — priced by how long they last")}</text>
+        <text class="ev-ph ev-phA" x="240" y="36" text-anchor="middle">{L("① call runs — fill stack & memory, write storage")}</text>
+        <text class="ev-ph ev-phB" x="240" y="36" text-anchor="middle">{L("② call ends — stack & memory wiped")}</text>
+        <text class="ev-ph ev-phC" x="240" y="36" text-anchor="middle">{L("③ next call — only storage survived")}</text>
 
-        <rect class="ev-reg ev-rstack" x="16" y="34" width="146" height="128" rx="8" />
-        <text class="t-cap" x="89" y="54">{L("stack")}</text>
-        {[0, 1, 2].map((i) => (<rect class="ev-sk" x="52" y={68 + i * 20} width="74" height="16" rx="3" />))}
-        <text class="t-ok" x="89" y="140">{L("cheapest")}</text>
-        <text class="t-cap ev-sub" x="89" y="155">{L("LIFO · cleared per call")}</text>
+        <rect class="ev-reg ev-rstack" x="16" y="48" width="146" height="120" rx="8" />
+        <text class="t-cap" x="89" y="66">{L("stack")}</text>
+        {[0, 1, 2].map((i) => (<rect class="ev-eph ev-sk" x="52" y={82 + i * 18} width="74" height="14" rx="3" />))}
+        <text class="t-ok ev-cheap" x="89" y="156">{L("+3 gas · wiped")}</text>
 
-        <rect class="ev-reg ev-rmem" x="170" y="34" width="146" height="128" rx="8" />
-        <text class="t-cap" x="243" y="54">{L("memory")}</text>
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<rect class="ev-byte" x={186 + i * 15} y="72" width="12" height="20" rx="2" />))}
-        <text class="t-cap" x="243" y="112">{L("linear scratch bytes")}</text>
-        <text class="t-cap ev-sub" x="243" y="140">{L("cheap · wiped after the call")}</text>
+        <rect class="ev-reg ev-rmem" x="170" y="48" width="146" height="120" rx="8" />
+        <text class="t-cap" x="243" y="66">{L("memory")}</text>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<rect class="ev-eph ev-byte" x={186 + i * 15} y="86" width="12" height="18" rx="2" />))}
+        <text class="t-cap ev-subm" x="243" y="124">{L("linear scratch")}</text>
+        <text class="t-ok ev-cheap" x="243" y="156">{L("cheap · wiped")}</text>
 
-        <rect class="ev-reg ev-rstore" x="324" y="34" width="140" height="128" rx="8" />
-        <text class="t-cap" x="394" y="54">{L("storage")}</text>
-        <ellipse class="ev-disk" cx="394" cy="80" rx="34" ry="9" />
-        <rect class="ev-diskbody" x="360" y="80" width="68" height="30" rx="2" />
-        <ellipse class="ev-disk" cx="394" cy="110" rx="34" ry="9" />
-        <text class="t-x" x="394" y="140">{L("expensive · on disk")}</text>
-        <text class="t-cap ev-sub" x="394" y="155">{L("key→value · persists forever")}</text>
+        <rect class="ev-reg ev-rstore" x="324" y="48" width="140" height="120" rx="8" />
+        <text class="t-cap" x="394" y="66">{L("storage")}</text>
+        <ellipse class="ev-disk" cx="394" cy="88" rx="34" ry="9" />
+        <rect class="ev-diskbody" x="360" y="88" width="68" height="26" rx="2" />
+        <ellipse class="ev-disk" cx="394" cy="114" rx="34" ry="9" />
+        <rect class="ev-persist" x="366" y="92" width="56" height="16" rx="3" />
+        <text class="ev-persistval" x="394" y="104">42</text>
+        <text class="t-x ev-exp" x="394" y="156">{L("20000 gas · survives")}</text>
 
-        <text class="t-cap" x="240" y="186">{L("stack for working, memory for scratch, storage for what must survive")}</text>
+        <text class="t-cap" x="240" y="200">{L("ephemeral data is cheap; data that outlives the call costs ~1000× more")}</text>
       </svg>
     )}
 
@@ -1689,58 +1692,65 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── State: the three Merkle-Patricia node types ── */}
     {name === "st-nodes" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="The three Merkle-Patricia trie node types: branch, extension, and leaf">
-        <text class="t-cap" x="240" y="20">{L("a path spelled in nibbles: a · 7 · c · 1")}</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="Walking the key a7c1 down the three node types, then the hash bubbling up">
+        <text class="t-cap" x="240" y="18">{L("walk the key a7c1 — each node consumes part of it")}</text>
+        <g>
+          <rect class="st-nib st-nib0" x="196" y="26" width="30" height="17" rx="4" /><text class="st-nibt" x="211" y="38">a7</text>
+          <rect class="st-nib st-nib1" x="230" y="26" width="22" height="17" rx="4" /><text class="st-nibt" x="241" y="38">c</text>
+          <rect class="st-nib st-nib2" x="256" y="26" width="22" height="17" rx="4" /><text class="st-nibt" x="267" y="38">1</text>
+        </g>
 
-        <rect class="st-ext" x="20" y="40" width="130" height="52" rx="7" />
-        <text class="t-cap" x="85" y="60">{L("extension")}</text>
-        <text class="t-fld st-nn" x="85" y="78">shared: a7</text>
-        <path class="sarrow st-e1" d="M150 66 H196" />
+        <rect class="st-ext st-gl-ext" x="20" y="52" width="128" height="52" rx="7" />
+        <text class="t-cap" x="84" y="72">{L("extension")}</text>
+        <text class="t-fld st-nn" x="84" y="90">eats a7</text>
+        <path class="sarrow st-e1" d="M148 78 H194" />
 
-        <rect class="st-branch" x="196" y="34" width="150" height="88" rx="7" />
-        <text class="t-cap" x="271" y="52">{L("branch · 16 ways")}</text>
+        <rect class="st-branch st-gl-branch" x="194" y="48" width="152" height="82" rx="7" />
+        <text class="t-cap" x="270" y="65">{L("branch · 16 ways")}</text>
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={206 + i * 17} y="62" width="13" height="13" rx="2" />
+          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={204 + i * 17} y="74" width="13" height="13" rx="2" />
         ))}
         {[8, 9, 10, 11, 12, 13, 14, 15].map((i) => (
-          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={206 + (i - 8) * 17} y="80" width="13" height="13" rx="2" />
+          <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={204 + (i - 8) * 17} y="92" width="13" height="13" rx="2" />
         ))}
-        <text class="t-fld st-nn" x="271" y="112">{L("one slot per nibble 0–f")}</text>
-        <path class="sarrow st-e2" d="M346 78 H392" />
+        <text class="t-fld st-nn" x="270" y="122">{L("nibble c → its slot")}</text>
+        <path class="sarrow st-e2" d="M346 90 H392" />
 
-        <rect class="st-leaf" x="392" y="52" width="80" height="52" rx="7" />
-        <text class="t-cap" x="432" y="72">{L("leaf")}</text>
-        <text class="t-fld st-nn" x="432" y="90">c1 → value</text>
+        <rect class="st-leaf st-gl-leaf" x="392" y="64" width="80" height="52" rx="7" />
+        <text class="t-cap" x="432" y="84">{L("leaf")}</text>
+        <text class="t-fld st-nn" x="432" y="102">1 → value</text>
 
-        <text class="t-cap" x="240" y="150">{L("extension: shared prefix · branch: 16 ways · leaf: tail + value")}</text>
-        <text class="t-cap st-sub2" x="240" y="176" text-anchor="middle">{L("every node also stores the hash of its children — that's the 'Merkle' part")}</text>
-        <text class="t-cap" x="240" y="200" text-anchor="middle">{L("so the root hash depends on every value beneath it")}</text>
+        <text class="t-ok st-up" x="240" y="152" text-anchor="middle">{L("↑ each node hashes its children — the hash bubbles up")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so change any leaf and the root hash changes with it")}</text>
+        <text class="t-cap st-sub2" x="240" y="200" text-anchor="middle">{L("extension collapses a prefix · branch splits 16 ways · leaf ends the path")}</text>
       </svg>
     )}
 
     {/* ── State: the state root lands in the block header; headers chain ── */}
     {name === "st-header" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="The state root is one field in the block header, and headers chain by parent hash">
-        <text class="t-cap" x="240" y="20">{L("three roots summarize the whole block")}</text>
-        <rect class="st-hdr" x="150" y="32" width="180" height="82" rx="8" />
-        <text class="t-cap" x="240" y="50">{L("block header")}</text>
-        <text class="t-fld st-hf st-hfhot" x="164" y="70">stateRoot   0x9f2e…</text>
-        <text class="t-fld st-hf" x="164" y="86">txRoot      0x4c11…</text>
-        <text class="t-fld st-hf" x="164" y="102">receiptsRoot 0x77a…</text>
-        <path class="sarrow st-ha" d="M330 73 H372" />
-        <rect class="st-bh" x="372" y="56" width="96" height="34" rx="7" />
-        <text class="t-cap" x="420" y="70">blockHash</text>
-        <text class="st-roothex" x="420" y="84">0xb3…</text>
+      <svg viewBox="0 0 480 212" role="img" aria-label="Tampering one past state root cascades through every later block's hash">
+        <text class="t-cap" x="240" y="18">{L("the state root is one field in the header — with two others")}</text>
+        <rect class="st-hdr" x="150" y="28" width="180" height="70" rx="8" />
+        <text class="t-fld st-hf st-hfhot" x="164" y="50">stateRoot   0x9f2e…</text>
+        <text class="t-fld st-hf" x="164" y="68">txRoot      0x4c11…</text>
+        <text class="t-fld st-hf" x="164" y="86">receiptsRoot 0x77a…</text>
+        <path class="sarrow st-ha" d="M330 63 H372" />
+        <rect class="st-bh" x="372" y="46" width="92" height="34" rx="7" />
+        <text class="t-cap" x="418" y="60">blockHash</text>
+        <text class="st-roothex" x="418" y="74">0xb3…</text>
 
+        <text class="t-x st-tamplbl" x="240" y="118" text-anchor="middle">{L("↓ tamper one past state root ↓")}</text>
         {[0, 1, 2].map((i) => (
           <g>
-            <rect class="st-block" x={40 + i * 150} y="134" width="118" height="40" rx="6" />
-            <text class="t-cap" x={99 + i * 150} y="150">{`block n${i ? "+" + i : ""}`}</text>
-            <text class="t-fld st-nn" x={99 + i * 150} y="166">parentHash ↩</text>
-            {i < 2 && <path class="sarrow st-link" d={`M${158 + i * 150} 154 H${190 + i * 150}`} />}
+            <rect class={`st-cblock st-cb${i}`} x={26 + i * 152} y="130" width="126" height="54" rx="6" />
+            <text class="t-cap" x={89 + i * 152} y="148">{`block n${i ? "+" + i : ""}`}</text>
+            <text class={`t-fld st-sr st-sr${i}`} x={89 + i * 152} y="165" text-anchor="middle">{i === 0 ? "stateRoot ✎" : "hash ✗"}</text>
+            <text class="t-fld st-nn" x={89 + i * 152} y="179" text-anchor="middle">parentHash</text>
+            {i < 2 && <path class={`sarrow st-clink st-cl${i}`} d={`M${152 + i * 152} 157 H${178 + i * 152}`} />}
+            {i < 2 && <text class={`st-break st-brk${i}`} x={165 + i * 152} y="150" text-anchor="middle">✗</text>}
           </g>
         ))}
-        <text class="t-cap" x="240" y="194" text-anchor="middle">{L("agree on the header and you agree on all of state; chaining locks the past")}</text>
+        <text class="t-cap" x="240" y="206" text-anchor="middle">{L("rewrite a past balance → its root, its hash, and every block after it break")}</text>
       </svg>
     )}
 
@@ -2974,18 +2984,32 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .ev-halt { opacity: 0; animation: ev-halt 6s ease-in-out infinite; }
   @keyframes ev-halt { 0%,68% { opacity: 0 } 80% { opacity: 1 } 100% { opacity: 1 } }
 
-  /* ── EVM — evm-regions: stack / memory / storage ── */
+  /* ── EVM — evm-regions: a call fills stack/memory then ends; storage survives ── */
   .ev-reg { fill: var(--color-surface); }
   .ev-rstack { stroke: var(--color-node-leaf); }
   .ev-rmem { stroke: var(--color-accent-dim); }
   .ev-rstore { stroke: var(--color-hash); }
-  .ev-sub { fill: var(--color-ink-faint); }
-  .ev-sk { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); animation: ev-skb 4s ease-in-out infinite; }
-  @keyframes ev-skb { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
-  .ev-byte { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); animation: ev-byte 4s ease-in-out infinite; }
-  @keyframes ev-byte { 0%,100% { opacity: 0.45 } 50% { opacity: 0.9 } }
+  .ev-subm { fill: var(--color-ink-faint); text-anchor: middle; }
+  .ev-cheap { fill: var(--color-node-leaf); }
+  .ev-exp { fill: var(--color-changed); }
   .ev-disk { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); }
   .ev-diskbody { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  /* phase captions cycle: run → end → next call (9s loop) */
+  .ev-ph { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9.5px; opacity: 0; }
+  .ev-phA { animation: ev-phA 9s ease-in-out infinite; }
+  .ev-phB { animation: ev-phB 9s ease-in-out infinite; }
+  .ev-phC { animation: ev-phC 9s ease-in-out infinite; }
+  @keyframes ev-phA { 0% { opacity: 0 } 4% { opacity: 1 } 34% { opacity: 1 } 39% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes ev-phB { 0%,39% { opacity: 0 } 43% { opacity: 1 } 51% { opacity: 1 } 55% { opacity: 0 } 100% { opacity: 0 } }
+  @keyframes ev-phC { 0%,55% { opacity: 0 } 59% { opacity: 1 } 90% { opacity: 1 } 95% { opacity: 0 } 100% { opacity: 0 } }
+  /* ephemeral stack/memory cells: fill during the call, wiped when it ends */
+  .ev-eph { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ev-eph 9s ease-in-out infinite; }
+  .ev-byte { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  @keyframes ev-eph { 0% { opacity: 0 } 8% { opacity: 1 } 39% { opacity: 1 } 49% { opacity: 0 } 100% { opacity: 0 } }
+  /* persistent storage cell: written during the call, survives across calls */
+  .ev-persist { fill: color-mix(in oklab, var(--color-hash) 22%, var(--color-surface)); stroke: var(--color-hash); opacity: 0; animation: ev-persist 9s ease-in-out infinite; }
+  .ev-persistval { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; font-weight: 600; opacity: 0; animation: ev-persist 9s ease-in-out infinite; }
+  @keyframes ev-persist { 0%,12% { opacity: 0 } 20% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-hash)) } 28% { filter: none } 100% { opacity: 1 } }
 
   /* ── State — st-fingerprint: world state → one root, tamper flips it ── */
   .st-acct rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
@@ -3016,6 +3040,24 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes st-hot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
   .st-e1 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out infinite; }
   .st-e2 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  /* nibble chips light as the walk consumes them (9s loop) */
+  .st-nib { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .st-nibt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .st-nib0 { animation: st-nib0 9s ease-in-out infinite; }
+  .st-nib1 { animation: st-nib1 9s ease-in-out infinite; }
+  .st-nib2 { animation: st-nib2 9s ease-in-out infinite; }
+  @keyframes st-nib0 { 0%,4% { opacity: 0.35 } 8%,100% { opacity: 1 } }
+  @keyframes st-nib1 { 0%,16% { opacity: 0.35 } 20%,100% { opacity: 1 } }
+  @keyframes st-nib2 { 0%,28% { opacity: 0.35 } 32%,100% { opacity: 1 } }
+  /* each node glows twice: on the way down (walk) and on the way up (hash) */
+  .st-gl-ext { animation: st-gl-ext 9s ease-in-out infinite; }
+  .st-gl-branch { animation: st-gl-branch 9s ease-in-out infinite; }
+  .st-gl-leaf { animation: st-gl-leaf 9s ease-in-out infinite; }
+  @keyframes st-gl-ext { 0%,2% { filter: none } 8% { filter: drop-shadow(0 0 7px var(--color-node-extension)) } 14%,64% { filter: none } 70% { filter: drop-shadow(0 0 7px var(--color-node-extension)) } 76%,100% { filter: none } }
+  @keyframes st-gl-branch { 0%,14% { filter: none } 20% { filter: drop-shadow(0 0 7px var(--color-node-branch)) } 26%,54% { filter: none } 60% { filter: drop-shadow(0 0 7px var(--color-node-branch)) } 66%,100% { filter: none } }
+  @keyframes st-gl-leaf { 0%,26% { filter: none } 32% { filter: drop-shadow(0 0 7px var(--color-node-leaf)) } 38%,44% { filter: none } 50% { filter: drop-shadow(0 0 7px var(--color-node-leaf)) } 56%,100% { filter: none } }
+  .st-up { opacity: 0; animation: st-up 9s ease-in-out infinite; }
+  @keyframes st-up { 0%,42% { opacity: 0 } 50%,76% { opacity: 1 } 84%,100% { opacity: 0 } }
 
   /* ── State — st-header: roots → header → chained blocks ── */
   .st-hdr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
@@ -3024,8 +3066,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes st-hfhot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
   .st-ha { stroke-dasharray: 44; stroke-dashoffset: 44; animation: st-draw 5s ease-in-out infinite; }
   .st-bh { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
-  .st-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .st-link { stroke-dasharray: 34; stroke-dashoffset: 34; animation: st-draw 5s ease-in-out 0.5s infinite; }
+  /* tamper cascade: a past root goes red, then each later block's hash breaks in sequence (8s loop) */
+  .st-tamplbl { opacity: 0; animation: st-tamplbl 8s ease-in-out infinite; }
+  @keyframes st-tamplbl { 0%,18% { opacity: 0 } 24%,72% { opacity: 1 } 84%,100% { opacity: 0 } }
+  .st-cblock { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .st-cb0 { animation: st-casc 8s ease-in-out infinite; }
+  .st-cb1 { animation: st-casc 8s ease-in-out infinite; animation-delay: 0.9s; }
+  .st-cb2 { animation: st-casc 8s ease-in-out infinite; animation-delay: 1.8s; }
+  @keyframes st-casc {
+    0%,22% { stroke: var(--color-border-strong); fill: var(--color-surface) }
+    30%,74% { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)) }
+    86%,100% { stroke: var(--color-border-strong); fill: var(--color-surface) }
+  }
+  .st-sr { fill: var(--color-ink-muted); }
+  .st-sr0 { animation: st-srred 8s ease-in-out infinite; }
+  .st-sr1 { animation: st-srred 8s ease-in-out infinite; animation-delay: 0.9s; }
+  .st-sr2 { animation: st-srred 8s ease-in-out infinite; animation-delay: 1.8s; }
+  @keyframes st-srred { 0%,22% { fill: var(--color-ink-muted) } 30%,74% { fill: var(--color-changed) } 86%,100% { fill: var(--color-ink-muted) } }
+  .st-clink { stroke: var(--color-border-strong); }
+  .st-cl0 { animation: st-linkbreak 8s ease-in-out infinite; animation-delay: 0.5s; }
+  .st-cl1 { animation: st-linkbreak 8s ease-in-out infinite; animation-delay: 1.4s; }
+  @keyframes st-linkbreak { 0%,26% { stroke: var(--color-border-strong) } 34%,74% { stroke: var(--color-changed) } 86%,100% { stroke: var(--color-border-strong) } }
+  .st-break { fill: var(--color-changed); font-size: 12px; opacity: 0; }
+  .st-brk0 { animation: st-brk 8s ease-in-out infinite; animation-delay: 0.5s; }
+  .st-brk1 { animation: st-brk 8s ease-in-out infinite; animation-delay: 1.4s; }
+  @keyframes st-brk { 0%,28% { opacity: 0 } 36%,74% { opacity: 1 } 84%,100% { opacity: 0 } }
 
   /* ── DELEGATECALL — dc-copy: duplication vs shared library ── */
   .dc-copybox rect { fill: var(--color-surface); stroke: var(--color-border-strong); }

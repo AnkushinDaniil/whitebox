@@ -95,7 +95,7 @@ export const FORKS: Fork[] = [
     blurb: "Metropolis part one — privacy precompiles and REVERT.",
     eips: [
       { eip: "100", title: "Average-block-time difficulty", category: "consensus" },
-      { eip: "140", title: "REVERT instruction", category: "execution" },
+      { eip: "140", title: "REVERT instruction", category: "execution", slug: "eip-140-revert" },
       { eip: "196", title: "alt_bn128 add/mul precompiles", category: "execution" },
       { eip: "197", title: "alt_bn128 pairing precompile", category: "execution" },
       { eip: "198", title: "Big-integer modexp", category: "execution" },

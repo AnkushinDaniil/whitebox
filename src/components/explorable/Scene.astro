@@ -101,7 +101,10 @@ interface Props {
     | "dc-proxy"
     | "tw-underpriced"
     | "tw-reprice"
-    | "tw-6364";
+    | "tw-6364"
+    | "rev-throw"
+    | "rev-revert"
+    | "rev-catch";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -1885,6 +1888,68 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so deep nested calls can't leave a caller stranded with zero gas")}</text>
       </svg>
     )}
+
+    {/* ── REVERT: the old way — throw burns all gas, says nothing ── */}
+    {name === "rev-throw" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Before REVERT, throwing on a failed check burned all remaining gas and returned no error">
+        <text class="t-cap" x="240" y="20">{L("before: a failed check threw — expensive and silent")}</text>
+        <rect class="rv-txbox" x="24" y="38" width="150" height="52" rx="8" />
+        <text class="t-cap" x="99" y="58">{L("your transaction")}</text>
+        <text class="t-fld rv-cc" x="99" y="76">require(bal ≥ amt)</text>
+        <path class="sarrow rv-a" d="M174 64 H236" /><text class="t-x rv-fail" x="205" y="56">✗</text>
+        <rect class="rv-throwbox" x="236" y="38" width="220" height="52" rx="8" />
+        <text class="t-cap" x="346" y="58">throw / invalid opcode</text>
+        <text class="t-fld rv-throwt" x="346" y="76">state undone — but…</text>
+        <rect class="rv-gtrack" x="60" y="110" width="360" height="18" rx="5" />
+        <rect class="rv-gburn" x="60" y="110" width="360" height="18" rx="5" />
+        <text class="t-x rv-burn" x="240" y="146" text-anchor="middle">{L("✗ all remaining gas burned · ✗ no reason returned")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a legitimate failed condition cost you everything and told you nothing")}</text>
+      </svg>
+    )}
+
+    {/* ── REVERT: undo state, refund gas, return an error ── */}
+    {name === "rev-revert" && (
+      <svg viewBox="0 0 480 210" role="img" aria-label="REVERT undoes state changes, refunds remaining gas, and returns error data">
+        <text class="t-cap" x="240" y="20">{L("REVERT (0xfd) — three things at once")}</text>
+        <rect class="rv-op" x="196" y="34" width="88" height="34" rx="8" />
+        <text class="t-addr" x="240" y="56">REVERT</text>
+        <path class="sarrow rv-b1" d="M210 68 L96 98" />
+        <path class="sarrow rv-b2" d="M240 68 V98" />
+        <path class="sarrow rv-b3" d="M270 68 L384 98" />
+        <rect class="rv-eff rv-e1" x="24" y="100" width="144" height="70" rx="8" />
+        <text class="t-cap" x="96" y="122">{L("① state")}</text>
+        <text class="t-ok" x="96" y="142">↩ rolled back</text>
+        <text class="t-cap rv-sub" x="96" y="160">{L("atomic — as if untouched")}</text>
+        <rect class="rv-eff rv-e2" x="180" y="100" width="120" height="70" rx="8" />
+        <text class="t-cap" x="240" y="122">{L("② gas")}</text>
+        <text class="t-ok" x="240" y="142">↩ refunded</text>
+        <text class="t-cap rv-sub" x="240" y="160">{L("not burned")}</text>
+        <rect class="rv-eff rv-e3" x="312" y="100" width="150" height="70" rx="8" />
+        <text class="t-cap" x="387" y="122">{L("③ return data")}</text>
+        <text class="t-ok" x="387" y="142">"InsufficientBal"</text>
+        <text class="t-cap rv-sub" x="387" y="160">{L("a reason bubbles up")}</text>
+        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("undo the frame · give the gas back · hand back an error blob")}</text>
+      </svg>
+    )}
+
+    {/* ── REVERT: a sub-call's revert is catchable by the caller ── */}
+    {name === "rev-catch" && (
+      <svg viewBox="0 0 480 194" role="img" aria-label="A sub-call's revert is returned to the caller as a catchable failure with its reason">
+        <text class="t-cap" x="240" y="20">{L("a sub-call can fail without killing the caller")}</text>
+        <rect class="rv-caller" x="20" y="42" width="150" height="70" rx="8" />
+        <text class="t-cap" x="95" y="64">{L("caller")}</text>
+        <text class="t-fld rv-cc" x="95" y="82">try — call</text>
+        <text class="t-ok rv-catchl" x="95" y="100">catch (reason) ✓</text>
+        <path class="sarrow rv-c1" d="M170 62 H300" /><text class="t-cap rv-cl" x="235" y="54">call</text>
+        <path class="sarrow rv-c2" d="M300 92 H170" /><text class="t-x rv-cl2" x="235" y="108">revert("reason") ↩</text>
+        <rect class="rv-callee2" x="300" y="42" width="160" height="70" rx="8" />
+        <text class="t-cap" x="380" y="64">{L("callee")}</text>
+        <text class="t-fld rv-cc" x="380" y="82">REVERT + reason</text>
+        <text class="t-cap rv-sub" x="380" y="100">{L("its state undone")}</text>
+        <text class="t-cap" x="240" y="150" text-anchor="middle">{L("the revert returns as a failed call — the caller decides what to do")}</text>
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("this is what require(reason), custom errors, and try/catch are built on")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -3036,4 +3101,35 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .tw-callee { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .tw-calleet { fill: var(--color-ink-muted); text-anchor: middle; }
   .tw-handle { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── REVERT — rev-throw: throw burns all gas, silent ── */
+  .rv-txbox { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .rv-cc { text-anchor: middle; fill: var(--color-accent-strong); }
+  .rv-a { stroke-dasharray: 60; stroke-dashoffset: 60; animation: st-draw 5s ease-in-out infinite; }
+  .rv-fail { fill: var(--color-changed); font-size: 13px; text-anchor: middle; }
+  .rv-throwbox { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
+  .rv-throwt { fill: var(--color-ink-muted); text-anchor: middle; }
+  .rv-gtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .rv-gburn { fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: rv-burn 5s ease-in-out infinite; }
+  @keyframes rv-burn { 0%,30% { transform: scaleX(1); fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)) } 55%,100% { transform: scaleX(0.02); fill: var(--color-changed) } }
+  .rv-burn { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── REVERT — rev-revert: undo, refund, return ── */
+  .rv-op { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
+  .rv-b1, .rv-b2, .rv-b3 { stroke-dasharray: 130; stroke-dashoffset: 130; animation: st-draw 5s ease-in-out infinite; }
+  .rv-b2 { animation-delay: 0.2s; } .rv-b3 { animation-delay: 0.4s; }
+  .rv-eff { fill: var(--color-surface); stroke: var(--color-node-leaf); opacity: 0; }
+  .rv-e1 { animation: tw-rowin 5s ease-out infinite; }
+  .rv-e2 { animation: tw-rowin 5s ease-out 0.25s infinite; }
+  .rv-e3 { animation: tw-rowin 5s ease-out 0.5s infinite; }
+  .rv-sub { fill: var(--color-ink-faint); }
+
+  /* ── REVERT — rev-catch: catchable sub-call revert ── */
+  .rv-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .rv-callee2 { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
+  .rv-c1 { stroke-dasharray: 132; stroke-dashoffset: 132; animation: st-draw 5s ease-in-out infinite; }
+  .rv-c2 { stroke-dasharray: 132; stroke-dashoffset: 132; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .rv-cl { fill: var(--color-ink-faint); }
+  .rv-cl2 { fill: var(--color-changed); }
+  .rv-catchl { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 </style>

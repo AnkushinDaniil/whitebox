@@ -1,0 +1,111 @@
+---
+title: "EIP-140: REVERT — failing cheaply, and saying why"
+dek: "Before Byzantium, a contract that hit a bad condition had one blunt option: throw — which undid its work but also torched every drop of the caller's remaining gas and returned no explanation. REVERT keeps the undo, gives the gas back, and lets the contract return an error. Every require(\"reason\"), custom error, and try/catch you've ever written descends from it."
+summary: "A step-by-step derivation of EIP-140 (REVERT), shipped in Byzantium (October 2017). Why aborting a contract call used to mean throwing — which reverted state but consumed all remaining gas and returned no data, punishing legitimate failed conditions and leaving no way to explain them; how the REVERT opcode (0xfd) fixes all three at once by atomically undoing the current frame's state changes, refunding the unused gas, and returning an error blob; and how that single instruction underpins require with reason strings, custom errors, and try/catch, because a sub-call's revert comes back to the caller as a catchable failure carrying its reason. Notes Byzantium's other big ships — STATICCALL and the alt_bn128 pairing precompiles that made on-chain zk verification possible."
+topic: EIPs
+order: 18
+spine: true
+prerequisites: ["the EVM, gas & the call model", "state changes"]
+updated: 2026-06-24
+readingMinutes: 10
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+
+**Byzantium, October 2017.** A big fork — it brought the cryptographic precompiles that made on-chain zero-knowledge proofs possible and a call type that can't touch state. But the change that every Solidity developer feels daily is smaller and more humble: a new way to *fail*. Up to here, a contract that detected a bad condition — an overdrawn balance, a failed permission check — could only `throw`, and throwing was a scorched-earth act: it undid the work, but it also burned every unit of gas the caller had left and handed back not one byte of explanation. **EIP-140** introduces `REVERT`, and with it, failure becomes cheap, precise, and *legible*. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Failure was scorched earth" },
+  { id: "step-2", label: "Undo, refund, explain" },
+  { id: "step-3", label: "Catchable by the caller" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Failure was scorched earth">
+
+## The problem: aborting cost everything and said nothing
+
+A contract call either succeeds and commits its state changes, or it aborts and they must be undone — you never want a *half-applied* transfer. Before Byzantium the only way to abort was to <KeyTerm term="throw" def="The pre-Byzantium way to abort: execute an invalid instruction (or Solidity's throw), which reverted the frame's state changes but consumed all remaining gas and returned no data." /> — typically by hitting an invalid opcode. That did undo the state, which is correct. But it came with two brutal side effects: it consumed **all** the caller's remaining gas, and it returned **no data** at all. So a perfectly reasonable `require(balance >= amount)` that simply wasn't met would burn the user's entire gas budget *and* leave them staring at a bare "transaction failed" with no reason.
+
+<Scene name="rev-throw" caption="Before REVERT, a failed check threw: the frame's state was correctly undone, but every unit of remaining gas was burned and no error data came back. A legitimate, expected failure cost the user their whole gas budget and told them nothing about what went wrong." />
+
+<Callout type="warning" title="What breaks">
+Undoing state on failure is right. Burning all the gas for an *expected* condition is punitive, and returning no reason makes contracts undebuggable and un-composable. We want the atomic undo — *without* the wasted gas, and *with* a way to say what happened.
+</Callout>
+
+**→ Step 2: keep the undo, drop the punishment, add a reason.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Undo, refund, explain">
+
+## REVERT: three fixes in one opcode
+
+<KeyTerm term="REVERT" def="The Byzantium opcode 0xfd. It halts the current call, reverts all of that frame's state changes atomically, returns the unused gas to the caller, and returns a data blob (offset, length) — used to carry an error reason." /> (opcode `0xfd`) does exactly what we asked for, three things at once. It **reverts** all state changes made in the current call frame — atomically, as if the frame never ran. It **refunds** the remaining gas instead of burning it, so an expected failure costs only the gas actually used up to that point. And it **returns data** — an arbitrary `(offset, length)` blob from memory — which is where an error string or a structured error code rides back out.
+
+<Scene name="rev-revert" caption="REVERT does three things atomically: ① rolls back every state change in the current frame, ② refunds the unused gas to the caller instead of burning it, and ③ returns a data blob — so the contract can hand back a reason like “InsufficientBalance” rather than failing silently." />
+
+<Formula
+  expr="REVERT  =  undo(state)  +  refund(gas)  +  return(data)"
+  terms={[
+    { t: "undo(state)", note: "every SSTORE, balance change, and log in this frame is reverted — atomic" },
+    { t: "refund(gas)", note: "the unused gas goes back to the caller; only gas already spent is lost" },
+    { t: "return(data)", note: "a memory blob bubbles up — the error string or custom-error data" },
+  ]}
+  caption="The old throw did only the first, and at maximum cost. REVERT keeps the atomic undo but adds the refund and the reason."
+/>
+
+<SpecExcerpt
+  source="EIP-140: REVERT instruction"
+  href="https://eips.ethereum.org/EIPS/eip-140"
+  ref="semantics"
+>
+Adds opcode `REVERT` (`0xfd`), taking two stack arguments `(offset, length)`. It stops
+execution and reverts state changes made by the current call, but — unlike an invalid
+instruction — does **not** consume all remaining gas: the unused gas is returned to the
+caller. The memory range `(offset, length)` is returned as the call's return data.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — but the returned reason is only useful if something can *receive* it. What happens to that error when the reverting code was itself called by another contract?
+</Callout>
+
+**→ Step 3: let the caller catch it.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Catchable by the caller">
+
+## The payoff: a failure the caller can catch and read
+
+Because `REVERT` returns *data* and *doesn't* nuke the transaction wholesale, a sub-call that reverts comes back to its caller as an ordinary **failed call** carrying its reason — not a chain-killing detonation. The callee's own state changes are undone, control returns to the caller, and the caller gets to decide: propagate the error up, or handle it. That is precisely the machinery behind the error-handling you write every day.
+
+<Scene name="rev-catch" caption="When a callee REVERTs, the failure returns to the caller as a catchable result with its reason attached — the callee's state is undone, but the caller keeps running and chooses what to do. This is exactly what require(reason), custom errors, and Solidity's try/catch are built on." />
+
+<Callout type="insight" title="And that is REVERT">
+Aborting used to mean **throw**: it undid state but torched all remaining gas and returned nothing → **REVERT** keeps the atomic undo but **refunds** the unused gas and **returns** an error blob → and because it returns data as a normal failed call, a sub-call's revert is **catchable**, with its reason intact. On this one opcode rests the whole modern failure model: `require(cond, "reason")`, `revert CustomError(...)` (cheaper than strings), and Solidity's `try/catch`. Failure went from a silent, wallet-draining dead end to a cheap, precise, composable signal. Byzantium shipped two other landmark features the same day — **STATICCALL** (a call guaranteed to make no state changes, for safe reads) and the **alt_bn128** pairing precompiles ([EIP-196](https://eips.ethereum.org/EIPS/eip-196)/[197](https://eips.ethereum.org/EIPS/eip-197)) that first made on-chain **zero-knowledge proof** verification practical, seeding everything from private payments to today's zk-rollups — but it's REVERT you touch every time you write a guard.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-140: REVERT instruction", note: "The spec — 0xfd, gas refund, return data", href: "https://eips.ethereum.org/EIPS/eip-140" },
+    { kind: "post", label: "Chapter 2 — The EVM, gas & calls", note: "Frames, gas, and the call model this builds on", href: "/the-evm" },
+    { kind: "eip", label: "EIP-211: RETURNDATASIZE / RETURNDATACOPY", note: "How a caller actually reads the returned reason", href: "https://eips.ethereum.org/EIPS/eip-211" },
+    { kind: "eip", label: "EIP-197: alt_bn128 pairing precompile", note: "Byzantium's other legacy — on-chain zk verification", href: "https://eips.ethereum.org/EIPS/eip-197" },
+    { kind: "tool", label: "evm.codes — REVERT (0xfd)", note: "The opcode in the interactive reference", href: "https://www.evm.codes/#fd" },
+  ]}
+/>
+
+</DepthLayer>

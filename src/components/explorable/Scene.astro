@@ -125,7 +125,10 @@ interface Props {
     | "sd-result"
     | "zk-cost"
     | "zk-precompile"
-    | "zk-unlock";
+    | "zk-unlock"
+    | "stc-danger"
+    | "stc-static"
+    | "stc-use";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2439,6 +2442,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="172" text-anchor="middle">{L("the pairing precompile seeded on-chain privacy and zk-rollup scaling")}</text>
       </svg>
     )}
+
+    {/* ── EIP-214: a plain CALL to read lets the callee do anything ── */}
+    {name === "stc-danger" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="Calling an untrusted contract just to read a value lets it change state or re-enter you">
+        <text class="t-cap" x="240" y="20">{L("you just want to read — but a CALL lets the callee do anything")}</text>
+        <rect class="stc-you" x="24" y="48" width="150" height="60" rx="8" />
+        <text class="t-cap" x="99" y="70">{L("your contract")}</text>
+        <text class="t-fld stc-c" x="99" y="90">CALL oracle.price()</text>
+        <path class="sarrow stc-a1" d="M174 66 H286" /><text class="t-cap stc-al" x="230" y="58">{L("read?")}</text>
+        <path class="sarrow stc-a2" d="M286 96 H174" /><text class="t-x stc-al2" x="230" y="110">{L("re-enters you ↩")}</text>
+        <rect class="stc-callee" x="286" y="48" width="170" height="60" rx="8" />
+        <text class="t-cap" x="371" y="70">{L("untrusted contract")}</text>
+        <text class="t-x stc-bad" x="371" y="90">SSTORE · reenter · LOG</text>
+        <text class="t-x stc-danger2" x="240" y="146" text-anchor="middle">{L("it can mutate state or re-enter — reading became an attack surface")}</text>
+        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("you had no way to say 'call this, but you may not change anything'")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-214: STATICCALL forbids all state change in the frame ── */}
+    {name === "stc-static" && (
+      <svg viewBox="0 0 480 190" role="img" aria-label="STATICCALL runs the callee but reverts on any state-changing opcode, guaranteeing a read-only call">
+        <text class="t-cap" x="240" y="20">{L("STATICCALL — run it, but forbid any state change")}</text>
+        <rect class="stc-you" x="24" y="48" width="150" height="60" rx="8" />
+        <text class="t-cap" x="99" y="70">{L("your contract")}</text>
+        <text class="t-fld stc-c" x="99" y="90">STATICCALL 0xFA</text>
+        <path class="sarrow stc-sa" d="M174 78 H286" />
+        <rect class="stc-frame" x="286" y="42" width="170" height="80" rx="8" />
+        <text class="t-cap" x="371" y="60">{L("read-only frame")}</text>
+        <text class="t-ok stc-ok" x="371" y="80">SLOAD · view ✓</text>
+        <text class="t-x stc-forbid" x="371" y="100">SSTORE · CREATE ✗</text>
+        <text class="t-fld stc-sub" x="371" y="116">{L("any write → revert")}</text>
+        <text class="t-cap" x="240" y="150" text-anchor="middle">{L("the whole call frame (and its sub-calls) can't touch state")}</text>
+        <text class="t-ok stc-guar" x="240" y="176" text-anchor="middle">{L("a guaranteed read — the callee can't reenter-and-mutate")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-214: safe reads, view functions, reentrancy safety ── */}
+    {name === "stc-use" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="STATICCALL powers safe oracle reads, enforced view functions, and reentrancy-safe calls">
+        <text class="t-cap" x="240" y="20">{L("a guaranteed read-only call — the building block for…")}</text>
+        {[["safe oracle reads", "call untrusted, can't be harmed", 24], ["view / pure calls", "Solidity enforces them here", 172], ["reentrancy safety", "a static call can't reenter+write", 320]].map(([t1, t2, x], i) => (
+          <g class={`stc-card stc-card${i}`}>
+            <rect x={x} y="42" width="136" height="76" rx="8" />
+            <text class="t-cap" x={Number(x) + 68} y="68">{L(t1)}</text>
+            <text class="t-fld stc-cardsub" x={Number(x) + 68} y="90">{L(t2)}</text>
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="158" text-anchor="middle">{L("'this call may read but not write' — a small guarantee with wide reach")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4072,4 +4125,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .zk-use0 { animation: tw-rowin 5s ease-out infinite; }
   .zk-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .zk-uc { text-anchor: middle; fill: var(--color-ink-faint); }
+
+  /* ── EIP-214 — stc-danger: a CALL to read lets the callee do anything ── */
+  .stc-you { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .stc-c { text-anchor: middle; fill: var(--color-accent-strong); }
+  .stc-a1 { stroke-dasharray: 112; stroke-dashoffset: 112; animation: st-draw 5s ease-in-out infinite; }
+  .stc-a2 { stroke-dasharray: 112; stroke-dashoffset: 112; stroke: var(--color-changed); animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .stc-al { fill: var(--color-ink-faint); }
+  .stc-al2 { fill: var(--color-changed); }
+  .stc-callee { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
+  .stc-bad { text-anchor: middle; }
+  .stc-danger2 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-214 — stc-static: read-only frame, writes revert ── */
+  .stc-sa { stroke-dasharray: 112; stroke-dashoffset: 112; animation: st-draw 5s ease-in-out infinite; }
+  .stc-frame { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .stc-ok { text-anchor: middle; }
+  .stc-forbid { text-anchor: middle; animation: rv-pulse 5s ease-in-out infinite; }
+  .stc-sub { text-anchor: middle; fill: var(--color-ink-faint); }
+  .stc-guar { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-214 — stc-use: safe reads / view / reentrancy ── */
+  .stc-card rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .stc-card { opacity: 0; }
+  .stc-card0 { animation: tw-rowin 5s ease-out infinite; }
+  .stc-card1 { animation: tw-rowin 5s ease-out 0.2s infinite; }
+  .stc-card2 { animation: tw-rowin 5s ease-out 0.4s infinite; }
+  .stc-cardsub { text-anchor: middle; fill: var(--color-ink-faint); }
 </style>

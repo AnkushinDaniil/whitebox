@@ -100,7 +100,7 @@ export const FORKS: Fork[] = [
       { eip: "197", title: "alt_bn128 pairing precompile", category: "execution", slug: "eip-196-197-bn128-precompiles" },
       { eip: "198", title: "Big-integer modexp", category: "execution" },
       { eip: "211", title: "RETURNDATASIZE / RETURNDATACOPY", category: "execution" },
-      { eip: "214", title: "STATICCALL", category: "execution" },
+      { eip: "214", title: "STATICCALL", category: "execution", slug: "eip-214-staticcall" },
       { eip: "649", title: "Difficulty bomb delay + 3 ETH reward", category: "consensus" },
       { eip: "658", title: "Transaction status in receipts", category: "execution" },
     ],

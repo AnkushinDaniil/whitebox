@@ -1,0 +1,100 @@
+---
+title: "EIP-214: STATICCALL — a call that promises not to touch anything"
+dek: "Contracts constantly call other contracts just to read a value — a price, a balance, a view function. But a normal call lets the callee do whatever it wants, including change state or re-enter you. STATICCALL is a call that the EVM guarantees is read-only: any attempt to modify state inside it reverts. A small guarantee that quietly underpins oracles, view functions, and reentrancy safety."
+summary: "A step-by-step derivation of EIP-214 (STATICCALL), shipped in Byzantium (October 2017). Why calling another contract merely to read something was dangerous — an ordinary CALL lets the callee execute arbitrary code, including modifying its own or others' state and re-entering the caller, so reading from an untrusted contract was an attack surface; and how STATICCALL (0xFA) fixes it by executing the callee in a frame where any state-changing opcode (SSTORE, CREATE, SELFDESTRUCT, LOG, value-bearing CALL) reverts, guaranteeing a read-only call — which is how Solidity enforces view/pure calls at the EVM level, how contracts safely read untrusted oracles, and a building block for reentrancy safety."
+topic: EIPs
+order: 26
+spine: true
+prerequisites: ["the EVM call model", "state & reentrancy"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Byzantium, October 2017.** Byzantium's third landmark (after [REVERT](/eip-140-revert) and the [zk precompiles](/eip-196-197-bn128-precompiles)) is a new kind of call. Contracts constantly need to *ask* another contract something — the current price from an oracle, a balance, the result of a `view` function. But in the EVM, "ask" and "act" used the same instruction: a `CALL` runs the callee's code, and that code can do *anything*. So merely reading from a contract you don't fully trust meant handing it the keys. **EIP-214** adds `STATICCALL`: a call the protocol guarantees can't change a thing. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "Reading is dangerous" },
+  { id: "step-2", label: "A read-only call" },
+  { id: "step-3", label: "Where it's load-bearing" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="Reading is dangerous">
+
+## The problem: a CALL to read grants full power
+
+When your contract does a plain `CALL` to fetch a value, the EVM runs the callee's code, and there's nothing stopping that code from *doing more than answer*. It can `SSTORE` to its own storage, emit logs, create contracts — or, most dangerously, <KeyTerm term="reentrancy" def="When a contract you call calls back into you before your first function has finished, potentially catching you in a half-updated state. The classic drain-the-vault attack. A read that can trigger arbitrary code is a reentrancy risk." /> — call *back into you* mid-execution, catching you in an inconsistent state. So calling an untrusted contract just to *read* a number was a genuine attack surface: the act of asking a question let the answerer run arbitrary code.
+
+<Scene name="stc-danger" caption="A plain CALL to read a value still runs the callee's full code — it can write state, emit logs, or re-enter your contract mid-call. Reading from an untrusted contract became an attack surface, and you had no way to say 'call this, but you may not change anything.'" />
+
+<Callout type="warning" title="What breaks">
+We need to distinguish *asking* from *acting*. A read should be able to run the callee's logic (to compute the answer) yet be provably incapable of changing any state or having side effects. The protocol has to enforce that — a convention isn't enough against untrusted code.
+</Callout>
+
+**→ Step 2: a call the EVM forces to be read-only.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="A read-only call">
+
+## STATICCALL: state changes revert, guaranteed
+
+<KeyTerm term="STATICCALL" def="The Byzantium opcode 0xFA. It calls a contract like CALL, but marks the entire call frame — and every sub-call it makes — as static: any state-modifying opcode encountered inside it reverts. The result is a call guaranteed to be read-only." /> (opcode `0xFA`) runs the callee exactly like `CALL`, with one iron rule: for the duration of that frame *and all of its sub-calls*, any **state-changing opcode reverts**. `SSTORE`, `CREATE`, `SELFDESTRUCT`, `LOG`, a value-bearing `CALL` — all forbidden. The callee can read all it likes (`SLOAD`, compute, call other views) to produce an answer, but it cannot alter storage, emit events, or move value. So a `STATICCALL` is a **guaranteed read**: the callee can't reenter-and-mutate, because it can't mutate at all.
+
+<Scene name="stc-static" caption="STATICCALL (0xFA) runs the callee in a read-only frame: SLOAD and pure computation are fine, but any state-changing opcode — SSTORE, CREATE, LOG, value transfer — reverts. The restriction covers the whole frame and its sub-calls, so the callee simply can't change anything." />
+
+<SpecExcerpt
+  source="EIP-214: New opcode STATICCALL"
+  href="https://eips.ethereum.org/EIPS/eip-214"
+  ref="the static frame"
+>
+Adds `STATICCALL` (`0xFA`), analogous to `CALL` but which executes the callee in a context
+where state modification is disallowed. Any attempt to execute a state-changing operation
+(`SSTORE`, `LOG*`, `CREATE`/`CREATE2`, `SELFDESTRUCT`, or a `CALL` transferring value)
+during the static execution — including in nested calls — causes an exception.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing breaks — you've just gained a way to call code with a hard read-only promise. The value is in everything that promise lets you build safely.
+</Callout>
+
+**→ Step 3: what a read-only guarantee unlocks.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Where it's load-bearing">
+
+## The payoff: safe reads, view functions, reentrancy safety
+
+A guaranteed read-only call is a small primitive with a wide footprint. It lets a contract **read an untrusted oracle** without fear that the oracle mutates state or re-enters. It's how Solidity enforces <KeyTerm term="view / pure calls" def="Solidity functions marked view (read state) or pure (read nothing) are called via STATICCALL, so the compiler's promise that they don't modify state is actually enforced by the EVM, not just by convention." /> at the EVM level — the compiler compiles calls to `view` functions as `STATICCALL`, so the "doesn't modify state" promise is enforced, not merely declared. And it's a foundational tool for **reentrancy safety**: a static call can't reenter and write, so read paths become safe by construction.
+
+<Scene name="stc-use" caption="A guaranteed read-only call underpins safe reads from untrusted oracles, EVM-enforced view/pure functions, and reentrancy safety — a static call can't reenter and write. One small guarantee, wide reach." />
+
+<Callout type="insight" title="And that is STATICCALL">
+Calling a contract to *read* still ran its full code, so it could write state or **re-enter** you — reading was an attack surface → **STATICCALL** runs the callee in a frame where any state change (and in every sub-call) **reverts**, making the call a guaranteed read → and that guarantee underpins **safe oracle reads**, **EVM-enforced `view`/`pure` functions**, and **reentrancy safety**. The deeper idea is that separating *asking* from *acting* — encoding "read-only" as something the machine enforces rather than the caller hopes — turns a whole class of dangerous patterns safe. You use it every time a `view` function is called, without ever seeing the opcode.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-214: STATICCALL", note: "The spec — the static frame & 0xFA", href: "https://eips.ethereum.org/EIPS/eip-214" },
+    { kind: "post", label: "Chapter 2 — The EVM & the call model", note: "How calls and frames work", href: "/the-evm" },
+    { kind: "post", label: "EIP-140 — REVERT", note: "Byzantium's other call-safety change", href: "/eip-140-revert" },
+    { kind: "post", label: "EIP-1153 — transient storage", note: "The modern reentrancy-guard tool", href: "/eip-1153-transient-storage" },
+    { kind: "tool", label: "evm.codes — STATICCALL (0xFA)", note: "The opcode in the interactive reference", href: "https://www.evm.codes/#fa" },
+  ]}
+/>
+
+</DepthLayer>

@@ -164,7 +164,10 @@ interface Props {
     | "ec-use"
     | "sh-emul"
     | "sh-ops"
-    | "sh-result";
+    | "sh-result"
+    | "fm-blind"
+    | "fm-opcode"
+    | "fm-use";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -3129,6 +3132,46 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="148" text-anchor="middle">{L("compilers emit them; the same 'add the missing primitive' story")}</text>
       </svg>
     )}
+
+    {/* ── EIP-3198/7516: the protocol computes fees the EVM couldn't read ── */}
+    {name === "fm-blind" && (
+      <svg viewBox="0 0 480 192" role="img" aria-label="EIP-1559 computes a base fee each block but a contract could only read the combined gas price, not the base fee itself">
+        <text class="t-cap" x="240" y="20">{L("the protocol computes fees each block…")}</text>
+        <rect class="fm-proto" x="24" y="36" width="200" height="64" rx="8" />
+        <text class="t-cap fm-pt" x="124" y="58">{L("EIP-1559 base fee")}</text>
+        <text class="t-fld fm-pt2" x="124" y="78">{L("EIP-4844 blob base fee")}</text>
+        <text class="t-fld fm-pt3" x="124" y="94">{L("computed, burned, on-chain")}</text>
+        <path class="sarrow fm-wall" d="M224 68 H300" /><text class="t-x fm-walll" x="262" y="60">{L("no way in")}</text>
+        <rect class="fm-evm" x="300" y="36" width="156" height="64" rx="8" />
+        <text class="t-cap fm-et" x="378" y="60">{L("a contract")}</text>
+        <text class="t-x fm-et2" x="378" y="82">{L("sees only GASPRICE")}</text>
+        <text class="t-x fm-mix" x="240" y="132" text-anchor="middle">{L("GASPRICE = base + priority, fused — can't read the base fee alone")}</text>
+        <text class="t-cap" x="240" y="160" text-anchor="middle">{L("gas oracles & relayers computing refunds are flying blind")}</text>
+        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("the fee exists in the protocol but not in the EVM")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3198/7516: two opcodes expose the fees ── */}
+    {name === "fm-opcode" && (
+      <svg viewBox="0 0 480 176" role="img" aria-label="BASEFEE and BLOBBASEFEE opcodes push the protocol-computed fees onto the stack">
+        <text class="t-cap" x="240" y="20">{L("just expose the value the protocol already has")}</text>
+        <g class="fm-op fm-op0"><rect class="fm-opbox" x="40" y="40" width="190" height="56" rx="8" /><text class="t-ok fm-opn" x="135" y="64">BASEFEE · 0x48</text><text class="t-cap fm-opd" x="135" y="84">{L("pushes the block's base fee")}</text></g>
+        <g class="fm-op fm-op1"><rect class="fm-opbox" x="250" y="40" width="190" height="56" rx="8" /><text class="t-ok fm-opn" x="345" y="64">BLOBBASEFEE · 0x4a</text><text class="t-cap fm-opd" x="345" y="84">{L("pushes the blob base fee")}</text></g>
+        <text class="t-ok fm-one" x="240" y="128" text-anchor="middle">{L("one-instruction reads of a value already computed each block")}</text>
+        <text class="t-cap" x="240" y="156" text-anchor="middle">{L("3198 ships with London/1559 · 7516 ships with Cancun/4844")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-3198/7516: contracts reason about the fee market ── */}
+    {name === "fm-use" && (
+      <svg viewBox="0 0 480 172" role="img" aria-label="Contracts can now reason about the fee market on-chain">
+        <text class="t-cap" x="240" y="20">{L("contracts can reason about the fee market on-chain")}</text>
+        <g class="fm-row fm-r0"><rect class="fm-chip" x="40" y="36" width="400" height="24" rx="5" /><text class="t-cap fm-cl" x="60" y="52" text-anchor="start">{L("relayers & smart accounts reimburse gas accurately")}</text></g>
+        <g class="fm-row fm-r1"><rect class="fm-chip" x="40" y="66" width="400" height="24" rx="5" /><text class="t-cap fm-cl" x="60" y="82" text-anchor="start">{L("on-chain gas oracles & congestion-aware logic")}</text></g>
+        <g class="fm-row fm-r2"><rect class="fm-chip" x="40" y="96" width="400" height="24" rx="5" /><text class="t-cap fm-cl" x="60" y="112" text-anchor="start">{L("rollups read the blob base fee to price data availability")}</text></g>
+        <text class="t-ok fm-done" x="240" y="148" text-anchor="middle">{L("the missing read that completes EIP-1559 and EIP-4844")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -5141,4 +5184,34 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sh-before { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke: var(--color-changed); }
   .sh-after { fill: color-mix(in oklab, var(--color-node-leaf) 50%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
   .sh-use { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+
+  /* ── EIP-3198/7516 — fm-blind: protocol computes, EVM can't read ── */
+  .fm-proto { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .fm-pt { text-anchor: middle; fill: var(--color-ink-muted); }
+  .fm-pt2 { text-anchor: middle; fill: var(--color-ink-muted); }
+  .fm-pt3 { text-anchor: middle; fill: var(--color-ink-faint); }
+  .fm-wall { stroke: var(--color-changed); stroke-dasharray: 4 4; animation: rv-pulse 5s ease-in-out infinite; }
+  .fm-walll { text-anchor: middle; fill: var(--color-changed); }
+  .fm-evm { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .fm-et { text-anchor: middle; fill: var(--color-ink-muted); }
+  .fm-et2 { text-anchor: middle; fill: var(--color-changed); }
+  .fm-mix { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.5s infinite; }
+
+  /* ── EIP-3198/7516 — fm-opcode: BASEFEE / BLOBBASEFEE ── */
+  .fm-opbox { fill: var(--color-surface); stroke: var(--color-node-leaf); }
+  .fm-opn { text-anchor: middle; font-weight: 600; }
+  .fm-opd { text-anchor: middle; fill: var(--color-ink-faint); }
+  .fm-op { opacity: 0; }
+  .fm-op0 { animation: tw-rowin 5s ease-out infinite; }
+  .fm-op1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .fm-one { opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
+
+  /* ── EIP-3198/7516 — fm-use: reasoning about the fee market ── */
+  .fm-chip { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .fm-cl { fill: var(--color-ink-muted); text-anchor: start; }
+  .fm-row { opacity: 0; }
+  .fm-r0 { animation: tw-rowin 5s ease-out infinite; }
+  .fm-r1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .fm-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
+  .fm-done { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
 </style>

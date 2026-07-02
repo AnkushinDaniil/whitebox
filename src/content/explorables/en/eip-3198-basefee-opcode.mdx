@@ -1,0 +1,99 @@
+---
+title: "EIP-3198 & EIP-7516: letting the EVM read its own fee market"
+dek: "EIP-1559 made the base fee a first-class protocol value — computed every block and burned. But a contract couldn't read it: GASPRICE only shows the fused base-plus-priority price the sender paid. EIP-3198 adds BASEFEE; EIP-7516 does the same for blobs. Two tiny opcodes that make the fee market legible on-chain."
+summary: "A step-by-step derivation of EIP-3198 (the BASEFEE opcode, London, August 2021) and its blob-era sibling EIP-7516 (the BLOBBASEFEE opcode, Cancun/Deneb, March 2024). Why exposing these fees mattered — EIP-1559 computes a base fee each block and EIP-4844 computes a blob base fee, both first-class protocol values, yet a contract could only see GASPRICE, which after 1559 is the effective price (base fee plus priority tip) fused together, so on-chain gas oracles, meta-transaction relayers, and smart accounts computing gas reimbursements could not read the base fee alone — and how EIP-3198 adds BASEFEE (0x48) to push the current block's base fee and EIP-7516 adds BLOBBASEFEE (0x4a) to push the current blob base fee, each a one-instruction read of a value the protocol already computes; the payoff is contracts that can reason about the fee market on-chain — accurate gas reimbursement, congestion-aware logic, and rollups pricing their data-availability costs against the blob base fee — the small but necessary reads that complete EIP-1559 and EIP-4844."
+topic: EIPs
+order: 39
+spine: true
+prerequisites: ["EIP-1559 (the fee market)", "EIP-4844 (blobs)"]
+updated: 2026-07-02
+readingMinutes: 6
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**London, August 2021 (and Cancun, March 2024).** [EIP-1559](/eip-1559-fee-market) turned the gas price into a real protocol variable: every block, the network computes a **base fee**, and it's burned. It's canonical, deterministic, on-chain — and yet, the moment it shipped, a contract had no way to actually *read* it. That sounds like an oversight, and the fix is almost embarrassingly small; but it's a clean illustration of a recurring EVM theme — *a value can exist in the protocol without existing in the EVM* — and it happened twice, once for gas and once for blobs. **EIP-3198** and **EIP-7516** are the two little reads that close the gap. Let's derive them together.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "A fee you can't read" },
+  { id: "step-2", label: "BASEFEE & BLOBBASEFEE" },
+  { id: "step-3", label: "Fees, on-chain" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="A fee you can't read">
+
+## The problem: the base fee was computed, burned — and invisible to contracts
+
+After EIP-1559, the price a transaction pays splits in two: the burned **base fee** and the **priority tip** to the proposer. The only fee value a contract could observe was <KeyTerm term="GASPRICE" def="The opcode (0x3a) returning tx.gasprice — the effective gas price the transaction paid. After EIP-1559 that's base fee + priority tip fused into one number; there was no opcode to recover the base fee component by itself." /> — which returns the *effective* price the sender paid, i.e. **base fee + tip** combined. There was no way to read the base fee **on its own**. That blocks a surprising amount: a <KeyTerm term="meta-transaction relayer" def="A contract (or smart account) that pays gas on a user's behalf and is reimbursed. To reimburse the exact cost it must know the base fee, not just the fused effective price — otherwise it over- or under-charges." /> reimbursing a user's gas needs the base fee to compute the true cost; an on-chain **gas oracle** wants the base fee as a congestion signal; any contract adapting to network load needs to see it. And later, [EIP-4844](/eip-4844-blobs) introduced a *second* such value — the **blob base fee**, with its own EIP-1559-style market — equally computed by the protocol and equally unreadable from the EVM.
+
+<Scene name="fm-blind" caption="EIP-1559 computes a base fee each block (and EIP-4844 a blob base fee), both burned and on-chain — but a contract could only read GASPRICE, which fuses base fee and priority tip. Relayers, smart accounts, and gas oracles couldn't read the base fee alone: the fee existed in the protocol but not in the EVM." />
+
+<Callout type="warning" title="What breaks">
+Nothing malfunctions — but a whole class of contracts can't do their job accurately. The base fee (and the blob base fee) are deterministic values the protocol already computes for every block; they simply aren't surfaced to the code that would use them.
+</Callout>
+
+**→ Step 2: surface each fee as its own opcode.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="BASEFEE & BLOBBASEFEE">
+
+## The fix: two one-instruction reads
+
+Because the values already exist in the block, exposing them is trivial. <KeyTerm term="BASEFEE" def="Opcode 0x48 (EIP-3198, shipped with London alongside EIP-1559): pushes the current block's base fee onto the stack. A single, cheap read of a value the protocol already computes." /> (`0x48`), added by EIP-3198 alongside 1559 in London, pushes the current block's base fee. Later, <KeyTerm term="BLOBBASEFEE" def="Opcode 0x4a (EIP-7516, shipped with Cancun alongside EIP-4844): pushes the current block's blob base fee, the blob-market analogue of BASEFEE." /> (`0x4a`), added by EIP-7516 alongside 4844 in Cancun, does exactly the same for the blob base fee. Each is a single, cheap instruction that reads a value the block header already carries — no computation, no new mechanism, just a window into a number that was always there.
+
+<Scene name="fm-opcode" caption="EIP-3198 adds BASEFEE (0x48) — push the block's base fee; EIP-7516 adds BLOBBASEFEE (0x4a) — push the blob base fee. Each is a one-instruction read of a value the protocol already computes every block. 3198 ships with London/1559; 7516 with Cancun/4844." />
+
+<SpecExcerpt
+  source="EIP-3198: BASEFEE opcode (and EIP-7516: BLOBBASEFEE)"
+  href="https://eips.ethereum.org/EIPS/eip-3198"
+  ref="the opcodes"
+>
+BASEFEE (0x48) pushes the value of the base fee of the current block onto the stack, giving
+contracts access to the EIP-1559 base fee. Its blob sibling, BLOBBASEFEE (0x4a, EIP-7516),
+likewise exposes the current block's blob base fee introduced by EIP-4844.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+Nothing — both are purely additive reads. The only change is that the fee market stops being a black box to contracts: they can finally see the two numbers that price gas and blob data.
+</Callout>
+
+**→ Step 3: what becomes possible once contracts can see the fees.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Fees, on-chain">
+
+## The payoff: contracts that understand the fee market
+
+With the base fee readable, relayers and [smart accounts](/eip-4337-account-abstraction) can compute gas reimbursements **accurately** instead of guessing from the fused effective price — important for account abstraction, where a contract front-runs a user's gas and must be repaid to the wei. On-chain **gas oracles** and congestion-aware contracts get a first-class signal to key off. And with `BLOBBASEFEE`, <KeyTerm term="rollup data-availability pricing" def="Rollups post their compressed transaction data as blobs. Reading BLOBBASEFEE lets a rollup contract price its data-availability costs on-chain — passing accurate L1 blob costs through to L2 users." /> becomes possible on-chain: a rollup can read the current blob base fee and price its data-availability costs precisely, passing real L1 costs through to L2 users. Neither opcode is glamorous — but together they finish the job [EIP-1559](/eip-1559-fee-market) and [EIP-4844](/eip-4844-blobs) started, making the fee market not just a protocol mechanism but something the EVM can reason about.
+
+<Scene name="fm-use" caption="With the fees readable, relayers and smart accounts reimburse gas accurately, on-chain gas oracles and congestion-aware logic get a first-class signal, and rollups price their data availability against the blob base fee. The small reads that complete EIP-1559 and EIP-4844." />
+
+<Callout type="insight" title="And that is EIP-3198 & EIP-7516">
+EIP-1559's **base fee** and EIP-4844's **blob base fee** are computed and burned every block, but a contract could only read **GASPRICE** — base fee and priority tip fused — so it couldn't see either base fee alone → EIP-3198 adds **BASEFEE (0x48)** and EIP-7516 adds **BLOBBASEFEE (0x4a)**, each a one-instruction read of a value the protocol already has → so relayers and smart accounts reimburse gas **accurately**, gas oracles and congestion logic get a real signal, and rollups **price blob data availability** on-chain. Two of the tiniest EIPs in the book, and a tidy lesson: shipping a new protocol value isn't finished until the EVM can *read* it. A fee the machine can't see is a fee its contracts can't reason about.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-3198: BASEFEE opcode", note: "The spec — 0x48 reads the base fee", href: "https://eips.ethereum.org/EIPS/eip-3198" },
+    { kind: "eip", label: "EIP-7516: BLOBBASEFEE opcode", note: "The blob sibling — 0x4a", href: "https://eips.ethereum.org/EIPS/eip-7516" },
+    { kind: "post", label: "EIP-1559 — the fee market", note: "Where the base fee comes from", href: "/eip-1559-fee-market" },
+    { kind: "post", label: "EIP-4844 — blobs", note: "Where the blob base fee comes from", href: "/eip-4844-blobs" },
+    { kind: "post", label: "EIP-4337 — account abstraction", note: "Why smart accounts need accurate gas reads", href: "/eip-4337-account-abstraction" },
+  ]}
+/>
+
+</DepthLayer>

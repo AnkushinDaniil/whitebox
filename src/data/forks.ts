@@ -180,7 +180,7 @@ export const FORKS: Fork[] = [
     blurb: "The fee market is rebuilt: a base fee, and a burn.",
     eips: [
       { eip: "1559", title: "Fee market change (base fee + burn)", category: "execution", slug: ours("eip-1559-fee-market") },
-      { eip: "3198", title: "BASEFEE opcode", category: "execution" },
+      { eip: "3198", title: "BASEFEE opcode", category: "execution", slug: "eip-3198-basefee-opcode" },
       { eip: "3529", title: "Reduction in gas refunds", category: "execution", slug: "eip-3529-refund-reduction" },
       { eip: "3541", title: "Reject contracts starting 0xEF", category: "execution", slug: "eip-3541-ef-reservation" },
       { eip: "3554", title: "Difficulty bomb delay", category: "consensus" },
@@ -254,7 +254,7 @@ export const FORKS: Fork[] = [
       { eip: "7044", title: "Perpetually valid voluntary exits", category: "consensus" },
       { eip: "7045", title: "Wider attestation inclusion", category: "consensus" },
       { eip: "7514", title: "Max epoch churn limit", category: "consensus" },
-      { eip: "7516", title: "BLOBBASEFEE opcode", category: "execution" },
+      { eip: "7516", title: "BLOBBASEFEE opcode", category: "execution", slug: "eip-3198-basefee-opcode" },
     ],
   },
   {

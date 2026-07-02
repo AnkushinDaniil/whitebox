@@ -104,6 +104,7 @@ export const BOOK: BookPart[] = [
         date: "Aug 2021",
         chapters: [
           { slug: "eip-1559-fee-market", eip: "1559" },
+          { slug: "eip-3198-basefee-opcode", eip: "3198" },
           { slug: "eip-3529-refund-reduction", eip: "3529" },
           { slug: "eip-3541-ef-reservation", eip: "3541" },
         ],

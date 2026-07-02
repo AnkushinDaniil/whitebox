@@ -112,7 +112,10 @@ const eipTag = (e: string) => (/^\d/.test(e) ? `EIP-${e}` : null);
                 <div class="chips">
                   {f.eips.map((e) =>
                     e.slug ? (
-                      <a class="chip covered" href={`/${e.slug}`}>
+                      <a
+                        class="chip covered"
+                        href={meta(e.slug)?.hasLang ? localizePath(`/${e.slug}`, lang) : `/${e.slug}`}
+                      >
                         <span class={`dot ${e.category}`} />
                         {eipTag(e.eip) && <b>{eipTag(e.eip)}</b>} {e.title}
                       </a>

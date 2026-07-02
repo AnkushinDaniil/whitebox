@@ -137,7 +137,10 @@ interface Props {
     | "cd-rollup"
     | "wr-clonly"
     | "wr-request"
-    | "wr-trustless";
+    | "wr-trustless"
+    | "pr-det"
+    | "pr-randao"
+    | "pr-caveat";
   caption?: string;
   /** widen the figure frame for dense diagrams */
   wide?: boolean;
@@ -2657,6 +2660,62 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-ok wr-pectra" x="240" y="168" text-anchor="middle">{L("part of Pectra's push to make staking safer to delegate")}</text>
       </svg>
     )}
+
+    {/* ── EIP-4399: the EVM is deterministic; DIFFICULTY was abused for randomness ── */}
+    {name === "pr-det" && (
+      <svg viewBox="0 0 480 186" role="img" aria-label="The EVM is deterministic and has no randomness; contracts abused the DIFFICULTY opcode, which disappeared at the Merge">
+        <text class="t-cap" x="240" y="20">{L("the EVM is deterministic — every node must agree")}</text>
+        <rect class="pr-evm" x="30" y="42" width="180" height="52" rx="8" />
+        <text class="t-cap" x="120" y="64">{L("no random opcode")}</text>
+        <text class="t-fld pr-c" x="120" y="82">{L("same input → same output")}</text>
+        <path class="sarrow pr-a1" d="M210 68 H262" /><text class="t-cap pr-al" x="236" y="60">{L("want randomness?")}</text>
+        <rect class="pr-diff" x="262" y="42" width="194" height="52" rx="8" />
+        <text class="t-x pr-difft" x="359" y="64">DIFFICULTY (0x44)</text>
+        <text class="t-fld pr-c2" x="359" y="82">{L("abused — weak & miner-biased")}</text>
+        <text class="t-x pr-gone" x="240" y="128" text-anchor="middle">{L("and after the Merge there's no difficulty at all")}</text>
+        <text class="t-cap" x="240" y="158" text-anchor="middle">{L("contracts want a randomness source — but a real one, agreed by everyone")}</text>
+        <text class="t-cap" x="240" y="178" text-anchor="middle">{L("the beacon chain already produces one: RANDAO")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4399: expose the beacon RANDAO via the repurposed opcode ── */}
+    {name === "pr-randao" && (
+      <svg viewBox="0 0 480 188" role="img" aria-label="The beacon chain accumulates a RANDAO value, exposed to the EVM through the repurposed opcode PREVRANDAO">
+        <text class="t-cap" x="240" y="20">{L("the beacon chain mixes randomness every block: RANDAO")}</text>
+        {[0, 1, 2, 3].map((i) => (
+          <g class="pr-mix" style={`animation-delay:${(i * 0.25).toFixed(2)}s`}>
+            <rect class="pr-vslot" x={40 + i * 62} y="42" width="48" height="28" rx="5" />
+            <text class="t-fld pr-vt" x={64 + i * 62} y="60">{`v${i}`}</text>
+            {i < 3 && <text class="pr-xor" x={94 + i * 62} y="60" text-anchor="middle">⊕</text>}
+          </g>
+        ))}
+        <path class="sarrow pr-a2" d="M300 56 H352" />
+        <rect class="pr-randbox" x="352" y="42" width="104" height="28" rx="5" />
+        <text class="t-ok pr-randt" x="404" y="60">RANDAO</text>
+        <path class="sarrow pr-a3" d="M240 78 V104" />
+        <rect class="pr-op" x="150" y="106" width="180" height="34" rx="8" />
+        <text class="t-addr" x="240" y="128">PREVRANDAO (0x44)</text>
+        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("repurpose the old DIFFICULTY opcode to return the previous RANDAO")}</text>
+        <text class="t-ok pr-now" x="240" y="184" text-anchor="middle">{L("now a contract reads a 32-byte randomness beacon")}</text>
+      </svg>
+    )}
+
+    {/* ── EIP-4399: it's weak randomness — biasable by the proposer ── */}
+    {name === "pr-caveat" && (
+      <svg viewBox="0 0 480 178" role="img" aria-label="PREVRANDAO is weak randomness: the proposer knows it ahead and can skip a slot to bias it">
+        <text class="t-cap" x="240" y="20">{L("but it's weak randomness — handle with care")}</text>
+        <rect class="pr-warn" x="30" y="40" width="200" height="80" rx="8" />
+        <text class="t-cap" x="130" y="62">{L("the proposer…")}</text>
+        <text class="t-x pr-w1" x="130" y="84">{L("knows it one epoch ahead")}</text>
+        <text class="t-x pr-w2" x="130" y="104">{L("can skip a slot to bias it")}</text>
+        <rect class="pr-safe" x="250" y="40" width="200" height="80" rx="8" />
+        <text class="t-ok" x="350" y="62">{L("✓ fine for low stakes")}</text>
+        <text class="t-x" x="350" y="84">{L("✗ not for high value")}</text>
+        <text class="t-fld pr-sc" x="350" y="104">{L("use commit-reveal or a VRF")}</text>
+        <text class="t-cap" x="240" y="150" text-anchor="middle">{L("a built-in randomness beacon — good enough when a little bias is tolerable")}</text>
+        <text class="t-cap" x="240" y="170" text-anchor="middle">{L("post-Merge, this is where on-chain 'randomness' comes from")}</text>
+      </svg>
+    )}
   </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -4401,4 +4460,33 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wr-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .wr-uc { text-anchor: middle; fill: var(--color-ink-faint); }
   .wr-pectra { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-4399 — pr-det: no randomness; DIFFICULTY abused, then gone ── */
+  .pr-evm { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .pr-c { text-anchor: middle; fill: var(--color-ink-muted); }
+  .pr-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
+  .pr-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 5s ease-in-out infinite; }
+  .pr-al { fill: var(--color-ink-faint); }
+  .pr-diff { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
+  .pr-difft { text-anchor: middle; }
+  .pr-gone { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-4399 — pr-randao: RANDAO → PREVRANDAO ── */
+  .pr-vslot { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .pr-vt { text-anchor: middle; fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .pr-mix { animation: sc-vdot 3s ease-in-out infinite; }
+  .pr-xor { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 12px; }
+  .pr-a2 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out infinite; }
+  .pr-randbox { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .pr-randt { text-anchor: middle; }
+  .pr-a3 { stroke-dasharray: 26; stroke-dashoffset: 26; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .pr-op { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
+  .pr-now { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+
+  /* ── EIP-4399 — pr-caveat: weak randomness ── */
+  .pr-warn { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); }
+  .pr-w1, .pr-w2 { text-anchor: middle; }
+  .pr-w2 { animation: rv-pulse 5s ease-in-out infinite; }
+  .pr-safe { fill: color-mix(in oklab, var(--color-node-leaf) 5%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .pr-sc { text-anchor: middle; fill: var(--color-ink-faint); }
 </style>

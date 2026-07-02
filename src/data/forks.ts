@@ -220,7 +220,7 @@ export const FORKS: Fork[] = [
     blurb: "Proof-of-work is switched off; the beacon chain takes over.",
     eips: [
       { eip: "3675", title: "Upgrade to proof-of-stake", category: "consensus", slug: ours("eip-3675-the-merge") },
-      { eip: "4399", title: "DIFFICULTY → PREVRANDAO", category: "execution" },
+      { eip: "4399", title: "DIFFICULTY → PREVRANDAO", category: "execution", slug: "eip-4399-prevrandao" },
     ],
   },
   {

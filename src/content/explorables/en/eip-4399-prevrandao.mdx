@@ -1,0 +1,99 @@
+---
+title: "EIP-4399: PREVRANDAO — where on-chain randomness comes from"
+dek: "The EVM is deterministic — there's no 'random' opcode, because every node must compute the same result. Contracts that wanted randomness abused the DIFFICULTY opcode, which was weak and miner-manipulable — and which vanished at the Merge. EIP-4399 repurposes that opcode to expose the beacon chain's RANDAO, giving contracts a real (if biasable) randomness beacon."
+summary: "A step-by-step derivation of EIP-4399 (PREVRANDAO), shipped with the Merge (Paris, September 2022). Why the EVM has no randomness opcode — determinism requires every node to reach the same result — and why contracts abused the DIFFICULTY opcode (0x44) as a weak, miner-biasable randomness source that disappeared when proof-of-work ended; how EIP-4399 repurposes that same opcode, renamed PREVRANDAO, to return the beacon chain's previous RANDAO value (randomness mixed by validators each block), giving contracts a 32-byte randomness beacon; and the crucial caveat that it's weak randomness — a block proposer knows the value ahead of time and can skip its slot to bias it — so it suits low-stakes uses but high-value applications should use commit-reveal schemes or a verifiable random function."
+topic: EIPs
+order: 30
+spine: true
+prerequisites: ["the EVM's determinism", "the Merge & the beacon chain"]
+updated: 2026-06-24
+readingMinutes: 8
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Scene from "@/components/explorable/Scene.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+
+**Paris / the Merge, September 2022.** Here's a question that sounds trivial and isn't: *how does a smart contract get a random number?* On an ordinary computer you'd call a random function. But the [EVM is deterministic](/the-evm) — every node re-executes every transaction and **must** reach the identical result, or they'd disagree on the state. A genuine `random()` opcode is therefore impossible: whatever it returned would have to be the same on every machine, which is the opposite of random. Contracts still wanted randomness, so they reached for the nearest thing that *looked* unpredictable — and the Merge both broke that hack and offered something better. **EIP-4399** is that swap. Let's derive it.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "No random in a shared machine" },
+  { id: "step-2", label: "Expose the RANDAO" },
+  { id: "step-3", label: "Weak, handle with care" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="No random in a shared machine">
+
+## The problem: determinism forbids randomness
+
+Because every node must compute the same state, the EVM can't have a true source of randomness — any value it produces has to be reproducible by everyone. So there's no random opcode, and contracts that wanted unpredictability improvised. The favourite hack was the `DIFFICULTY` opcode (`0x44`), which returned the block's proof-of-work difficulty — a number that varied block to block and *felt* unpredictable. But it was **weak randomness**: miners could nudge it, and it wasn't designed to be unguessable. Worse, at the Merge, proof-of-work ended and **there was no difficulty at all** — the hack's foundation simply disappeared.
+
+<Scene name="pr-det" caption="The EVM is deterministic — no random opcode, because every node must agree. Contracts abused the DIFFICULTY opcode as a weak, miner-biasable stand-in for randomness — and proof-of-work's end at the Merge removed even that. But the beacon chain already produces a randomness value: RANDAO." />
+
+<Callout type="warning" title="What breaks">
+Contracts need *some* shared, unpredictable-ish value that every node agrees on. A true random opcode is impossible; the difficulty hack is gone. Is there already a value in the protocol that's mixed unpredictably and available to everyone?
+</Callout>
+
+**→ Step 2: there is — the beacon chain's RANDAO.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Expose the RANDAO">
+
+## Repurpose the opcode to return RANDAO
+
+The beacon chain already maintains a shared randomness value called the <KeyTerm term="RANDAO" def="A randomness value the beacon chain accumulates by mixing in a contribution from each block proposer (a reveal from their private, pre-committed sequence). No single validator controls the result, and it's the same for every node." />: each block, the proposer reveals a value that gets mixed (XOR-folded) into the running RANDAO, so no one validator controls it and every node holds the same number. EIP-4399 simply **exposes it to the EVM** — by reusing the now-meaningless `DIFFICULTY` opcode (`0x44`), renamed <KeyTerm term="PREVRANDAO" def="The Merge-era meaning of opcode 0x44 (formerly DIFFICULTY): it returns the previous block's RANDAO value, a 32-byte number from the beacon chain, available to contracts as a randomness beacon." />. Now `PREVRANDAO` returns the previous block's RANDAO — a 32-byte value from the beacon chain — so a contract has a built-in randomness beacon that every node agrees on, without a new opcode slot or a special mechanism.
+
+<Scene name="pr-randao" caption="The beacon chain mixes a contribution from each proposer into a running RANDAO. EIP-4399 repurposes the old DIFFICULTY opcode (0x44) as PREVRANDAO, returning the previous RANDAO — so a contract can read a 32-byte, network-agreed randomness value." />
+
+<SpecExcerpt
+  source="EIP-4399: Supplant DIFFICULTY opcode with PREVRANDAO"
+  href="https://eips.ethereum.org/EIPS/eip-4399"
+  ref="the opcode"
+>
+After the Merge, opcode `0x44` (formerly `DIFFICULTY`) returns the `prev_randao` value from
+the beacon chain — the accumulated RANDAO mix of the previous block. It provides contracts
+with a source of on-chain randomness, replacing the now-zero difficulty value.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+We have a shared, non-trivially-mixed value — better than the difficulty hack. But is it *good* randomness? Who, if anyone, can see it coming or bend it?
+</Callout>
+
+**→ Step 3: know exactly how weak it is.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Weak, handle with care">
+
+## The payoff — and the sharp edge
+
+`PREVRANDAO` is a genuine, network-agreed randomness beacon, and for low-stakes uses (picking a daily featured item, tie-breaking, jitter) it's perfectly fine. But it is **not** strong randomness, and using it as if it were is a classic bug. The reason: the <KeyTerm term="proposer bias" def="A block proposer learns the RANDAO value that will apply to its slot one epoch in advance, and can choose to skip (not propose) its slot — forfeiting the reward but changing which RANDAO applies. So the proposer has limited but real influence over the 'random' outcome." /> means the party building the block knows the value ahead of time and can *grind* it a little by skipping a slot. So for anything high-value — a lottery, a large random allocation — contracts should layer a **commit-reveal** scheme on top or use an external **verifiable random function** (like Chainlink VRF). `PREVRANDAO` is the floor, not the ceiling.
+
+<Scene name="pr-caveat" caption="PREVRANDAO is weak: the proposer knows the value ahead and can skip a slot to bias it. Fine when a little bias is tolerable; for high-value randomness, layer a commit-reveal scheme or use a verifiable random function (VRF) on top." />
+
+<Callout type="insight" title="And that is PREVRANDAO">
+The EVM is deterministic, so there's no true random opcode → contracts abused **DIFFICULTY**, which was weak and vanished at the Merge → the beacon chain already mixes a shared **RANDAO**, so repurpose the dead opcode `0x44` as **PREVRANDAO** to expose it → giving contracts a network-agreed 32-byte randomness beacon, with the caveat that a proposer can **bias it by skipping a slot**, so it's for low-stakes use, not high-value lotteries. The elegant part is reusing an opcode that was *already* the de-facto randomness source, so contracts that read `block.difficulty` kept working with a strictly better value underneath. Post-Merge, when a contract asks for "randomness," this is what it gets — and knowing its limits is the difference between a fun feature and an exploit.
+</Callout>
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-4399: PREVRANDAO", note: "The spec — 0x44's new meaning", href: "https://eips.ethereum.org/EIPS/eip-4399" },
+    { kind: "post", label: "EIP-3675 — the Merge", note: "Where mixHash became prevRandao in the header", href: "/eip-3675-the-merge" },
+    { kind: "post", label: "How consensus runs", note: "The RANDAO and validator randomness", href: "/how-consensus-runs" },
+    { kind: "post", label: "Chapter 2 — The EVM", note: "Why determinism forbids a random opcode", href: "/the-evm" },
+    { kind: "tool", label: "Chainlink VRF", note: "A verifiable random function for high-value randomness", href: "https://docs.chain.link/vrf" },
+  ]}
+/>
+
+</DepthLayer>

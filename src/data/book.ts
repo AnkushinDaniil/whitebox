@@ -100,7 +100,14 @@ export const BOOK: BookPart[] = [
         ],
       },
       { forkName: "Altair", date: "Oct 2021", chapters: [{ slug: "altair-sync-committees" }] },
-      { forkName: "Paris · The Merge", date: "Sep 2022", chapters: [{ slug: "eip-3675-the-merge", eip: "3675" }] },
+      {
+        forkName: "Paris · The Merge",
+        date: "Sep 2022",
+        chapters: [
+          { slug: "eip-3675-the-merge", eip: "3675" },
+          { slug: "eip-4399-prevrandao", eip: "4399" },
+        ],
+      },
       {
         forkName: "Shanghai · Capella",
         date: "Apr 2023",

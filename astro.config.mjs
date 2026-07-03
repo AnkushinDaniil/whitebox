@@ -4,11 +4,19 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
+import rehypeBaseLinks from "./src/lib/rehype-base-links.mjs";
+
+// Deployed to GitHub Pages as a project site: served from a subpath, so `base`
+// must match the repo name and internal links are base-prefixed (see the
+// rehype-base-links plugin for author-written markdown links, and
+// src/i18n/utils.ts `withBase`/`localizePath` for component links).
+const BASE = "/whitebox";
 
 // Static-only for milestone 1 (host decided later). Email capture uses a
 // pluggable client-side adapter, so no server adapter is required yet.
 export default defineConfig({
-  site: "https://whitebox.dev",
+  site: "https://ankushindaniil.github.io",
+  base: BASE,
   output: "static",
   integrations: [mdx(), react(), sitemap()],
   vite: {
@@ -33,5 +41,8 @@ export default defineConfig({
       theme: "github-dark-default",
       wrap: false,
     },
+    // Base-prefix author-written links in prose (e.g. [x](/the-evm)); MDX inherits
+    // this via @astrojs/mdx's extendMarkdownConfig (default true).
+    rehypePlugins: [[rehypeBaseLinks, { base: BASE }]],
   },
 });

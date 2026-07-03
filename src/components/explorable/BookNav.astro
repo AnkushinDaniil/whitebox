@@ -10,6 +10,7 @@ import { chapterNav, type FlatChapter } from "@/data/book";
 import {
   useTranslations,
   localizePath,
+  withBase,
   entryLang,
   entrySlug,
   type Lang,
@@ -33,7 +34,7 @@ const titleFor = (s: string): string => {
 };
 const hrefFor = (c: FlatChapter): string => {
   const hasLang = all.some((e) => entrySlug(e.id) === c.slug && entryLang(e.id) === lang);
-  return hasLang ? localizePath(`/${c.slug}`, lang) : `/${c.slug}`;
+  return hasLang ? localizePath(`/${c.slug}`, lang) : withBase(`/${c.slug}`);
 };
 ---
 

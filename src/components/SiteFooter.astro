@@ -1,6 +1,6 @@
 ---
 import { SITE } from "@/consts";
-import { useTranslations, localizePath, type Lang } from "@/i18n/utils";
+import { useTranslations, localizePath, withBase, type Lang } from "@/i18n/utils";
 
 interface Props {
   lang?: Lang;
@@ -22,7 +22,7 @@ const year = new Date().getFullYear();
       <a href={localizePath("/the-execution-layer", lang)}>{t.nav.hub}</a>
       <a href={localizePath("/notes", lang)}>{t.nav.notes}</a>
       <a href={localizePath("/about", lang)}>{t.nav.about}</a>
-      <a href="/rss.xml">{t.footer.rss}</a>
+      <a href={withBase("/rss.xml")}>{t.footer.rss}</a>
     </nav>
   </div>
 </footer>

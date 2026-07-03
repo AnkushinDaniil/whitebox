@@ -4,6 +4,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import {
   useTranslations,
   localizePath,
+  withBase,
   entryLang,
   entrySlug,
   type Lang,
@@ -114,7 +115,7 @@ const eipTag = (e: string) => (/^\d/.test(e) ? `EIP-${e}` : null);
                     e.slug ? (
                       <a
                         class="chip covered"
-                        href={meta(e.slug)?.hasLang ? localizePath(`/${e.slug}`, lang) : `/${e.slug}`}
+                        href={meta(e.slug)?.hasLang ? localizePath(`/${e.slug}`, lang) : withBase(`/${e.slug}`)}
                       >
                         <span class={`dot ${e.category}`} />
                         {eipTag(e.eip) && <b>{eipTag(e.eip)}</b>} {e.title}

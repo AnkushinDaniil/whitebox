@@ -5,20 +5,22 @@ interface Link {
   note?: string;
   kind?: "spec" | "code" | "eip" | "post" | "tool";
 }
-import { useTranslations, type Lang } from "@/i18n/utils";
+import { useTranslations, localizePath, type Lang } from "@/i18n/utils";
 interface Props {
   links: Link[];
   lang?: Lang;
 }
 const { links, lang = "en" } = Astro.props;
 const KIND_LABEL = useTranslations(lang).go;
+// Internal links (/slug) get the locale + deploy base; external URLs pass through.
+const hrefOf = (href: string) => (href.startsWith("/") ? localizePath(href, lang) : href);
 ---
 
 <ul class="go-deeper">
   {
     links.map((l) => (
       <li>
-        <a href={l.href} target="_blank" rel="noopener noreferrer">
+        <a href={hrefOf(l.href)} target="_blank" rel="noopener noreferrer">
           <span class="kind">{KIND_LABEL[l.kind ?? "post"]}</span>
           <span class="meta">
             <span class="label">{l.label}</span>

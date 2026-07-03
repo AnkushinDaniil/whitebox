@@ -1,7 +1,7 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import { SITE } from "@/consts";
-import { entryLang, entrySlug } from "@/i18n/utils";
+import { entryLang, entrySlug, withBase } from "@/i18n/utils";
 import type { APIContext } from "astro";
 
 export async function GET(context: APIContext) {
@@ -18,14 +18,14 @@ export async function GET(context: APIContext) {
       title: e.data.title,
       description: e.data.summary,
       pubDate: e.data.updated,
-      link: `/${entrySlug(e.id)}`,
+      link: withBase(`/${entrySlug(e.id)}`),
       categories: [e.data.topic, "explorable"],
     })),
     ...notes.map((n) => ({
       title: n.data.title,
       description: n.data.summary,
       pubDate: n.data.date,
-      link: `/notes/${entrySlug(n.id)}`,
+      link: withBase(`/notes/${entrySlug(n.id)}`),
       categories: ["note"],
     })),
   ].sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf());

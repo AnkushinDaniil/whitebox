@@ -1,6 +1,6 @@
 ---
 import { SITE } from "@/consts";
-import { useTranslations, altLangPath, stripLang, type Lang } from "@/i18n/utils";
+import { useTranslations, localizePath, stripLang, withBase, type Lang } from "@/i18n/utils";
 
 interface Props {
   title: string;
@@ -24,13 +24,14 @@ const t = useTranslations(lang);
 
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site).toString();
-const ogImage = new URL(image, Astro.site).toString();
+const ogImage = new URL(withBase(image), Astro.site).toString();
 const fullTitle =
   title === SITE.name ? `${SITE.name} — ${t.site.tagline}` : `${title} · ${SITE.name}`;
 
-// hreflang alternates: the same page in each language.
-const enHref = new URL(stripLang(path), Astro.site).toString();
-const ruHref = new URL(altLangPath(stripLang(path), "en"), Astro.site).toString();
+// hreflang alternates: the same page in each language (base- and locale-prefixed).
+const canonicalPath = stripLang(path);
+const enHref = new URL(localizePath(canonicalPath, "en"), Astro.site).toString();
+const ruHref = new URL(localizePath(canonicalPath, "ru"), Astro.site).toString();
 const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
 ---
 
@@ -42,8 +43,8 @@ const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
 <link rel="alternate" hreflang="en" href={enHref} />
 <link rel="alternate" hreflang="ru" href={ruHref} />
 <link rel="alternate" hreflang="x-default" href={enHref} />
-<link rel="sitemap" href="/sitemap-index.xml" />
-<link rel="alternate" type="application/rss+xml" title={SITE.name} href="/rss.xml" />
+<link rel="sitemap" href={withBase("/sitemap-index.xml")} />
+<link rel="alternate" type="application/rss+xml" title={SITE.name} href={withBase("/rss.xml")} />
 
 <title>{fullTitle}</title>
 <meta name="title" content={fullTitle} />
@@ -73,7 +74,7 @@ const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
   triggers hydration mismatches that break the interactive widgets.
 -->
 <meta name="darkreader-lock" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
 
 <!-- Fonts: Inter (UI) + JetBrains Mono (technical). Preconnect for speed. -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />

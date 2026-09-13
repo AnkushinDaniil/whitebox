@@ -228,76 +228,82 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── signatures: a seal stamps, verifies, then a tamper breaks it ── */}
     {name === "sign" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Signing and verifying">
-        <rect class="msg" x="40" y="74" width="150" height="60" rx="8" />
-        <text class="t-s" x="115" y="100">{L("“send 5 Ξ")}</text>
-        <text class="t-s" x="115" y="118">{L("to Bob”")}</text>
-        <text class="t-cap" x="115" y="158">{L("message (public)")}</text>
-        <g class="seal">
-          <circle class="seal-c" cx="300" cy="104" r="30" />
-          <text class="seal-m" x="300" y="110">✓</text>
-        </g>
-        <g class="crack"><text class="t-x" x="300" y="160">{L("✗ tampered")}</text></g>
-        <path class="arrow" d="M196 104 L262 104" />
-        <text class="t-cap" x="300" y="62">{L("signature")}</text>
-        <text class="t-cap" x="430" y="110">{L("verify")}</text>
-        <path class="arrow2" d="M332 104 L398 104" />
+      <svg viewBox="0 0 480 190" role="img" aria-label="A message is signed into a signature, then verified as authentic">
+        <rect class="sg-box" x="16" y="60" width="120" height="54" rx="8" />
+        <text class="t-s" x="76" y="84">send 5 Ξ</text>
+        <text class="t-s" x="76" y="102">to Bob</text>
+        <text class="t-cap" x="76" y="132">{L("message (public)")}</text>
+
+        <path class="sg-ar" d="M138 87 H204" marker-end="url(#wb-arrow)" />
+        <text class="t-cap" x="171" y="78">{L("sign")}</text>
+        <text class="t-cap sg-key" x="171" y="104">{L("with key")}</text>
+
+        <circle class="sg-seal" cx="240" cy="87" r="30" />
+        <text class="sg-sealm" x="240" y="95">✓</text>
+        <text class="t-cap" x="240" y="132">{L("signature")}</text>
+
+        <path class="sg-ar" d="M272 87 H332" marker-end="url(#wb-arrow)" />
+        <text class="t-cap" x="302" y="78">{L("verify")}</text>
+
+        <rect class="sg-vbox" x="332" y="63" width="130" height="48" rx="8" />
+        <text class="sg-ok" x="397" y="85">{L("✓ authentic")}</text>
+        <text class="t-cap" x="397" y="102">signer 0xYou</text>
+
+        <text class="t-cap" x="240" y="172">{L("a signature proves the message came from the key holder")}</text>
       </svg>
     )}
 
     {/* ── verify: one signature accepts a true message, rejects a tampered one ── */}
     {name === "verify" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Verification: a valid message passes, a tampered one fails">
+      <svg viewBox="0 0 480 200" role="img" aria-label="Verification: a valid message passes, a tampered one fails">
         {/* positive lane */}
-        <text class="t-cap vlbl ok-t" x="92" y="24">{L("✓ untouched message")}</text>
-        <rect class="vmsg ok" x="16" y="30" width="152" height="46" rx="7" />
-        <text class="t-s" x="92" y="50">{L("send 5 Ξ")}</text>
-        <text class="t-s" x="92" y="67">{L("to Bob")}</text>
-        <rect class="vsig" x="188" y="42" width="40" height="22" rx="4" />
-        <text class="t-cap" x="208" y="57">sig</text>
-        <path class="varrow va-a" d="M228 53 H276" />
-        <rect class="vbox" x="276" y="36" width="52" height="34" rx="6" />
-        <text class="t-cap" x="302" y="57">{L("verify")}</text>
-        <path class="varrow va-b" d="M328 53 H368" />
-        <g class="vres v-ok">
-          <circle class="vmark-c ok-c" cx="388" cy="53" r="15" />
-          <text class="vmark ok-m" x="388" y="59">✓</text>
-          <text class="t-ok" x="430" y="50">{L("VALID")}</text>
-          <text class="t-cap" x="430" y="65">{L("signer 0xYou")}</text>
-        </g>
+        <text class="vf-okt" x="16" y="24">{L("✓ untouched message")}</text>
+        <rect class="vf-msg vf-ok" x="16" y="30" width="140" height="44" rx="7" />
+        <text class="t-s" x="86" y="50">send 5 Ξ</text>
+        <text class="t-s" x="86" y="66">to Bob</text>
+        <path class="vf-ar" d="M156 52 H194" marker-end="url(#wb-arrow)" />
+        <rect class="vf-sig" x="194" y="40" width="40" height="24" rx="4" />
+        <text class="t-cap" x="214" y="56">sig</text>
+        <path class="vf-ar" d="M234 52 H276" marker-end="url(#wb-arrow)" />
+        <rect class="vf-box" x="276" y="36" width="58" height="32" rx="6" />
+        <text class="t-cap" x="305" y="56">{L("verify")}</text>
+        <path class="vf-ar" d="M334 52 H362" marker-end="url(#wb-arrow)" />
+        <circle class="vf-okc" cx="378" cy="52" r="13" />
+        <text class="vf-okm" x="378" y="57">✓</text>
+        <text class="vf-okt" x="400" y="49" style="text-anchor:start">{L("VALID")}</text>
+        <text class="t-cap" x="400" y="63" style="text-anchor:start">signer 0xYou</text>
         {/* negative lane */}
-        <text class="t-cap vlbl bad-t" x="92" y="120">{L("✗ one byte flipped")}</text>
-        <rect class="vmsg bad" x="16" y="126" width="152" height="46" rx="7" />
-        <text class="t-s" x="92" y="146">{L("send 5 Ξ")}</text>
-        <text class="t-s bad-word" x="92" y="163">{L("to Eve")}</text>
-        <rect class="vsig" x="188" y="138" width="40" height="22" rx="4" />
-        <text class="t-cap" x="208" y="153">sig</text>
-        <path class="varrow va-c" d="M228 149 H276" />
-        <rect class="vbox" x="276" y="132" width="52" height="34" rx="6" />
-        <text class="t-cap" x="302" y="153">{L("verify")}</text>
-        <path class="varrow va-d" d="M328 149 H368" />
-        <g class="vres v-bad">
-          <circle class="vmark-c bad-c" cx="388" cy="149" r="15" />
-          <text class="vmark bad-m" x="388" y="155">✗</text>
-          <text class="t-x" x="430" y="146">{L("INVALID")}</text>
-          <text class="t-cap" x="430" y="161">{L("signer ≠ you")}</text>
-        </g>
+        <text class="vf-badt" x="16" y="118">{L("✗ one byte flipped")}</text>
+        <rect class="vf-msg vf-bad" x="16" y="124" width="140" height="44" rx="7" />
+        <text class="t-s" x="86" y="144">send 5 Ξ</text>
+        <text class="t-s vf-word" x="86" y="160">to Eve</text>
+        <path class="vf-ar" d="M156 146 H194" marker-end="url(#wb-arrow)" />
+        <rect class="vf-sig" x="194" y="134" width="40" height="24" rx="4" />
+        <text class="t-cap" x="214" y="150">sig</text>
+        <path class="vf-ar" d="M234 146 H276" marker-end="url(#wb-arrow)" />
+        <rect class="vf-box" x="276" y="130" width="58" height="32" rx="6" />
+        <text class="t-cap" x="305" y="150">{L("verify")}</text>
+        <path class="vf-ar" d="M334 146 H362" marker-end="url(#wb-arrow)" />
+        <circle class="vf-badc" cx="378" cy="146" r="13" />
+        <text class="vf-badm" x="378" y="151">✗</text>
+        <text class="vf-badt" x="400" y="143" style="text-anchor:start">{L("INVALID")}</text>
+        <text class="t-cap" x="400" y="157" style="text-anchor:start">signer ≠ you</text>
       </svg>
     )}
 
     {/* ── recovery: the signer's address materializes from the signature ── */}
     {name === "recover" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Recovering the signer from a signature">
-        <circle class="seal-c2" cx="110" cy="100" r="34" />
-        <text class="seal-m2" x="110" y="106">✦</text>
-        <text class="t-cap" x="110" y="156">{L("signature only")}</text>
-        <path class="arrow3" d="M152 100 L250 100" />
-        <text class="t-mid recover-q" x="201" y="88">{L("who signed?")}</text>
-        <g class="addr-reveal">
-          <rect class="addr-box" x="270" y="78" width="180" height="44" rx="8" />
-          <text class="t-addr" x="360" y="106">0xBob…a3f1</text>
-        </g>
-        <text class="t-cap" x="360" y="146">{L("no “from” field needed")}</text>
+      <svg viewBox="0 0 480 190" role="img" aria-label="Recovering the signer address from a signature">
+        <circle class="rc-seal" cx="86" cy="88" r="32" />
+        <text class="rc-sealm" x="86" y="95">✦</text>
+        <text class="t-cap" x="86" y="140">{L("signature only")}</text>
+        <path class="rc-ar" d="M124 88 H250" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="187" y="78">ecrecover</text>
+        <text class="t-cap" x="187" y="104">{L("who signed?")}</text>
+        <rect class="rc-box" x="258" y="64" width="192" height="48" rx="8" />
+        <text class="rc-addr" x="354" y="93">0xBob…a3f1</text>
+        <text class="t-cap" x="354" y="140">{L("the recovered signer")}</text>
+        <text class="t-cap" x="240" y="174">{L("no “from” field needed; the signature reveals the sender")}</text>
       </svg>
     )}
 
@@ -352,29 +358,33 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── decentralize: a single host censors; a replicated network survives ── */}
     {name === "network" && (
-      <svg viewBox="0 0 480 214" role="img" aria-label="A single host can drop your edit; a replicated network re-checks and keeps it">
-        {/* BEFORE: one host can censor */}
-        <g class="net-before">
-          <rect class="node net-server" x="200" y="76" width="90" height="54" rx="8" />
-          <text class="t-cap" x="245" y="98">{L("one server")}</text>
-          <text class="t-cap" x="245" y="114">{L("single copy")}</text>
-          <text class="t-fld net-el" x="34" y="86" text-anchor="start">{L("your edit")}</text>
-          <path class="sarrow net-edit" d="M34 98 H192" />
-          <text class="t-x net-censor" x="150" y="86" text-anchor="middle">{L("✗ dropped")}</text>
-          <text class="t-cap" x="240" y="170" text-anchor="middle">{L("a single host can silently drop or rewrite your edit")}</text>
-        </g>
-        {/* AFTER: replicated, everyone re-checks */}
-        <g class="net-after">
-          <rect class="node net-hub" x="208" y="86" width="64" height="44" rx="8" />
-          {[[60, 30], [380, 30], [40, 152], [400, 152]].map(([x, y], i) => (
-            <g class={`copy c${i}`}>
-              <rect class="node" x={x} y={y} width="64" height="44" rx="8" />
-              <line class="hair2" x1={x + 8} y1={y + 15} x2={x + 56} y2={y + 15} /><line class="hair2" x1={x + 8} y1={y + 25} x2={x + 56} y2={y + 25} /><line class="hair2" x1={x + 8} y1={y + 34} x2={x + 48} y2={y + 34} />
-              <text class="t-ok net-tick" x={x + 32} y={y + 28}>✓</text>
-            </g>
-          ))}
-          <text class="t-cap" x="240" y="206" text-anchor="middle">{L("everyone re-checks it — no host can silence it")}</text>
-        </g>
+      <svg viewBox="0 0 480 232" role="img" aria-label="One server can silently drop your edit; a replicated network re-checks and keeps it">
+        {/* one host can censor */}
+        <rect class="nw-box" x="16" y="40" width="88" height="30" rx="6" />
+        <text class="t-cap" x="60" y="59">{L("your edit")}</text>
+        <path class="nw-ar" d="M104 55 H186" marker-end="url(#wb-arrow)" />
+        <text class="t-x" x="150" y="34">{L("✗ dropped")}</text>
+        <rect class="nw-server" x="190" y="38" width="100" height="42" rx="8" />
+        <text class="t-cap" x="240" y="56">{L("one server")}</text>
+        <text class="t-cap" x="240" y="71">{L("single copy")}</text>
+        <text class="t-cap" x="240" y="104" text-anchor="middle">{L("a single host can silently drop or rewrite your edit")}</text>
+
+        {/* replicated: every node re-checks */}
+        <rect class="nw-box" x="16" y="151" width="80" height="30" rx="6" />
+        <text class="t-cap" x="56" y="170">{L("your edit")}</text>
+        <path class="nw-ar" d="M96 166 H140" marker-end="url(#wb-arrow)" />
+        {[144, 226, 308, 390].map((x, i) => (
+          <g>
+            <rect class="nw-node" x={x} y="146" width="64" height="48" rx="7" />
+            <rect class="bk-fchip" x={x + 8} y="153" width="48" height="9" rx="2" />
+            <line class="nw-hair" x1={x + 8} y1={168} x2={x + 48} y2={168} />
+            <line class="nw-hair" x1={x + 8} y1={175} x2={x + 40} y2={175} />
+            <circle class="vf-okc" cx={x + 50} cy={183} r="8" />
+            <text class="nw-tick" x={x + 50} y={187}>✓</text>
+            {i < 3 && <line class="nw-peer" x1={x + 64} y1={170} x2={x + 82} y2={170} marker-end="url(#wb-arrow)" />}
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="216" text-anchor="middle">{L("every node re-checks it; no single host can silence it")}</text>
       </svg>
     )}
 
@@ -3642,6 +3652,156 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .root-badge { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); animation: rootpulse 5s ease-in-out infinite; }
   .t-root { font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
   @keyframes flow { 0% { stroke-dashoffset: 120 } 60%,100% { stroke-dashoffset: 0 } }
+
+  /* ── batch-txevm: static, glanceable rebuilds (scene-namespaced) ── */
+  .sg-box, .sg-vbox { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .sg-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.8; }
+  .sg-seal { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; }
+  .sg-sealm { fill: var(--color-node-leaf); font-size: 22px; text-anchor: middle; }
+  .sg-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .sg-key { fill: var(--color-ink-faint); }
+
+  .vf-msg { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .vf-msg.vf-ok { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .vf-msg.vf-bad { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); }
+  .vf-sig { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); stroke-width: 1.4; }
+  .vf-box { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .vf-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .vf-okc { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; }
+  .vf-okm { fill: var(--color-node-leaf); font-size: 15px; text-anchor: middle; }
+  .vf-badc { fill: color-mix(in oklab, var(--color-changed) 16%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2; }
+  .vf-badm { fill: var(--color-changed); font-size: 15px; text-anchor: middle; }
+  .vf-okt { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; }
+  .vf-badt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; }
+  .vf-word { fill: var(--color-changed); }
+
+  .rc-seal { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); stroke-width: 1.6; }
+  .rc-sealm { fill: var(--color-hash); font-size: 22px; text-anchor: middle; }
+  .rc-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.9; }
+  .rc-box { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-width: 1.6; }
+  .rc-addr { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 14px; text-anchor: middle; }
+
+  .nw-box { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .nw-server { fill: var(--color-surface); stroke: var(--color-changed); stroke-width: 1.6; }
+  .nw-node { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .nw-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.7; }
+  .nw-arbad { fill: none; stroke: var(--color-changed); stroke-width: 1.7; }
+  .nw-hair { stroke: var(--color-border); stroke-width: 1; }
+  .nw-tick { fill: var(--color-node-leaf); font-size: 12px; text-anchor: middle; }
+  .nw-peer { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 3 3; }
+
+  .bk-block { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .bk-changed { stroke: var(--color-changed); stroke-width: 1.8; }
+  .bk-fchip { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-border); }
+  .bk-hchip { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .bk-fld { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; }
+  .bk-new { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9px; }
+  .bk-h { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8px; }
+  .bk-bal { fill: var(--color-ink); font-family: var(--font-mono); font-size: 10px; }
+  .bk-leaft { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9px; }
+  .bk-plink { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .bk-feed { fill: none; stroke: var(--color-accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .bk-feedlbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9px; }
+  .bk-node { fill: var(--color-surface); stroke: var(--color-node-branch); stroke-width: 1.4; }
+  .bk-leaf { fill: var(--color-surface); stroke: var(--color-node-leaf); stroke-width: 1.4; }
+  .bk-edge { fill: none; stroke: var(--color-border); stroke-width: 1.3; }
+  .bk-edgeon { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+  .bk-nib { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .bk-nibchip { fill: var(--color-surface); stroke: var(--color-border); }
+
+  .sy-attacker { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.6; }
+  .sy-face { fill: var(--color-changed); font-size: 15px; text-anchor: middle; }
+  .sy-clone { fill: color-mix(in oklab, var(--color-changed) 12%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.4; }
+  .sy-keep { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.6; }
+  .sy-vote { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .sy-votekeep { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .sy-ar { fill: none; stroke: var(--color-changed); stroke-width: 1.5; }
+  .sy-arkeep { fill: none; stroke: var(--color-node-leaf); stroke-width: 1.6; }
+  .sy-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+
+  .ga-track { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .ga-fill { fill: var(--color-node-leaf); }
+  .ga-spent { fill: color-mix(in oklab, var(--color-changed) 20%, var(--color-surface)); }
+  .ga-tick { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .ga-op { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .ga-halt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .tp2-chip { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.3; }
+  .tp2-chip-on { fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.5; }
+  .tp2-nib { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .tp2-nib-on { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .tp2-node { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .tp2-branch { stroke: var(--color-node-branch); }
+  .tp2-ext { stroke: var(--color-node-extension); }
+  .tp2-leaf { stroke: var(--color-node-leaf); }
+  .tp2-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
+  .tp2-root { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.5; }
+  .tp2-kind { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .tp2-note { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9.5px; text-anchor: end; }
+
+  .txf-tx { fill: var(--color-surface); stroke: var(--color-accent-dim); stroke-width: 1.6; }
+  .txf-bar { fill: color-mix(in oklab, var(--color-surface-2) 60%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; }
+  .txf-field { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; }
+  .txf-why { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .txf-hd { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; }
+
+  .onf-rlp { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .onf-rlptext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .onf-chip { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-width: 1.2; }
+  .onf-parser { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.5; }
+  .onf-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+
+  .tb-byte { fill: color-mix(in oklab, var(--color-accent) 18%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.6; }
+  .tb-bytetext { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 18px; text-anchor: middle; }
+  .tb-pay { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .tb-paytext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .tb-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
+  .tb-dec { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.5; }
+  .tb-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .fam-chip { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.3; }
+  .fam-byte { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .fam-name { fill: var(--color-surface); stroke: var(--color-border); stroke-width: 1; }
+  .fam-namelbl { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .fam-next { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 4 3; }
+  .fam-nextlbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 11px; }
+  .fam-conn { fill: none; stroke: var(--color-border); stroke-width: 1.2; }
+
+  .dis-typed { fill: color-mix(in oklab, var(--color-node-leaf) 18%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.4; }
+  .dis-gap { fill: color-mix(in oklab, var(--color-ink-faint) 10%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 3 3; }
+  .dis-legacy { fill: color-mix(in oklab, var(--color-accent) 16%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.4; }
+  .dis-zonelbl { fill: var(--color-ink); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .dis-gaplbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .dis-axis { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .dis-tick { stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .dis-num { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .dis-mark { fill: var(--color-accent); }
+  .dis-marklbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+
+  .evw-fixed { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .evw-prog { fill: var(--color-surface); stroke: var(--color-node-leaf); stroke-width: 1.5; }
+  .evw-cc { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .evw-op { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; }
+  .evw-ar { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+  .evw-rigid { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .evw-free { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+
+  .evg-track { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evg-fill { fill: var(--color-node-leaf); }
+  .evg-spent { fill: color-mix(in oklab, var(--color-changed) 18%, var(--color-surface)); }
+  .evg-tick { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evg-op { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .evg-halt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .evr-reg { fill: color-mix(in oklab, var(--color-surface-2) 50%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evr-stack-cell { fill: color-mix(in oklab, var(--color-node-extension) 30%, var(--color-surface)); stroke: var(--color-node-extension); stroke-width: 1.2; }
+  .evr-mem-cell { fill: color-mix(in oklab, var(--color-node-branch) 26%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1; }
+  .evr-disk { fill: color-mix(in oklab, var(--color-node-leaf) 22%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
+  .evr-diskbody { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
+  .evr-persistval { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .evr-cheap { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .evr-exp { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .evr-sub { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
   @keyframes rootpulse { 0%,55% { filter: none } 70% { filter: drop-shadow(0 0 8px var(--color-accent-dim)) } 100% { filter: none } }
   /* editing a cell flips the root value 9f2e → a2e0 (5s) */
   .rt-editcell { animation: rt-editcell 5s ease-in-out infinite; }

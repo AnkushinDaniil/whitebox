@@ -188,6 +188,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <marker id="wb-arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
           <path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="var(--color-accent)" />
         </marker>
+        <marker id="wb-arrow-ctx" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="context-stroke" />
+        </marker>
         <linearGradient id="wb-node" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="color-mix(in oklab, var(--color-surface-3) 55%, var(--color-border-strong))" />
           <stop offset="0.5" stop-color="var(--color-surface-2)" />
@@ -315,7 +318,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-s" x="99" y="48">{L("send 5 Ξ → Bob")}</text>
         <text class="t-fld rp-noN" x="99" y="63">(no nonce)</text>
         <g class="rp-dup"><rect class="msg ghost" x="24" y="30" width="150" height="40" rx="8" /><text class="t-x" x="99" y="55">{L("✗ copy, again…")}</text></g>
-        <path class="arrow rp-d1" d="M174 50 H344" />
+        <path class="arrow rp-d1" d="M174 50 H344" marker-end="url(#wb-arrow-ctx)" />
         <rect class="node" x="344" y="30" width="112" height="40" rx="8" />
         <text class="rp-balbad" x="400" y="55">9 → 4 → -1 Ξ</text>
         <text class="t-x rp-leak" x="240" y="88" text-anchor="middle">{L("the same signed edit applies again and again — the balance leaks")}</text>
@@ -323,8 +326,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-fld rp-h" x="24" y="122" text-anchor="start">{L("with a nonce")}</text>
         <rect class="msg rp-card" x="24" y="128" width="150" height="44" rx="8" />
         <text class="t-s" x="99" y="148">{L("send 5 Ξ → Bob")}</text>
-        <text class="t-cap rp-nonce" x="99" y="164">nonce 7 · 🔒</text>
-        <path class="arrow rp-ok" d="M174 150 H344" />
+        <text class="t-cap rp-nonce" x="99" y="164">nonce 7 · spent</text>
+        <path class="arrow rp-ok" d="M174 150 H344" marker-end="url(#wb-arrow-ctx)" />
         <rect class="node" x="344" y="128" width="112" height="44" rx="8" />
         <text class="t-ok rp-balgood" x="400" y="154">9 → 4 Ξ</text>
         <text class="t-x rp-reject" x="240" y="192" text-anchor="middle">{L("the copy is rejected — nonce 7 already spent, so each edit applies once")}</text>
@@ -1231,7 +1234,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 188" role="img" aria-label="To get smart-account powers you had to migrate to a new address">
         <rect class="sm-eoa" x="18" y="52" width="156" height="62" rx="8" /><text class="t-cap" x="96" y="74">{L("your EOA · 0xYou")}</text><text class="t-cap" x="96" y="90">{L("funds · history · key")}</text>
         <text class="t-x" x="96" y="130">{L("✗ rigid, no smart powers")}</text>
-        <path class="sarrow sm-mig" d="M174 84 H300" /><text class="t-cap sm-miglbl" x="237" y="74">{L("migrate?")}</text>
+        <path class="sarrow sm-mig" d="M174 84 H300" marker-end="url(#wb-arrow)" /><text class="t-cap sm-miglbl" x="237" y="74">{L("migrate?")}</text>
         <rect class="sm-new" x="300" y="50" width="162" height="60" rx="8" /><text class="t-cap" x="381" y="74">{L("smart account")}</text><text class="t-cap" x="381" y="90">{L("0xNew — new address")}</text>
         <text class="t-cap" x="240" y="170">{L("4337 powers need a new address — your EOA is left behind, still rigid")}</text>
       </svg>
@@ -1241,11 +1244,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "se-delegate" && (
       <svg viewBox="0 0 480 198" role="img" aria-label="The EOA signs an authorization; its code becomes a delegation pointer">
         <rect class="sd-auth" x="18" y="30" width="200" height="46" rx="6" /><text class="t-cap" x="118" y="50">{L("signed authorization")}</text><text class="t-cap" x="118" y="66">(chainId, delegate, nonce)</text>
-        <path class="sarrow sd-a1" d="M118 76 V104" />
+        <path class="sarrow sd-a1" d="M118 76 V104" marker-end="url(#wb-arrow)" />
         <rect class="sd-eoa" x="38" y="108" width="208" height="60" rx="8" /><text class="t-cap" x="142" y="128">{L("EOA 0xYou")}</text>
         <text class="t-fld sd-code0" x="52" y="150">code: (empty)</text>
         <text class="t-fld sd-code1" x="52" y="150">code: 0xef0100 → delegate</text>
-        <path class="sarrow sd-a2" d="M246 138 H300" />
+        <path class="sarrow sd-a2" d="M246 138 H300" marker-end="url(#wb-arrow)" />
         <rect class="sd-deleg" x="300" y="116" width="156" height="44" rx="8" /><text class="t-cap" x="378" y="142">{L("delegate contract")}</text>
         <text class="t-cap" x="240" y="188">{L("sign a delegation → the EOA’s code becomes a pointer, not a copy")}</text>
       </svg>
@@ -1255,9 +1258,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "se-run" && (
       <svg viewBox="0 0 480 184" role="img" aria-label="A call loads the delegate's code and runs it as the EOA">
         <rect class="sr-caller" x="14" y="64" width="86" height="40" rx="6" /><text class="t-cap" x="57" y="88">{L("a call")}</text>
-        <path class="sarrow sr-a1" d="M100 84 H150" />
+        <path class="sarrow sr-a1" d="M100 84 H150" marker-end="url(#wb-arrow)" />
         <rect class="sr-eoa" x="150" y="50" width="150" height="76" rx="8" /><text class="t-cap" x="225" y="70">{L("EOA 0xYou")}</text><text class="t-cap" x="225" y="86">code: → delegate</text><text class="t-cap" x="225" y="102">{L("storage · balance")}</text>
-        <path class="sarrow sr-a2" d="M300 88 H348" /><text class="t-cap sr-load" x="324" y="78">{L("loads code")}</text>
+        <path class="sarrow sr-a2" d="M300 88 H348" marker-end="url(#wb-arrow)" /><text class="t-cap sr-load" x="324" y="78">{L("loads")}</text>
         <rect class="sr-deleg" x="348" y="68" width="118" height="40" rx="6" /><text class="t-cap" x="407" y="92">{L("delegate code")}</text>
         <text class="t-ok sr-as" x="225" y="148">{L("runs AS 0xYou — its storage, balance, address")}</text>
         <text class="t-cap" x="240" y="172">{L("the call loads the delegate’s code and runs it in the EOA’s own context")}</text>
@@ -1361,8 +1364,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="rv-tx" x="180" y="36" width="120" height="48" rx="8" />
         <text class="t-cap" x="240" y="57">{L("signed tx")}</text>
         <text class="t-cap rv-vsig" x="240" y="73">v = 27 / 28</text>
-        <path class="sarrow rv-a1" d="M212 84 L128 126" />
-        <path class="sarrow rv-a2" d="M268 84 L352 126" />
+        <path class="sarrow rv-a1" d="M212 84 L128 126" marker-end="url(#wb-arrow)" />
+        <path class="sarrow rv-a2" d="M268 84 L352 126" marker-end="url(#wb-arrow)" />
         <rect class="rv-chain" x="36" y="130" width="168" height="54" rx="8" />
         <text class="t-cap" x="120" y="152">{L("Chain A · ETH")}</text>
         <text class="t-ok rv-ok1" x="120" y="172">{L("✓ accepted")}</text>
@@ -1383,8 +1386,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="rv-list rv-new" x="44" y="90" width="392" height="30" rx="6" />
         <text class="t-fld rv-listc rv-newt" x="240" y="109">rlp[ … , chainId, 0, 0]</text>
         <text class="t-cap" x="240" y="136">{L("after — bound to one chainId")}</text>
-        <path class="sarrow rv-ha" d="M240 142 V160" />
-        <rect class="rv-hash" x="148" y="164" width="184" height="30" rx="8" />
+        <path class="sarrow rv-ha" d="M240 142 V160" marker-end="url(#wb-arrow)" />
+        <rect class="rv-hash" x="120" y="164" width="240" height="30" rx="8" />
         <text class="t-ok" x="240" y="183">{L("keccak now differs per chain")}</text>
       </svg>
     )}
@@ -1395,7 +1398,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("why it's backward-compatible: the v ranges can't overlap")}</text>
         <rect class="rvn-in" x="46" y="32" width="182" height="26" rx="6" />
         <text class="t-fld rvn-int" x="137" y="49">chainId·2 + 35 + parity</text>
-        <path class="sarrow rvn-arrow" d="M228 45 H270" />
+        <path class="sarrow rvn-arrow" d="M228 45 H270" marker-end="url(#wb-arrow)" />
         <rect class="rvn-out" x="270" y="32" width="118" height="26" rx="6" />
         <text class="t-ok rvn-outt" x="329" y="49">→ 37 or 38</text>
 
@@ -1425,10 +1428,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="105" y="64">{L("tx signed for")}</text>
         <text class="t-ok" x="105" y="83">chainId 1</text>
         <text class="t-cap" x="240" y="58">{L("replay →")}</text>
-        <path class="sarrow rv-ra" d="M180 70 H300" />
+        <path class="sarrow rv-ra" d="M180 70 H300" marker-end="url(#wb-arrow)" />
         <rect class="rv-chain2" x="300" y="42" width="160" height="58" rx="8" />
         <text class="t-cap" x="380" y="64">{L("chain · chainId 61")}</text>
         <text class="t-cap" x="380" y="82">{L("recompute hash w/ 61")}</text>
+        <path class="sarrow" d="M360 102 L296 121" marker-end="url(#wb-arrow)" />
         <rect class="rv-verdict" x="150" y="126" width="180" height="42" rx="8" />
         <text class="t-x rv-vtext" x="240" y="146">{L("signer ≠ sender")}</text>
         <text class="t-x rv-vtext" x="240" y="162">{L("✗ rejected")}</text>
@@ -1621,8 +1625,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="ts-step ts-cost" x="324" y="36" width="135" height="56" rx="8" />
         <text class="t-cap" x="391" y="58">SSTORE slot = 0</text>
         <text class="t-x" x="391" y="78">{L("reset · refund")}</text>
-        <path class="sarrow ts-da1" d="M87 92 L180 126" />
-        <path class="sarrow ts-da2" d="M391 92 L300 126" />
+        <path class="sarrow ts-da1" d="M87 92 L180 126" marker-end="url(#wb-arrow)" />
+        <path class="sarrow ts-da2" d="M391 92 L300 126" marker-end="url(#wb-arrow)" />
         <rect class="ts-disk" x="150" y="128" width="180" height="42" rx="8" />
         <text class="t-cap" x="240" y="146">{L("state trie · disk")}</text>
         <text class="t-x ts-forever" x="240" y="163">{L("persists forever")}</text>
@@ -1661,7 +1665,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="114" y="62">{L("caller frame")}</text>
         <text class="t-fld ts-c" x="114" y="82">TSTORE(k, v)</text>
         <text class="t-cap ts-oalbl" x="240" y="58">{L("sub-call")}</text>
-        <path class="sarrow ts-oa" d="M204 68 H276" />
+        <path class="sarrow ts-oa" d="M204 68 H276" marker-end="url(#wb-arrow)" />
         <rect class="ts-callee" x="276" y="40" width="180" height="56" rx="8" />
         <text class="t-cap" x="366" y="62">{L("callee frame")}</text>
         <text class="t-ok ts-c2" x="366" y="82">TLOAD(k) → v</text>
@@ -1967,9 +1971,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="30" y="46" text-anchor="start">{L("bytecode")}</text>
         {[["6002", "PUSH1 2", 0], ["6003", "PUSH1 3", 1], ["01", "ADD", 2], ["6004", "PUSH1 4", 3], ["02", "MUL", 4]].map(([hex, asm, i]) => (
           <g>
-            <rect class={`ev-iprow ev-ph${i}`} x="24" y={54 + Number(i) * 30} width="176" height="26" rx="5" />
-            <text class="t-fld ev-hex" x="36" y={71 + Number(i) * 30}>{hex}</text>
-            <text class="t-fld ev-asm" x="92" y={71 + Number(i) * 30}>{asm}</text>
+            <rect class={`ev-iprow ev-ph${i}`} x="24" y={50 + Number(i) * 27} width="176" height="24" rx="5" />
+            <text class="t-fld ev-hex" x="36" y={66 + Number(i) * 27}>{hex}</text>
+            <text class="t-fld ev-asm" x="92" y={66 + Number(i) * 27}>{asm}</text>
           </g>
         ))}
 
@@ -1978,7 +1982,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="ev-slot" x="316" y="150" width="88" height="28" rx="5" />
         <rect class="ev-slot" x="316" y="118" width="88" height="28" rx="5" />
         <line class="ev-base" x1="304" y1="182" x2="416" y2="182" />
-        <text class="t-cap ev-toplbl" x="430" y="128" text-anchor="start">{L("top")}</text>
+        <text class="t-cap ev-toplbl" x="430" y="169" text-anchor="start">{L("top")}</text>
 
         <g class="ev-cell ev-c2"><rect x="316" y="150" width="88" height="28" rx="5" /><text x="360" y="169">2</text></g>
         <g class="ev-cell ev-c3"><rect x="316" y="118" width="88" height="28" rx="5" /><text x="360" y="137">3</text></g>
@@ -2428,8 +2432,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="ci-msg" x="180" y="34" width="120" height="48" rx="8" />
         <text class="t-cap" x="240" y="54">{L("signed permit")}</text>
         <text class="t-fld ci-sig" x="240" y="72">ecrecover(v,r,s)</text>
-        <path class="sarrow ci-ra1" d="M212 82 L128 118" />
-        <path class="sarrow ci-ra2" d="M268 82 L352 118" />
+        <path class="sarrow ci-ra1" d="M212 82 L128 118" marker-end="url(#wb-arrow)" />
+        <path class="sarrow ci-ra2" d="M268 82 L352 118" marker-end="url(#wb-arrow)" />
         <rect class="ci-chain" x="34" y="122" width="164" height="52" rx="8" />
         <text class="t-cap" x="116" y="142">{L("Chain A · 0xTkn")}</text>
         <text class="t-ok ci-ok1" x="116" y="162">{L("✓ approved")}</text>
@@ -2447,12 +2451,12 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="ci-op" x="24" y="52" width="110" height="44" rx="8" />
         <text class="t-addr" x="79" y="72">CHAINID</text>
         <text class="t-fld ci-opv" x="79" y="88">0x46 → 1</text>
-        <path class="sarrow ci-da" d="M134 74 H190" />
+        <path class="sarrow ci-da" d="M134 74 H190" marker-end="url(#wb-arrow)" />
         <rect class="ci-dom" x="190" y="44" width="180" height="60" rx="8" />
         <text class="t-cap" x="280" y="64">{L("domain separator")}</text>
         <text class="t-fld ci-domt" x="280" y="82">chainId: 1</text>
         <text class="t-fld ci-domt" x="280" y="97">contract: 0xTkn</text>
-        <path class="sarrow ci-da2" d="M280 104 V132" />
+        <path class="sarrow ci-da2" d="M280 104 V132" marker-end="url(#wb-arrow)" />
         <rect class="ci-signed" x="150" y="134" width="260" height="26" rx="6" />
         <text class="t-ok ci-signedt" x="280" y="151">{L("the message is signed over this domain")}</text>
         <text class="t-cap" x="240" y="182" text-anchor="middle">{L("now the signature is valid only on chain 1, and only for this contract")}</text>
@@ -2465,8 +2469,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("on a split, CHAINID differs — the signature can't cross")}</text>
         <rect class="ci-msg" x="184" y="34" width="112" height="40" rx="8" />
         <text class="t-fld ci-sig" x="240" y="58">the same sig</text>
-        <path class="sarrow ci-ra1" d="M212 74 L128 112" />
-        <path class="sarrow ci-ra2" d="M268 74 L352 112" />
+        <path class="sarrow ci-ra1" d="M212 74 L128 112" marker-end="url(#wb-arrow)" />
+        <path class="sarrow ci-ra2" d="M268 74 L352 112" marker-end="url(#wb-arrow)" />
         <rect class="ci-chain ci-good" x="30" y="116" width="170" height="58" rx="8" />
         <text class="t-cap" x="115" y="136">{L("Chain A · CHAINID 1")}</text>
         <text class="t-fld ci-cmt" x="115" y="152">domain uses 1</text>
@@ -2639,20 +2643,22 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "sd-danger" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="SELFDESTRUCT deleted a contract's code and freed its address, enabling different code to be redeployed there">
         <text class="t-cap" x="240" y="20">{L("SELFDESTRUCT wiped the code and freed the address")}</text>
-        <rect class="sd-c sd-c0" x="24" y="44" width="120" height="52" rx="8" />
-        <text class="t-cap" x="84" y="66">{L("contract v1")}</text>
-        <text class="t-fld sd-addr" x="84" y="84">0xAddr</text>
-        <path class="sarrow sdx-a1" d="M144 70 H196" /><text class="t-x sd-sdl" x="170" y="62">SELFDESTRUCT</text>
-        <rect class="sd-empty" x="196" y="44" width="120" height="52" rx="8" />
-        <text class="t-x sd-wiped" x="256" y="66">{L("code + storage wiped")}</text>
-        <text class="t-fld sd-addr" x="256" y="84">0xAddr {L("free")}</text>
-        <path class="sarrow sdx-a2" d="M316 70 H368" /><text class="t-cap sd-c2l" x="342" y="62">CREATE2</text>
-        <rect class="sd-c sd-c1" x="368" y="44" width="104" height="52" rx="8" />
-        <text class="t-x" x="420" y="66">{L("contract v2")}</text>
-        <text class="t-fld sd-addr" x="420" y="84">{L("same 0xAddr!")}</text>
-        <text class="t-x sd-meta" x="240" y="134" text-anchor="middle">{L("different code, same address — a 'metamorphic' contract")}</text>
-        <text class="t-cap" x="240" y="164" text-anchor="middle">{L("an audited address could silently become something else")}</text>
-        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("and 'a contract can just vanish' complicated all future state handling")}</text>
+        <rect class="sd-c sd-c0" x="24" y="50" width="90" height="54" rx="8" />
+        <text class="t-cap" x="69" y="74">{L("contract v1")}</text>
+        <text class="t-fld sd-addr" x="69" y="92">0xAddr</text>
+        <text class="t-x sd-sdl" x="159" y="70" text-anchor="middle">SELFDESTRUCT</text>
+        <path class="sarrow sdx-a1" d="M114 79 H201" marker-end="url(#wb-arrow)" />
+        <rect class="sd-empty" x="204" y="50" width="90" height="54" rx="8" />
+        <text class="t-x sd-wiped" x="249" y="74" text-anchor="middle">{L("code wiped")}</text>
+        <text class="t-fld sd-addr" x="249" y="92">{L("0xAddr free")}</text>
+        <text class="t-cap sd-c2l" x="339" y="70" text-anchor="middle">CREATE2</text>
+        <path class="sarrow sdx-a2" d="M294 79 H381" marker-end="url(#wb-arrow-accent)" />
+        <rect class="sd-c sd-c1" x="384" y="50" width="90" height="54" rx="8" />
+        <text class="t-x" x="429" y="74" text-anchor="middle">{L("contract v2")}</text>
+        <text class="t-fld sd-addr" x="429" y="92">{L("same 0xAddr")}</text>
+        <text class="t-x sd-meta" x="240" y="138" text-anchor="middle">{L("different code, same address = 'metamorphic'")}</text>
+        <text class="t-cap" x="240" y="162" text-anchor="middle">{L("an audited address could silently change")}</text>
+        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("and contracts could just vanish from state")}</text>
       </svg>
     )}
 
@@ -2683,7 +2689,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="sd-c sd-c0" x="30" y="44" width="130" height="50" rx="8" />
         <text class="t-cap" x="95" y="64">{L("contract at 0xAddr")}</text>
         <text class="t-fld sd-addr" x="95" y="82">SELFDESTRUCT (later)</text>
-        <path class="sarrow sd-r1" d="M160 69 H236" />
+        <path class="sarrow sd-r1" d="M160 69 H236" marker-end="url(#wb-arrow)" />
         <rect class="sd-c sd-stays" x="236" y="44" width="130" height="50" rx="8" />
         <text class="t-ok" x="301" y="64">{L("code STAYS")}</text>
         <text class="t-fld sd-addr" x="301" y="82">0xAddr occupied</text>
@@ -2867,7 +2873,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="cd-l2" x="24" y="46" width="140" height="56" rx="8" />
         <text class="t-cap" x="94" y="68">{L("rollup · L2")}</text>
         <text class="t-fld cd-c" x="94" y="86">{L("1000s of txns")}</text>
-        <path class="sarrow cd-a1" d="M164 74 H228" /><text class="t-cap cd-al" x="196" y="66">{L("post batch")}</text>
+        <path class="sarrow cd-a1" d="M164 74 H228" marker-end="url(#wb-arrow)" /><text class="t-cap cd-al" x="196" y="66" text-anchor="middle">{L("post")}</text>
         <rect class="cd-l1" x="228" y="46" width="228" height="56" rx="8" />
         <text class="t-cap" x="342" y="68">{L("L1 calldata")}</text>
         <text class="t-x cd-price" x="342" y="86">68 gas / non-zero byte</text>
@@ -2881,13 +2887,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 184" role="img" aria-label="EIP-2028 cuts the cost of a non-zero calldata byte from 68 gas to 16">
         <text class="t-cap" x="240" y="20">{L("reprice calldata down — analysis showed 68 was too high")}</text>
         <text class="t-fld cd-bl" x="24" y="60" text-anchor="start">{L("before")}</text>
-        <rect class="cd-track" x="96" y="48" width="340" height="20" rx="4" />
-        <rect class="cd-bar cd-barbefore" x="96" y="48" width="340" height="20" rx="4" />
-        <text class="t-x cd-blbl" x="440" y="63" text-anchor="end">68 gas/byte</text>
+        <rect class="cd-bar cd-barbefore" x="96" y="48" width="232" height="20" rx="4" />
+        <text class="t-x cd-blbl" x="338" y="63" text-anchor="start">68 gas/byte</text>
         <text class="t-fld cd-bl" x="24" y="104" text-anchor="start">{L("after")}</text>
-        <rect class="cd-track" x="96" y="92" width="340" height="20" rx="4" />
-        <rect class="cd-bar cd-barafter" x="96" y="92" width="340" height="20" rx="4" />
-        <text class="t-ok cd-albl" x="188" y="107">16 gas/byte</text>
+        <rect class="cd-bar cd-barafter" x="96" y="92" width="55" height="20" rx="4" />
+        <text class="t-ok cd-albl" x="162" y="107" text-anchor="start">16 gas/byte</text>
         <text class="t-ok cd-save" x="240" y="146" text-anchor="middle">{L("~4× cheaper data (zero bytes stay 4 gas)")}</text>
         <text class="t-cap" x="240" y="170" text-anchor="middle">{L("the tradeoff: cheaper data means bigger blocks — 16 was the safe balance")}</text>
       </svg>
@@ -3144,7 +3148,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("net metering: charge by net effect vs. the tx-start value")}</text>
         <rect class="ss-cheapbox" x="60" y="34" width="360" height="30" rx="6" />
         <text class="t-ok ss-cheap" x="240" y="53">{L("repeat / dirty writes now cost as little as 200 gas")}</text>
-        <path class="sarrow ss-dn" d="M240 66 V90" />
+        <path class="sarrow ss-dn" d="M240 66 V90" marker-end="url(#wb-arrow)" />
         <rect class="ss-hole" x="46" y="94" width="388" height="58" rx="8" />
         <text class="t-x ss-hl" x="240" y="114">{L("but a 2300-gas stipend call was assumed unable to write")}</text>
         <text class="t-x ss-hl2" x="240" y="134">{L("at 200 gas it can — reentrancy surface reopens")}</text>
@@ -3160,14 +3164,14 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="ss-gate" x="70" y="38" width="340" height="40" rx="8" />
         <text class="t-ok ss-gt" x="240" y="63">{L("SSTORE reverts if < 2300 gas remains (the sentry)")}</text>
         <g class="ss-lane">
-          <text class="t-cap ss-ll" x="24" y="106" text-anchor="start">{L("stipend call · 2300 gas")}</text>
-          <path class="sarrow ss-block" d="M180 100 H250" />
-          <text class="t-x ss-bl" x="300" y="106" text-anchor="middle">{L("blocked — can't write")}</text>
+          <text class="t-cap ss-ll" x="24" y="106" text-anchor="start">{L("stipend · 2300 gas")}</text>
+          <path class="sarrow ss-block" d="M188 100 H226" marker-end="url(#wb-arrow-ctx)" />
+          <text class="t-x ss-bl" x="240" y="106" text-anchor="start">{L("blocked, can't write")}</text>
         </g>
         <g class="ss-lane">
-          <text class="t-cap ss-ll" x="24" y="138" text-anchor="start">{L("real call · plenty of gas")}</text>
-          <path class="sarrow ss-pass" d="M180 132 H250" />
-          <text class="t-ok ss-pl" x="300" y="138" text-anchor="middle">{L("net savings kept")}</text>
+          <text class="t-cap ss-ll" x="24" y="138" text-anchor="start">{L("real call · ample gas")}</text>
+          <path class="sarrow ss-pass" d="M188 132 H226" marker-end="url(#wb-arrow-ctx)" />
+          <text class="t-ok ss-pl" x="240" y="138" text-anchor="start">{L("net savings kept")}</text>
         </g>
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("cheap repeated writes restored — the stipend hole closed")}</text>
       </svg>
@@ -3241,15 +3245,16 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("each block: write parent hash into a ring buffer in state")}</text>
         <text class="t-fld bh-blk" x="240" y="42" text-anchor="middle">{L("block n → store hash at slot (n−1) mod 8191")}</text>
         <g class="bh-rot">
-          <circle class="bh-rc" cx="240" cy="118" r="46" />
+          <circle class="bh-rc" cx="240" cy="110" r="42" />
         </g>
-        <circle class="bh-slot bh-s0" cx="240" cy="72" r="7" />
-        <circle class="bh-slot bh-s1" cx="286" cy="118" r="7" />
-        <circle class="bh-slot bh-s2" cx="240" cy="164" r="7" />
-        <circle class="bh-slot bh-s3" cx="194" cy="118" r="7" />
-        <text class="t-cap bh-ct" x="240" y="115" text-anchor="middle">{L("8191 slots")}</text>
-        <text class="t-cap bh-ct2" x="240" y="130" text-anchor="middle">{L("in system storage")}</text>
-        <text class="t-ok bh-sload" x="240" y="186" text-anchor="middle">{L("now readable with a plain SLOAD — same pattern as EIP-4788's beacon root")}</text>
+        <circle class="bh-slot bh-s0" cx="240" cy="68" r="7" />
+        <circle class="bh-slot bh-s1" cx="282" cy="110" r="7" />
+        <circle class="bh-slot bh-s2" cx="240" cy="152" r="7" />
+        <circle class="bh-slot bh-s3" cx="198" cy="110" r="7" />
+        <text class="t-cap bh-ct" x="240" y="107" text-anchor="middle">{L("8191 slots")}</text>
+        <text class="t-cap bh-ct2" x="240" y="122" text-anchor="middle">{L("in state")}</text>
+        <text class="t-ok bh-sload" x="240" y="182" text-anchor="middle">{L("readable with a plain SLOAD")}</text>
+        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("same pattern as EIP-4788's beacon root")}</text>
       </svg>
     )}
 
@@ -3258,13 +3263,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 180" role="img" aria-label="Historical hashes in state extend the readable window and make block hashes part of witnessed state for stateless clients">
         <text class="t-cap" x="240" y="20">{L("256 → 8191 blocks, and now part of state")}</text>
         <text class="t-fld bh-wl" x="24" y="52" text-anchor="start">before</text>
-        <rect class="bh-track" x="96" y="40" width="360" height="16" rx="4" />
-        <rect class="bh-before" x="96" y="40" width="12" height="16" rx="3" />
-        <text class="t-cap bh-bl" x="118" y="52" text-anchor="start">256</text>
+        <rect class="bh-before" x="96" y="40" width="11" height="16" rx="3" />
+        <text class="t-cap bh-bl" x="118" y="52" text-anchor="start">256 blocks</text>
         <text class="t-fld bh-wl" x="24" y="82" text-anchor="start">after</text>
-        <rect class="bh-track" x="96" y="70" width="360" height="16" rx="4" />
-        <rect class="bh-after" x="96" y="70" width="360" height="16" rx="4" />
-        <text class="t-ok bh-al" x="450" y="82" text-anchor="end">8191</text>
+        <rect class="bh-after" x="96" y="70" width="250" height="16" rx="4" />
+        <text class="t-ok bh-al" x="352" y="82" text-anchor="start">8191 blocks</text>
         <text class="t-ok bh-state" x="240" y="120" text-anchor="middle">{L("hashes live in witnessed state — no special header cache")}</text>
         <text class="t-cap" x="240" y="148" text-anchor="middle">{L("a building block for stateless Ethereum and cheaper cross-chain proofs")}</text>
         <text class="t-cap" x="240" y="170" text-anchor="middle">{L("the ring-buffer-in-a-contract pattern, again")}</text>
@@ -5780,4 +5783,85 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .rvr-gaslbl, .rv-gaslbl { fill: var(--color-canvas); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; font-weight: 600; }
   .rv-gaslbl2 { font-size: 9px; }
   .rv-gburn { animation: none; transform: none; fill: var(--color-changed); }
+
+  /* ══ batch2 (viz/batch2-selfdestruct-misc) static-render fixes ══
+     Rationale (see visual-explainer-diagrams skill): a --virtual-time-budget
+     headless screenshot freezes CSS at t=0, so opacity-reveal + dashoffset-draw
+     animations render as invisible/empty and cannot be eye-verified. These
+     scenes are made COMPLETE and glanceable at their resting state: arrows are
+     solid with real marker-end heads, and revealed content is visible at rest.
+     Every selector below is an existing scene-prefixed class (no new generic
+     names), so it only overrides its own scene — no cross-scene collisions. */
+  .sm-mig, .sd-a1, .sd-a2, .sr-a1, .sr-a2, .rv-a1, .rv-a2, .rv-ha, .rv-ra,
+  .rvn-arrow, .ts-da1, .ts-da2, .ts-oa, .ci-ra1, .ci-ra2, .ci-da, .ci-da2,
+  .sdx-a1, .sdx-a2, .sd-r1, .cd-a1, .ss-dn, .rp-ok, .rp-d1 {
+    stroke-dasharray: none; stroke-dashoffset: 0; animation: none;
+  }
+  /* revealed content -> visible & complete at rest */
+  .sd-c1, .sd-meta, .sd-cok, .sd-clater, .sd-stays, .sd-nometa, .sd-simpl,
+  .sr-as, .sp-power, .rv-ok1, .rv-ok2, .rv-new, .rv-newt, .rv-hash,
+  .rv-verdict, .rv-vtext, .ci-ok1, .ci-ok2, .ci-dom, .ci-signed, .ci-signedt,
+  .cd-dom, .cd-save, .cd-era, .cd-blob, .ss-w, .ss-sum, .ss-hole, .ss-hl,
+  .ss-hl2, .ss-post, .bh-need, .bh-need2, .bh-sload, .bh-state, .fm-mix,
+  .fm-op, .fm-one, .fm-row, .fm-done, .ts-survives, .ts-wiped, .ts-c2,
+  .ts-undo, .ts-cleared, .rp-reject {
+    opacity: 1; animation: none;
+  }
+  /* crossfade pairs at a shared position -> show one meaningful state only */
+  .sd-code0 { opacity: 0; animation: none; }
+  .sd-code1 { opacity: 1; animation: none; }
+  .tsr-wrote, .tsr-during { opacity: 0; animation: none; }
+  .tsr-undone, .tsr-zero { opacity: 1; animation: none; }
+  /* evm-stack: freeze the FINAL coherent frame (MUL done, stack = [20]) */
+  .ev-c20, .ev-final { opacity: 1; animation: none; }
+  .ec0, .ec1, .ec2, .ec3 { opacity: 0; animation: none; }
+  .ec4 { opacity: 1; animation: none; }
+  .ev-c2, .ev-c3, .ev-c4, .ev-c5 { opacity: 0; animation: none; }
+  .ev-ph0, .ev-ph1, .ev-ph2, .ev-ph3 { opacity: 0; animation: none; }
+  .ev-ph4 { opacity: 1; animation: none; }
+  .cd-barafter { animation: none; }
+  .bh-after { animation: none; transform: none; }
+  .bh-rot { animation: none; transform: none; }
+  /* these labels need left alignment; a CSS text-anchor beats the start= attribute
+     that the shared .t-cap/.t-ok/.t-x middle-anchor would otherwise override */
+  .ss-ll, .ss-bl, .ss-pl, .cd-blbl, .cd-albl, .bh-al, .bh-bl { text-anchor: start; }
+  .scene-stage[data-scene="evm-stack"] text[text-anchor="start"] { text-anchor: start; }
+  .scene-stage[data-scene="state"] .edit,
+  .scene-stage[data-scene="state"] .rowhl { opacity: 1; animation: none; }
+  /* scene-scoped: neutralize the shared .t-ok fade-hold at rest (only my scenes) */
+  .scene-stage[data-scene="sd-danger"] .t-ok,
+  .scene-stage[data-scene="sd-restrict"] .t-ok,
+  .scene-stage[data-scene="sd-result"] .t-ok,
+  .scene-stage[data-scene="se-delegate"] .t-ok,
+  .scene-stage[data-scene="se-migrate"] .t-ok,
+  .scene-stage[data-scene="se-powers"] .t-ok,
+  .scene-stage[data-scene="se-run"] .t-ok,
+  .scene-stage[data-scene="ss-naive"] .t-ok,
+  .scene-stage[data-scene="ss-net"] .t-ok,
+  .scene-stage[data-scene="ss-sentry"] .t-ok,
+  .scene-stage[data-scene="ts-opcodes"] .t-ok,
+  .scene-stage[data-scene="ts-persist"] .t-ok,
+  .scene-stage[data-scene="ts-revert"] .t-ok,
+  .scene-stage[data-scene="ts-scratch"] .t-ok,
+  .scene-stage[data-scene="fm-blind"] .t-ok,
+  .scene-stage[data-scene="fm-opcode"] .t-ok,
+  .scene-stage[data-scene="fm-use"] .t-ok,
+  .scene-stage[data-scene="cd-cost"] .t-ok,
+  .scene-stage[data-scene="cd-reduce"] .t-ok,
+  .scene-stage[data-scene="cd-rollup"] .t-ok,
+  .scene-stage[data-scene="ci-domain"] .t-ok,
+  .scene-stage[data-scene="ci-replay"] .t-ok,
+  .scene-stage[data-scene="ci-split"] .t-ok,
+  .scene-stage[data-scene="r155-bind"] .t-ok,
+  .scene-stage[data-scene="r155-reject"] .t-ok,
+  .scene-stage[data-scene="r155-replay"] .t-ok,
+  .scene-stage[data-scene="r155-vencode"] .t-ok,
+  .scene-stage[data-scene="bh-payoff"] .t-ok,
+  .scene-stage[data-scene="bh-ring"] .t-ok,
+  .scene-stage[data-scene="bh-window"] .t-ok,
+  .scene-stage[data-scene="replay"] .t-ok,
+  .scene-stage[data-scene="state"] .t-ok,
+  .scene-stage[data-scene="evm-stack"] .t-ok {
+    opacity: 1; animation: none;
+  }
 </style>

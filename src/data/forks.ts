@@ -41,6 +41,7 @@ export const ARTICLE_META: Record<
   "eip-7702-set-eoa-code": { eip: "7702", category: "execution", fork: "Prague · Electra" },
   "eip-7251-max-effective-balance": { eip: "7251", category: "consensus", fork: "Prague · Electra" },
   "eip-4337-account-abstraction": { eip: "4337", category: "general", fork: "Application layer (ERC)" },
+  "eip-7594-peerdas": { eip: "7594", category: "consensus", fork: "Fulu · Osaka (Fusaka)" },
 };
 
 const ours = (slug: string) => slug; // marker for readability below
@@ -276,6 +277,26 @@ export const FORKS: Fork[] = [
       { eip: "7691", title: "Blob throughput increase", category: "consensus" },
       { eip: "7702", title: "Set EOA account code", category: "execution", slug: ours("eip-7702-set-eoa-code") },
       { eip: "7840", title: "Blob schedule in EL config", category: "execution" },
+    ],
+  },
+  {
+    name: "Osaka",
+    cl: "Fulu",
+    date: "2025-12",
+    display: "Dec 2025",
+    layer: "both",
+    blurb: "Fusaka: PeerDAS lets nodes sample blob data instead of downloading all of it, and blob-parameter-only (BPO) forks raise capacity between full upgrades.",
+    eips: [
+      { eip: "7594", title: "PeerDAS — data availability sampling", category: "consensus", slug: ours("eip-7594-peerdas") },
+      { eip: "7823", title: "Upper bounds for MODEXP", category: "execution" },
+      { eip: "7825", title: "Transaction gas limit cap", category: "execution" },
+      { eip: "7883", title: "ModExp gas cost increase", category: "execution" },
+      { eip: "7892", title: "Blob-parameter-only (BPO) forks", category: "consensus" },
+      { eip: "7917", title: "Deterministic proposer lookahead", category: "consensus" },
+      { eip: "7918", title: "Blob base fee bounded by execution cost", category: "execution" },
+      { eip: "7934", title: "RLP execution block size limit", category: "execution" },
+      { eip: "7939", title: "CLZ opcode (count leading zeros)", category: "execution" },
+      { eip: "7951", title: "secp256r1 precompile", category: "execution" },
     ],
   },
 ];

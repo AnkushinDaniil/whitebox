@@ -1,12 +1,12 @@
 ---
 title: "EIP-2929 & 2930: pricing state access by what it really costs"
 dek: "Reading state is the most disk-expensive thing a node does, but the EVM charged a flat, far-too-cheap price for it — so an attacker could touch thousands of slots for almost nothing and grind every node to a halt. The fix prices the first touch at its real cost and makes repeats cheap; access lists let a transaction pre-declare what it will touch."
-summary: "A step-by-step derivation of EIP-2929 (gas cost increases for state access) and EIP-2930 (optional access lists) — why a flat, underpriced cost for SLOAD and account access enabled the 2016 Shanghai denial-of-service attacks, why simply raising the flat price would overcharge the common case of touching the same slot repeatedly, and how cold/warm pricing fixes both: the first access to an address or storage slot in a transaction is 'cold' and pays the real cost (2600 for an account, 2100 for a slot) while every repeat is 'warm' at 100 gas, tracked in a per-transaction access set — and how EIP-2930's type-0x01 access-list transaction (the first user of the EIP-2718 envelope) lets a transaction pre-declare the addresses and slots it will touch so their first access is charged the warm price, for a small upfront fee."
+summary: "A step-by-step derivation of EIP-2929 (gas cost increases for state access) and EIP-2930 (optional access lists) — why a single flat price for SLOAD and account access is the wrong shape — too cheap for a cold first touch that hits disk, too dear for the common case of touching the same slot repeatedly, and how cold/warm pricing fixes both: the first access to an address or storage slot in a transaction is 'cold' and pays the real cost (2600 for an account, 2100 for a slot) while every repeat is 'warm' at 100 gas, tracked in a per-transaction access set — and how EIP-2930's type-0x01 access-list transaction (the first user of the EIP-2718 envelope) lets a transaction pre-declare the addresses and slots it will touch so their first access is charged the warm price, for a small upfront fee."
 topic: EIPs
 order: 14
 spine: true
 prerequisites: ["the gas model", "storage & SLOAD"]
-updated: 2026-06-23
+updated: 2026-09-13
 readingMinutes: 11
 ---
 
@@ -33,11 +33,11 @@ Gas is supposed to track the real cost of work, so the chain can't be cheaply ov
 
 ## The problem: a flat price far below the real cost
 
-Accessing state is the most expensive thing a node does per unit of gas, because it means a <KeyTerm term="trie lookup" def="To read a storage slot or account, a node walks the Merkle-Patricia trie, fetching nodes from disk along the path. It's I/O-bound and far slower than in-memory EVM computation — the real bottleneck in block validation." /> and disk I/O. But the original gas schedule charged a flat ~200 gas for `SLOAD` and ~700 for touching an account — far below the true cost. That underpricing is a denial-of-service waiting to happen: craft a transaction that touches thousands of *distinct* slots or accounts, pay almost nothing per touch, and force every node on Earth to do enormous disk work to validate your block.
+Accessing state is the most expensive thing a node does per unit of gas, because it means a <KeyTerm term="trie lookup" def="To read a storage slot or account, a node walks the Merkle-Patricia trie, fetching nodes from disk along the path. It's I/O-bound and far slower than in-memory EVM computation — the real bottleneck in block validation." /> and disk I/O. Earlier repricings had already raised the flat price — after EIP-150 and EIP-1884, `SLOAD` sat at **800 gas** and touching an account at **700** — yet a single flat number is still the wrong *shape*. Price it for a *cold* first touch that genuinely hits disk and you overcharge the common case of reading the same slot again from memory; price it for that common case and a transaction that touches thousands of *distinct* slots or accounts pays almost nothing per touch, forcing every node on Earth to do enormous disk work to validate your block.
 
-<Scene name="ga-flat" caption="A flat ~200 gas for SLOAD and cheap account access sat far below the real disk cost. So a transaction could touch thousands of distinct slots for almost nothing, forcing every node into huge I/O — exactly the 2016 Shanghai DoS attacks." />
+<Scene name="ga-flat" caption="A single flat price for state access is the wrong shape: set it high enough for a cold, disk-hitting first touch and it overcharges every warm repeat; set it low for the common case and thousands of distinct cold touches cost almost nothing, forcing every node into huge I/O." />
 
-That's not hypothetical: the 2016 "Shanghai" attacks did exactly this, spamming cheap state-touching opcodes to slow block processing dramatically.
+This isn't hypothetical: the 2016 "Shanghai" attacks spammed state-touching opcodes — then priced at just 20–50 gas — to drag block processing to tens of seconds. The flat raises of EIP-150 and EIP-1884 were the immediate patch; EIP-2929 is the structural fix they pointed to.
 
 <Callout type="warning" title="What breaks">
 The price has to go up to match the real cost. But if we just raise the flat fee, we punish every honest contract too — and especially the ones that touch the *same* slot many times.

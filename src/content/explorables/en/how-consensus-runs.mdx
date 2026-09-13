@@ -6,7 +6,7 @@ topic: Consensus
 order: 3
 spine: true
 prerequisites: ["proof of stake", "finality"]
-updated: 2026-06-22
+updated: 2026-09-13
 readingMinutes: 16
 ---
 
@@ -70,9 +70,9 @@ A proposer publishes a block — but a block is just *one* validator's say-so. W
 
 Agreement comes from votes, not authority. Every validator casts an **<KeyTerm term="attestation" def="A validator's signed vote, cast once per epoch. It names the block it sees as the head (the LMD-GHOST/fork-choice vote) and a source-to-target checkpoint pair (the Casper-FFG/finality vote)." />** — a signed vote that says two things at once: *this is the head block I see* (the fork-choice vote, which adds weight to that branch) and *this is the checkpoint I consider current* (the finality vote, in a moment). Fork choice then follows the branch carrying the most attesting stake, so a minority fork can never out-weigh the honest majority.
 
-A million validators can't all vote every slot without drowning the network, so they're split into **<KeyTerm term="committee" def="A pseudo-random subset of validators. The set is divided into 32 committees per epoch, one assigned to each slot, so every validator attests exactly once per epoch." />s** — 32 of them per epoch, one assigned to each slot. Each validator votes **exactly once per epoch**, in its slot's committee. The votes pile up as weight on the chain.
+A million validators can't all vote every slot without drowning the network, so they're split into **<KeyTerm term="committee" def="A pseudo-random subset of validators. Every validator is shuffled into exactly one committee in exactly one slot of the epoch — each slot carries one or more committees (up to 64) — so every validator attests exactly once per epoch." />s** — the epoch is 32 slots, and every validator is shuffled into exactly one committee in exactly one of them (a slot can carry several committees). Each validator votes **exactly once per epoch**, in its slot's committee. The votes pile up as weight on the chain.
 
-<Scene name="cl-attest" caption="Each slot, one committee attests — every vote names the head (adding fork-choice weight) and a checkpoint (the finality vote). Split into 32 committees, every validator votes once per epoch." />
+<Scene name="cl-attest" caption="Each slot, one committee attests — every vote names the head (adding fork-choice weight) and a checkpoint (the finality vote). Every validator is shuffled into one committee in one slot, so it votes exactly once per epoch." />
 
 <Callout type="warning" title="What breaks">
 Votes accumulate and the head is clear moment to moment — but weight can always shift. When does a block stop being "currently favored" and become **settled**, so a merchant can trust a payment is irreversible?

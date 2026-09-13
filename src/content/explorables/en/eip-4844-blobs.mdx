@@ -6,7 +6,7 @@ topic: EIPs
 order: 5
 spine: true
 prerequisites: ["rollups", "gas & EIP-1559"]
-updated: 2026-06-23
+updated: 2026-09-13
 readingMinutes: 14
 ---
 
@@ -108,13 +108,13 @@ One thing still leaks. If blobs are paid for in the same gas as execution, a sur
 
 ## A separate fee market: blob gas
 
-Price blobs in their own unit — **blob gas** — with their own [EIP-1559-style base fee](/eip-1559-fee-market), fully separate from execution. Each block **targets 3 blobs** and allows up to **6**; the blob base fee moves up or down per block toward that target, and is **burned** just like the execution base fee. A flood of rollup data now raises the *blob* base fee without touching your swap's gas price — and a busy execution layer doesn't make blobs more expensive. Two independent congestion signals, two independent prices.
+Price blobs in their own unit — **blob gas** — with their own [EIP-1559-style base fee](/eip-1559-fee-market), fully separate from execution. At Cancun each block **targeted 3 blobs** and allowed up to **6** (EIP-7691 raised this to **6/9** for Pectra, and Fusaka's PeerDAS raises it further via BPO forks); the blob base fee moves up or down per block toward that target, and is **burned** just like the execution base fee. A flood of rollup data now raises the *blob* base fee without touching your swap's gas price — and a busy execution layer doesn't make blobs more expensive. Two independent congestion signals, two independent prices.
 
-<Scene name="blob-fee" caption="Blobs are metered in their own unit with their own base fee — target 3, max 6 per block, burned — so blob demand and execution demand never push on each other's price." />
+<Scene name="blob-fee" caption="Blobs are metered in their own unit with their own base fee — at Cancun's launch target 3, max 6 per block (since raised — 6/9 in Pectra, higher under Fusaka), burned — so blob demand and execution demand never push on each other's price." />
 
 <MathViz
   name="blob-exponential"
-  caption="The blob base fee plotted against accumulated excess blob gas. At or below the 3-blob target the excess stays put and the price holds near the minimum; once blocks run over target the excess builds and the fee climbs exponentially (e^(excess/UPDATE_FRACTION)) — on its own curve, never touching the execution-gas price."
+  caption="The blob base fee plotted against accumulated excess blob gas. At or below the target (3 blobs at Cancun's launch, since raised) the excess stays put and the price holds near the minimum; once blocks run over target the excess builds and the fee climbs exponentially (e^(excess/UPDATE_FRACTION)) — on its own curve, never touching the execution-gas price."
 />
 
 <Callout type="insight" title="And that is EIP-4844">

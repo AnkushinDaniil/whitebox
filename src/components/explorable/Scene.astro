@@ -1280,7 +1280,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "mg-pow" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="Miners churn through nonces, burning ever more energy to race for a valid hash">
         <text class="t-cap" x="240" y="18">{L("proof of work — race to guess a nonce, burning energy")}</text>
-        {[["miner A", "0x9c4a", "0x1f7e", 14], ["miner B", "0x3a12", "0x8b03", 170], ["miner C", "0x77ec", "0x2d99", 326]].map(([who, na, nb, x], i) => (
+        {([["miner A", "0x9c4a", "0x1f7e", 14], ["miner B", "0x3a12", "0x8b03", 170], ["miner C", "0x77ec", "0x2d99", 326]] as [string, string, string, number][]).map(([who, na, nb, x], i) => (
           <g class={`mg-miner mgm${i}`}>
             <rect class="mg-mrect" x={x} y="34" width="140" height="50" rx="8" />
             <text class="t-cap" x={Number(x) + 70} y="54">{L(who)}</text>
@@ -1668,7 +1668,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "mb-payoff" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="The payoff: fewer validators, compounding rewards, and an opt-in 32 ETH floor">
         <text class="t-cap" x="240" y="18">{L("fewer validators, compounding rewards")}</text>
-        {[["fewer validators", "lighter consensus", "room to scale", 24, "mbb0"], ["auto-compounding", "earn up to 2048", "not skimmed at 32", 171, "mbb1"], ["opt-in floor", "32 ETH still allowed", "same security", 318, "mbb2"]].map(([t1, t2, t3, x, cls], i) => (
+        {([["fewer validators", "lighter consensus", "room to scale", 24, "mbb0"], ["auto-compounding", "earn up to 2048", "not skimmed at 32", 171, "mbb1"], ["opt-in floor", "32 ETH still allowed", "same security", 318, "mbb2"]] as [string, string, string, number, string][]).map(([t1, t2, t3, x, cls], i) => (
           <g>
             <rect class={`mb-ben ${cls}`} x={x} y="40" width="138" height="100" rx="8" />
             <text class="t-cap" x={Number(x) + 69} y="68">{L(t1)}</text>
@@ -2113,7 +2113,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "cr-create2" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="CREATE2 derives the address from the sender, a chosen salt, and the init code — no nonce">
         <text class="t-cap" x="240" y="20">{L("CREATE2: drop the nonce, use inputs you control")}</text>
-        {[["sender", "0xYou", 0], ["salt", "your choice", 1], ["init code", "the bytecode", 2]].map(([lbl, val, i]) => (
+        {([["sender", "0xYou", 0], ["salt", "your choice", 1], ["init code", "the bytecode", 2]] as [string, string, number][]).map(([lbl, val, i]) => (
           <g class={`cr-in cr-in${i}`}>
             <rect x="24" y={40 + Number(i) * 46} width="150" height="36" rx="6" />
             <text class="t-cap" x="99" y={58 + Number(i) * 46}>{L(lbl)}</text>
@@ -2521,7 +2521,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "stc-use" && (
       <svg viewBox="0 0 480 176" role="img" aria-label="STATICCALL powers safe oracle reads, enforced view functions, and reentrancy-safe calls">
         <text class="t-cap" x="240" y="20">{L("a guaranteed read-only call — the building block for…")}</text>
-        {[["safe oracle reads", "call untrusted, can't be harmed", 24], ["view / pure calls", "Solidity enforces them here", 172], ["reentrancy safety", "a static call can't reenter+write", 320]].map(([t1, t2, x], i) => (
+        {([["safe oracle reads", "call untrusted, can't be harmed", 24], ["view / pure calls", "Solidity enforces them here", 172], ["reentrancy safety", "a static call can't reenter+write", 320]] as [string, string, number][]).map(([t1, t2, x], i) => (
           <g class={`stc-card stc-card${i}`}>
             <rect x={x} y="42" width="136" height="76" rx="8" />
             <text class="t-cap" x={Number(x) + 68} y="68">{L(t1)}</text>

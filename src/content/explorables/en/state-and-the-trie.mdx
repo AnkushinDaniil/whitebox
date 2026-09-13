@@ -6,7 +6,7 @@ topic: "Start here"
 order: 1
 spine: true
 prerequisites: ["the EVM & storage", "hashing (keccak256)"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 15
 ---
 
@@ -156,7 +156,7 @@ Every node must agree on identical world state → commit it to one cryptographi
     { kind: "spec", label: "Yellow Paper §4.1 & Appendix D", note: "World state and the Merkle-Patricia trie, formally", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
     { kind: "post", label: "Flat DB — reading state in one hop", note: "How clients actually lay this trie on disk", href: "/flat-db-nethermind" },
     { kind: "post", label: "EIP-2929/2930 — cold vs warm access", note: "Why touching a trie slot the first time costs more", href: "/eip-2929-2930-access-lists" },
-    { kind: "tool", label: "Verkle trees", note: "The proposed successor: much smaller proofs for statelessness", href: "https://ethereum.org/en/roadmap/verkle-trees/" },
+    { kind: "tool", label: "Binary state tree (EIP-7864)", note: "The current statelessness direction — a SNARK-friendly binary Merkle tree that superseded the earlier Verkle plan", href: "https://eips.ethereum.org/EIPS/eip-7864" },
   ]}
 />
 

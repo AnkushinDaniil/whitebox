@@ -2120,10 +2120,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           </g>
         ))}
         <text class="t-x dc-waste" x="118" y="184" text-anchor="middle">{L("same bytecode, over and over")}</text>
-        <path class="sarrow dc-a1" d="M220 96 H268" />
+        <path class="sarrow dc-a1" d="M214 82 H284" marker-end="url(#wb-arrow)" />
         <text class="t-cap" x="360" y="20">{L("share one implementation")}</text>
-        {[0, 1, 2].map((i) => (
-          <g><rect class="dc-thin" x="286" y={34 + i * 30} width="60" height="20" rx="4" /><path class="sarrow dc-share" d={`M346 ${44 + i * 30} H392`} /></g>
+        {(["A", "B", "C"] as string[]).map((lbl, i) => (
+          <g><rect class="dc-thin" x="286" y={54 + i * 20} width="60" height="16" rx="4" /><text class="t-fld dc-thint" x="316" y={66 + i * 20}>{`app ${lbl}`}</text><path class="sarrow dc-share" d={`M346 ${62 + i * 20} H390`} marker-end="url(#wb-arrow)" /></g>
         ))}
         <rect class="dc-lib" x="392" y="52" width="72" height="60" rx="7" />
         <text class="t-cap" x="428" y="78">{L("Library")}</text>
@@ -2141,7 +2141,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="dc-slot dc-empty" x="40" y="74" width="110" height="24" rx="4" />
         <text class="t-fld dc-slott" x="95" y="90">storage: empty</text>
         <text class="t-x dc-unchanged" x="95" y="120">{L("✗ never written")}</text>
-        <path class="sarrow dc-c1" d="M170 74 H262" /><text class="t-cap dc-cl" x="216" y="66">CALL</text>
+        <path class="sarrow dc-c1" d="M170 74 H262" marker-end="url(#wb-arrow)" /><text class="t-cap dc-cl" x="216" y="66">CALL</text>
         <rect class="dc-libbox" x="262" y="40" width="196" height="96" rx="8" />
         <text class="t-cap" x="360" y="60">{L("Library")}</text>
         <text class="t-fld dc-libt" x="360" y="78">balances[msg.sender] += x</text>
@@ -2160,14 +2160,14 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="110" y="60">{L("your contract")}</text>
         <rect class="dc-slot dc-wrote2" x="40" y="74" width="140" height="24" rx="4" />
         <text class="t-fld dc-slott3" x="110" y="90">storage: WRITTEN ✓</text>
-        <text class="t-ok dc-keep" x="110" y="118">{L("your balance · your msg.sender")}</text>
-        <text class="t-fld dc-keep2" x="110" y="136">runs as if the code were yours</text>
-        <path class="sarrow dc-d1" d="M200 70 H286" /><text class="t-cap dc-dl" x="243" y="62">{L("borrow code")}</text>
-        <path class="sarrow dc-d2" d="M286 104 H200" /><text class="t-cap dc-dl2" x="243" y="120">{L("runs here ↩")}</text>
+        <text class="t-ok dc-keep" x="110" y="118">{L("your balance & caller")}</text>
+        <text class="t-fld dc-keep2" x="110" y="136">runs as if it were yours</text>
+        <path class="sarrow dc-d1" d="M200 70 H286" marker-end="url(#wb-arrow)" /><text class="t-cap dc-dl" x="243" y="62">{L("borrow code")}</text>
+        <path class="sarrow dc-d2" d="M286 104 H200" marker-end="url(#wb-arrow)" /><text class="t-cap dc-dl2" x="243" y="120">{L("runs here ↩")}</text>
         <rect class="dc-libbox" x="286" y="52" width="176" height="80" rx="8" />
         <text class="t-cap" x="374" y="74">{L("Library CODE")}</text>
         <text class="t-fld dc-libt" x="374" y="92">balances[msg.sender] += x</text>
-        <text class="t-cap dc-libsub" x="374" y="112">{L("code only — no storage used")}</text>
+        <text class="t-cap dc-libsub" x="374" y="112">{L("code only, no storage")}</text>
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("same opcodes, but they read & write YOUR storage, balance, and caller")}</text>
         <text class="t-cap" x="240" y="194" text-anchor="middle">{L("the fix over CALLCODE: it also preserves the original msg.sender & value")}</text>
       </svg>
@@ -2182,7 +2182,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="dc-slot dc-wrote2" x="42" y="80" width="114" height="24" rx="4" />
         <text class="t-fld dc-slott3" x="99" y="96">holds all state</text>
         <text class="t-cap dc-keep2" x="99" y="126">{L("address never changes")}</text>
-        <path class="sarrow dc-p1" d="M174 78 H262" /><text class="t-cap dc-dl" x="218" y="70">DELEGATECALL</text>
+        <path class="sarrow dc-p1" d="M174 78 H262" marker-end="url(#wb-arrow)" /><text class="t-cap dc-dl" x="218" y="70">DELEGATECALL</text>
         <rect class="dc-impl dc-implold" x="262" y="44" width="196" height="42" rx="7" />
         <text class="t-cap" x="360" y="63">{L("Implementation v1")}</text>
         <text class="t-fld dc-libt" x="360" y="79">the logic today</text>
@@ -2262,7 +2262,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="rv-txbox" x="24" y="38" width="150" height="52" rx="8" />
         <text class="t-cap" x="99" y="58">{L("your transaction")}</text>
         <text class="t-fld rv-cc" x="99" y="76">require(bal ≥ amt)</text>
-        <path class="sarrow rv-a" d="M174 64 H236" /><text class="t-x rv-fail" x="205" y="56">✗</text>
+        <path class="sarrow rv-a" d="M174 64 H236" marker-end="url(#wb-arrow)" /><text class="t-x rv-fail" x="205" y="56">✗</text>
         <rect class="rv-throwbox" x="236" y="38" width="220" height="52" rx="8" />
         <text class="t-cap" x="346" y="58">throw / invalid opcode</text>
         <text class="t-fld rv-throwt" x="346" y="76">state undone — but…</text>
@@ -2275,29 +2275,28 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── REVERT: undo state, refund gas, return an error ── */}
     {name === "rev-revert" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="REVERT undoes state changes, refunds remaining gas, and returns error data">
+      <svg viewBox="0 0 480 200" role="img" aria-label="REVERT undoes state changes, refunds remaining gas, and returns error data">
         <text class="t-cap" x="240" y="20">{L("REVERT (0xfd) — three things at once")}</text>
         <rect class="rv-op" x="196" y="34" width="88" height="34" rx="8" />
         <text class="t-addr" x="240" y="56">REVERT</text>
-        <path class="sarrow rv-b1" d="M210 68 L96 98" />
-        <path class="sarrow rv-b2" d="M240 68 V98" />
-        <path class="sarrow rv-b3" d="M270 68 L384 98" />
-        <rect class="rv-eff rv-e1" x="24" y="100" width="144" height="70" rx="8" />
-        <text class="t-cap" x="96" y="120">{L("① state — undone")}</text>
-        <rect class="rvr-cell" x="50" y="128" width="92" height="22" rx="4" />
-        <text class="rvr-changed" x="96" y="143">slot = 9</text>
-        <text class="rvr-restored" x="96" y="143">slot = 14 ✓</text>
-        <text class="t-cap rv-sub" x="96" y="163">{L("snaps back, atomic")}</text>
-        <rect class="rv-eff rv-e2" x="180" y="100" width="120" height="70" rx="8" />
-        <text class="t-cap" x="240" y="120">{L("② gas — kept")}</text>
-        <rect class="rvr-gbg" x="196" y="130" width="88" height="16" rx="4" />
-        <rect class="rvr-gfull" x="196" y="130" width="88" height="16" rx="4" />
-        <text class="t-ok rv-sub" x="240" y="163">{L("refunded, not burned")}</text>
-        <rect class="rv-eff rv-e3" x="312" y="100" width="150" height="70" rx="8" />
-        <text class="t-cap" x="387" y="120">{L("③ reason — returned")}</text>
-        <text class="rvr-blob" x="387" y="146">"InsufficientBal"</text>
-        <text class="t-cap rv-sub" x="387" y="163">{L("bubbles up to the caller")}</text>
-        <text class="t-cap" x="240" y="196" text-anchor="middle">{L("undo the frame · give the gas back · hand back an error — unlike a raw throw")}</text>
+        <path class="sarrow rv-b1" d="M210 68 L98 100" marker-end="url(#wb-arrow)" />
+        <path class="sarrow rv-b2" d="M240 68 V100" marker-end="url(#wb-arrow)" />
+        <path class="sarrow rv-b3" d="M270 68 L382 100" marker-end="url(#wb-arrow)" />
+        <rect class="rv-eff rv-e1" x="24" y="102" width="144" height="62" rx="8" />
+        <text class="t-cap" x="96" y="122">{L("① state — undone")}</text>
+        <rect class="rvr-cell" x="50" y="130" width="92" height="22" rx="4" />
+        <text class="rvr-changed" x="96" y="145">slot = 9</text>
+        <text class="rvr-restored" x="96" y="145">slot = 14 ✓</text>
+        <rect class="rv-eff rv-e2" x="180" y="102" width="120" height="62" rx="8" />
+        <text class="t-cap" x="240" y="122">{L("② gas — kept")}</text>
+        <rect class="rvr-gbg" x="196" y="130" width="88" height="22" rx="4" />
+        <rect class="rvr-gfull" x="196" y="130" width="88" height="22" rx="4" />
+        <text class="rv-gaslbl" x="240" y="144">100% refunded</text>
+        <rect class="rv-eff rv-e3" x="312" y="102" width="150" height="62" rx="8" />
+        <text class="t-cap" x="387" y="122">{L("③ reason — returned")}</text>
+        <rect class="rvr-blobbox" x="322" y="132" width="130" height="22" rx="4" />
+        <text class="rvr-blob" x="387" y="147">"InsufficientBal"</text>
+        <text class="t-cap" x="240" y="190" text-anchor="middle">{L("undo the frame · give the gas back · hand back an error — unlike a raw throw")}</text>
       </svg>
     )}
 
@@ -2309,8 +2308,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="95" y="64">{L("caller")}</text>
         <text class="t-fld rv-cc" x="95" y="82">try — call</text>
         <text class="t-ok rv-catchl" x="95" y="100">catch (reason) ✓</text>
-        <path class="sarrow rv-c1" d="M170 62 H300" /><text class="t-cap rv-cl" x="235" y="54">call</text>
-        <path class="sarrow rv-c2" d="M300 92 H170" /><text class="t-x rv-cl2" x="235" y="108">revert("reason") ↩</text>
+        <path class="sarrow rv-c1" d="M170 62 H300" marker-end="url(#wb-arrow)" /><text class="t-cap rv-cl" x="235" y="54">call</text>
+        <path class="sarrow rv-c2" d="M300 92 H170" marker-end="url(#wb-arrow)" /><text class="t-x rv-cl2" x="235" y="108">revert("reason") ↩</text>
         <rect class="rv-callee2" x="300" y="42" width="160" height="70" rx="8" />
         <text class="t-cap" x="380" y="64">{L("callee")}</text>
         <text class="t-fld rv-cc" x="380" y="82">REVERT + reason</text>
@@ -2327,12 +2326,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="cr-dep" x="24" y="44" width="120" height="52" rx="8" />
         <text class="t-cap" x="84" y="66">{L("deployer")}</text>
         <text class="t-fld cr-nonceval" x="84" y="84">nonce = 5 → 6 → 7</text>
-        <path class="sarrow cr-a1" d="M144 70 H196" />
+        <path class="sarrow cr-a1" d="M144 70 H196" marker-end="url(#wb-arrow-accent)" />
         <rect class="cr-kec" x="196" y="52" width="76" height="36" rx="7" />
         <text class="t-cap" x="234" y="74">keccak</text>
-        <path class="sarrow cr-a2" d="M272 70 H324" />
+        <path class="sarrow cr-a2" d="M272 70 H330" marker-end="url(#wb-arrow-accent)" />
+        <rect class="cr-out" x="332" y="52" width="104" height="36" rx="7" />
         {[["0x4b2…", 0], ["0x9f1…", 1], ["0xc07…", 2]].map(([addr, i]) => (
-          <text class={`t-addr cr-addr cr-addr${i}`} x="392" y="74">{addr}</text>
+          <text class={`t-addr cr-addr cr-addr${i}`} x="384" y="75">{addr}</text>
         ))}
         <text class="t-x cr-unknow" x="240" y="130" text-anchor="middle">{L("the nonce ticks every deploy → the address keeps changing")}</text>
         <text class="t-cap" x="240" y="158" text-anchor="middle">{L("so you can't know a contract's address before you deploy it")}</text>
@@ -2346,17 +2346,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("CREATE2: drop the nonce, use inputs you control")}</text>
         {([["sender", "0xYou", 0], ["salt", "your choice", 1], ["init code", "the bytecode", 2]] as [string, string, number][]).map(([lbl, val, i]) => (
           <g class={`cr-in cr-in${i}`}>
-            <rect x="24" y={40 + Number(i) * 46} width="150" height="36" rx="6" />
-            <text class="t-cap" x="99" y={58 + Number(i) * 46}>{L(lbl)}</text>
-            <text class="t-fld cr-inv" x="99" y={73 + Number(i) * 46}>{val}</text>
+            <rect x="24" y={40 + Number(i) * 46} width="150" height="40" rx="6" />
+            <text class="t-cap" x="99" y={57 + Number(i) * 46}>{L(lbl)}</text>
+            <text class="t-fld cr-inv" x="99" y={72 + Number(i) * 46}>{val}</text>
           </g>
         ))}
-        <path class="sarrow cr-b1" d="M174 58 L232 96" />
-        <path class="sarrow cr-b2" d="M174 108 H232" />
-        <path class="sarrow cr-b3" d="M174 158 L232 120" />
+        <path class="sarrow cr-b1" d="M174 58 L232 96" marker-end="url(#wb-arrow-accent)" />
+        <path class="sarrow cr-b2" d="M174 108 H232" marker-end="url(#wb-arrow-accent)" />
+        <path class="sarrow cr-b3" d="M174 158 L232 120" marker-end="url(#wb-arrow-accent)" />
         <rect class="cr-kec" x="232" y="90" width="80" height="36" rx="7" />
         <text class="t-cap" x="272" y="112">keccak</text>
-        <path class="sarrow cr-b4" d="M312 108 H360" />
+        <path class="sarrow cr-b4" d="M312 108 H360" marker-end="url(#wb-arrow-accent)" />
         <rect class="cr-det" x="360" y="90" width="104" height="36" rx="7" />
         <text class="t-addr cr-detaddr" x="412" y="112">0x71c…</text>
         <text class="t-ok cr-now" x="240" y="184" text-anchor="middle">{L("no nonce → the same inputs always give the same address, computable now")}</text>
@@ -2365,21 +2365,26 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── CREATE2: use & fund the address before the contract exists ── */}
     {name === "cr-counterfactual" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Compute the address ahead, fund it while empty, then deploy the contract into exactly that address">
-        <text class="t-cap" x="240" y="18">{L("counterfactual: use the address before the contract exists")}</text>
-        <rect class="cr-slot" x="180" y="44" width="120" height="120" rx="10" />
-        <text class="t-addr cr-slotaddr" x="240" y="40" text-anchor="middle">0x71c…</text>
+      <svg viewBox="0 0 480 174" role="img" aria-label="Compute the address ahead, fund it while empty, then deploy the contract into exactly that address">
+        <text class="t-cap" x="240" y="20">{L("use the address before it has code")}</text>
+        <text class="t-addr" x="240" y="44" text-anchor="middle">0x71c…</text>
 
-        <text class="t-cap cr-s1" x="240" y="72" text-anchor="middle">{L("① address computed")}</text>
-        <text class="t-fld cr-s1b" x="240" y="88" text-anchor="middle">{L("(no code yet)")}</text>
+        <rect class="cr-cf1" x="24" y="58" width="132" height="52" rx="8" />
+        <text class="t-cap" x="90" y="80" text-anchor="middle">{L("① compute")}</text>
+        <text class="t-fld cr-cflbl" x="90" y="98" text-anchor="middle">{L("no code yet")}</text>
 
-        <text class="t-ok cr-s2" x="240" y="112" text-anchor="middle">{L("② funded: 5 ETH")}</text>
-        <text class="t-fld cr-s2b" x="240" y="128" text-anchor="middle">{L("sent to an empty address")}</text>
+        <path class="sarrow cr-cfa1" d="M156 84 H176" marker-end="url(#wb-arrow)" />
+        <rect class="cr-cf2" x="176" y="58" width="132" height="52" rx="8" />
+        <text class="t-cap" x="242" y="80" text-anchor="middle">{L("② fund it")}</text>
+        <text class="t-fld cr-cflbl" x="242" y="98" text-anchor="middle">{L("send 5 ETH")}</text>
 
-        <rect class="cr-deployed" x="192" y="138" width="96" height="20" rx="4" />
-        <text class="t-cap cr-s3" x="240" y="152" text-anchor="middle">{L("③ contract deployed")}</text>
+        <path class="sarrow cr-cfa2" d="M308 84 H328" marker-end="url(#wb-arrow)" />
+        <rect class="cr-cf3" x="328" y="58" width="132" height="52" rx="8" />
+        <text class="t-cap" x="394" y="80" text-anchor="middle">{L("③ deploy")}</text>
+        <text class="t-ok cr-cflbl2" x="394" y="98" text-anchor="middle">{L("code lands here")}</text>
 
-        <text class="t-cap" x="240" y="184" text-anchor="middle">{L("CREATE2 lands the contract at exactly that address — already funded")}</text>
+        <text class="t-cap" x="240" y="140" text-anchor="middle">{L("CREATE2 puts the contract at that exact address")}</text>
+        <text class="t-cap" x="240" y="162" text-anchor="middle">{L("— and it is already funded")}</text>
       </svg>
     )}
 
@@ -2522,7 +2527,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-x ef-rej" x="130" y="82">{L("✗ rejected — reverts")}</text>
         <rect class="ef-deploy ef-ok" x="250" y="42" width="200" height="52" rx="8" />
         <text class="t-cap" x="350" y="62">{L("deploy code 0x60…")}</text>
-        <text class="t-ok" x="350" y="82">{L("✓ fine — as before")}</text>
+        <text class="t-ok ef-okline" x="350" y="82">{L("✓ fine — as before")}</text>
         <text class="t-cap" x="240" y="128" text-anchor="middle">{L("from London on, no new contract's code may begin with 0xEF")}</text>
         <text class="t-ok ef-reserved" x="240" y="156" text-anchor="middle">{L("→ 0xEF is now a reserved prefix, guaranteed free")}</text>
         <text class="t-cap" x="240" y="178" text-anchor="middle">{L("(the handful of pre-existing 0xEF contracts are grandfathered)")}</text>
@@ -2535,8 +2540,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("now a future fork can define what 0xEF… means")}</text>
         <rect class="ef-prefix" x="196" y="36" width="88" height="34" rx="8" />
         <text class="t-addr" x="240" y="58">0xEF</text>
-        <path class="sarrow ef-u1" d="M212 70 L120 100" />
-        <path class="sarrow ef-u2" d="M268 70 L360 100" />
+        <path class="sarrow ef-u1" d="M212 70 L120 100" marker-end="url(#wb-arrow-accent)" />
+        <path class="sarrow ef-u2" d="M268 70 L360 100" marker-end="url(#wb-arrow-accent)" />
         <rect class="ef-use ef-use0" x="24" y="102" width="184" height="56" rx="8" />
         <text class="t-cap" x="116" y="122">{L("EOF container")}</text>
         <text class="t-fld ef-uc" x="116" y="140">0xEF00 · versioned code</text>
@@ -2720,8 +2725,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="stc-you" x="24" y="48" width="150" height="60" rx="8" />
         <text class="t-cap" x="99" y="70">{L("your contract")}</text>
         <text class="t-fld stc-c" x="99" y="90">CALL oracle.price()</text>
-        <path class="sarrow stc-a1" d="M174 66 H286" /><text class="t-cap stc-al" x="230" y="58">{L("read?")}</text>
-        <path class="sarrow stc-a2" d="M286 96 H174" /><text class="t-x stc-al2" x="230" y="110">{L("re-enters you ↩")}</text>
+        <path class="sarrow stc-a1" d="M174 66 H286" marker-end="url(#wb-arrow)" /><text class="t-cap stc-al" x="230" y="58">{L("read?")}</text>
+        <path class="sarrow stc-a2" d="M286 96 H174" marker-end="url(#wb-arrow)" /><text class="t-x stc-al2" x="230" y="110">{L("re-enters you ↩")}</text>
         <rect class="stc-callee" x="286" y="48" width="170" height="60" rx="8" />
         <text class="t-cap" x="371" y="70">{L("untrusted contract")}</text>
         <text class="t-x stc-bad" x="371" y="90">SSTORE · reenter · LOG</text>
@@ -2737,7 +2742,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="stc-you" x="24" y="48" width="150" height="60" rx="8" />
         <text class="t-cap" x="99" y="70">{L("your contract")}</text>
         <text class="t-fld stc-c" x="99" y="90">STATICCALL 0xFA</text>
-        <path class="sarrow stc-sa" d="M174 78 H286" />
+        <path class="sarrow stc-sa" d="M174 78 H286" marker-end="url(#wb-arrow)" />
         <rect class="stc-frame" x="286" y="42" width="170" height="80" rx="8" />
         <text class="t-cap" x="371" y="60">{L("read-only frame")}</text>
         <text class="t-ok stc-ok" x="371" y="80">SLOAD · view ✓</text>
@@ -2750,16 +2755,16 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-214: safe reads, view functions, reentrancy safety ── */}
     {name === "stc-use" && (
-      <svg viewBox="0 0 480 176" role="img" aria-label="STATICCALL powers safe oracle reads, enforced view functions, and reentrancy-safe calls">
+      <svg viewBox="0 0 480 150" role="img" aria-label="STATICCALL powers safe oracle reads, enforced view functions, and reentrancy-safe calls">
         <text class="t-cap" x="240" y="20">{L("a guaranteed read-only call — the building block for…")}</text>
-        {([["safe oracle reads", "call untrusted, can't be harmed", 24], ["view / pure calls", "Solidity enforces them here", 172], ["reentrancy safety", "a static call can't reenter+write", 320]] as [string, string, number][]).map(([t1, t2, x], i) => (
+        {([["safe oracle reads", "read untrusted safely", 24], ["view / pure calls", "compiler-enforced", 172], ["reentrancy safety", "can't reenter + write", 320]] as [string, string, number][]).map(([t1, t2, x], i) => (
           <g class={`stc-card stc-card${i}`}>
-            <rect x={x} y="42" width="136" height="76" rx="8" />
-            <text class="t-cap" x={Number(x) + 68} y="68">{L(t1)}</text>
-            <text class="t-fld stc-cardsub" x={Number(x) + 68} y="90">{L(t2)}</text>
+            <rect x={x} y="40" width="136" height="58" rx="8" />
+            <text class="t-cap" x={Number(x) + 68} y="66">{L(t1)}</text>
+            <text class="t-fld stc-cardsub" x={Number(x) + 68} y="86">{L(t2)}</text>
           </g>
         ))}
-        <text class="t-cap" x="240" y="158" text-anchor="middle">{L("'this call may read but not write' — a small guarantee with wide reach")}</text>
+        <text class="t-cap" x="240" y="130" text-anchor="middle">{L("read but not write — a small guarantee with wide reach")}</text>
       </svg>
     )}
 
@@ -3257,8 +3262,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="mc-src" x="70" y="44" width="120" height="26" rx="5" />
         <text class="t-fld mc-srct" x="130" y="61">src</text>
         <rect class="mc-dst" x="290" y="44" width="120" height="26" rx="5" />
-        <text class="t-ok mc-dstt" x="350" y="61">dest</text>
-        <path class="sarrow mc-fly" d="M190 57 H290" />
+        <text class="t-ok mc-dstt" x="360" y="61">dest</text>
+        <path class="sarrow mc-fly" d="M190 57 H290" marker-end="url(#wb-arrow)" />
         <circle class="mc-byte" cx="130" cy="57" r="6" />
         <text class="t-ok mc-one" x="240" y="104" text-anchor="middle">{L("copies len bytes at once — overlap handled like memmove")}</text>
         <text class="t-cap mc-price" x="240" y="132" text-anchor="middle">{L("priced like the other copy ops: 3 gas + 3 per word")}</text>
@@ -4907,9 +4912,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .dc-dup { fill: var(--color-changed); text-anchor: end; animation: dc-dup 4s ease-in-out infinite; }
   @keyframes dc-dup { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
   .dc-waste { animation: dc-dup 4s ease-in-out infinite; }
-  .dc-a1 { stroke-dasharray: 50; stroke-dashoffset: 50; animation: st-draw 5s ease-in-out infinite; }
   .dc-thin { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .dc-share { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out 0.3s infinite; }
   .dc-lib { fill: color-mix(in oklab, var(--color-node-branch) 12%, var(--color-surface)); stroke: var(--color-node-branch); }
   .dc-libt { fill: var(--color-accent-strong); text-anchor: middle; }
 
@@ -4925,19 +4928,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes dc-wrote { 0%,40% { opacity: 0.4 } 55%,100% { opacity: 1 } }
   .dc-unchanged { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
   @keyframes dc-late { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
-  .dc-c1 { stroke-dasharray: 92; stroke-dashoffset: 92; animation: st-draw 5s ease-in-out infinite; }
   .dc-cl, .dc-dl, .dc-dl2 { fill: var(--color-ink-faint); }
 
   /* ── DELEGATECALL — dc-delegate: write lands in your storage ── */
   .dc-wrote2 { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); animation: dc-wrote 5s ease-in-out infinite; }
   .dc-keep { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
   .dc-keep2 { fill: var(--color-ink-faint); text-anchor: middle; }
-  .dc-d1 { stroke-dasharray: 86; stroke-dashoffset: 86; animation: st-draw 5s ease-in-out infinite; }
-  .dc-d2 { stroke-dasharray: 86; stroke-dashoffset: 86; animation: st-draw 5s ease-in-out 0.4s infinite; }
 
   /* ── DELEGATECALL — dc-proxy: upgradeable pattern ── */
   .dc-proxybox { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent); }
-  .dc-p1 { stroke-dasharray: 88; stroke-dashoffset: 88; animation: st-draw 5s ease-in-out infinite; }
   .dc-impl { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .dc-implold { animation: dc-old 6s ease-in-out infinite; }
   @keyframes dc-old { 0%,45% { opacity: 1 } 60%,100% { opacity: 0.4 } }
@@ -4993,7 +4992,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* ── REVERT — rev-throw: throw burns all gas, silent ── */
   .rv-txbox { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .rv-cc { text-anchor: middle; fill: var(--color-accent-strong); }
-  .rv-a { stroke-dasharray: 60; stroke-dashoffset: 60; animation: st-draw 5s ease-in-out infinite; }
   .rv-fail { fill: var(--color-changed); font-size: 13px; text-anchor: middle; }
   .rv-throwbox { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
   .rv-throwt { fill: var(--color-ink-muted); text-anchor: middle; }
@@ -5004,8 +5002,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
   /* ── REVERT — rev-revert: undo, refund, return ── */
   .rv-op { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
-  .rv-b1, .rv-b2, .rv-b3 { stroke-dasharray: 130; stroke-dashoffset: 130; animation: st-draw 5s ease-in-out infinite; }
-  .rv-b2 { animation-delay: 0.2s; } .rv-b3 { animation-delay: 0.4s; }
   .rv-eff { fill: var(--color-surface); stroke: var(--color-node-leaf); opacity: 0; }
   .rv-e1 { animation: tw-rowin 5s ease-out infinite; }
   .rv-e2 { animation: tw-rowin 5s ease-out 0.25s infinite; }
@@ -5027,8 +5023,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* ── REVERT — rev-catch: catchable sub-call revert ── */
   .rv-caller { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .rv-callee2 { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
-  .rv-c1 { stroke-dasharray: 132; stroke-dashoffset: 132; animation: st-draw 5s ease-in-out infinite; }
-  .rv-c2 { stroke-dasharray: 132; stroke-dashoffset: 132; animation: st-draw 5s ease-in-out 0.4s infinite; }
   .rv-cl { fill: var(--color-ink-faint); }
   .rv-cl2 { fill: var(--color-changed); }
   .rv-catchl { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
@@ -5038,7 +5032,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .cr-nonceval { text-anchor: middle; fill: var(--color-changed); animation: cr-tick 1.5s ease-in-out infinite; }
   @keyframes cr-tick { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
   .cr-kec { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
-  .cr-a1, .cr-a2 { stroke-dasharray: 54; stroke-dashoffset: 54; animation: st-draw 4s ease-in-out infinite; }
   .cr-addr { text-anchor: middle; opacity: 0; }
   .cr-addr0 { animation: cr-cyc0 1.5s steps(1) infinite; }
   .cr-addr1 { animation: cr-cyc1 1.5s steps(1) infinite; }
@@ -5056,10 +5049,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .cr-in2 { animation: cr-inin 5s ease-out 0.4s infinite; }
   @keyframes cr-inin { 0%,6% { opacity: 0 } 20%,100% { opacity: 1 } }
   .cr-inv { text-anchor: middle; fill: var(--color-accent-strong); }
-  .cr-b1, .cr-b2, .cr-b3 { stroke-dasharray: 80; stroke-dashoffset: 80; animation: cr-bdraw 5s ease-in-out infinite; }
-  .cr-b2 { animation-delay: 0.2s; } .cr-b3 { animation-delay: 0.4s; }
   @keyframes cr-bdraw { 0%,30% { stroke-dashoffset: 80 } 50%,100% { stroke-dashoffset: 0 } }
-  .cr-b4 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: cr-bdraw 5s ease-in-out 0.5s infinite; }
   .cr-det { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
   .cr-detaddr { text-anchor: middle; opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
   @keyframes cr-detin { 0%,58% { opacity: 0 } 70% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-node-leaf)) } 80% { filter: none } 100% { opacity: 1 } }
@@ -5155,8 +5145,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
   /* ── EIP-3541 — ef-unlock: 0xEF prefixes future formats ── */
   .ef-prefix { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
-  .ef-u1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out infinite; }
-  .ef-u2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out 0.3s infinite; }
   .ef-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
   .ef-use0 { animation: tw-rowin 5s ease-out infinite; }
   .ef-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
@@ -5255,8 +5243,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* ── EIP-214 — stc-danger: a CALL to read lets the callee do anything ── */
   .stc-you { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .stc-c { text-anchor: middle; fill: var(--color-accent-strong); }
-  .stc-a1 { stroke-dasharray: 112; stroke-dashoffset: 112; animation: st-draw 5s ease-in-out infinite; }
-  .stc-a2 { stroke-dasharray: 112; stroke-dashoffset: 112; stroke: var(--color-changed); animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .stc-a2 { stroke: var(--color-changed); }
   .stc-al { fill: var(--color-ink-faint); }
   .stc-al2 { fill: var(--color-changed); }
   .stc-callee { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
@@ -5264,7 +5251,6 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .stc-danger2 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
 
   /* ── EIP-214 — stc-static: read-only frame, writes revert ── */
-  .stc-sa { stroke-dasharray: 112; stroke-dashoffset: 112; animation: st-draw 5s ease-in-out infinite; }
   .stc-frame { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .stc-ok { text-anchor: middle; }
   .stc-forbid { text-anchor: middle; animation: rv-pulse 5s ease-in-out infinite; }
@@ -5277,7 +5263,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .stc-card0 { animation: tw-rowin 5s ease-out infinite; }
   .stc-card1 { animation: tw-rowin 5s ease-out 0.2s infinite; }
   .stc-card2 { animation: tw-rowin 5s ease-out 0.4s infinite; }
-  .stc-cardsub { text-anchor: middle; fill: var(--color-ink-faint); }
+  .stc-cardsub { text-anchor: middle; fill: var(--color-ink-faint); font-size: 8px; }
 
   /* ── Altair — sc-heavy: too many validators for a light client ── */
   .sc-lc { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
@@ -5592,9 +5578,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mc-srct { text-anchor: middle; fill: var(--color-ink-muted); }
   .mc-dst { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .mc-dstt { text-anchor: middle; }
-  .mc-fly { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
   .mc-byte { fill: var(--color-node-leaf); animation: mc-move 5s ease-in-out infinite; }
-  @keyframes mc-move { 0%, 15% { transform: translateX(0); opacity: 0; } 25% { opacity: 1; } 60%, 100% { transform: translateX(220px); opacity: 1; } }
+  @keyframes mc-move { 0%, 15% { transform: translateX(0); opacity: 0; } 25% { opacity: 1; } 60%, 100% { transform: translateX(190px); opacity: 1; } }
   .mc-one { opacity: 0; animation: dc-late 5s ease-in-out 0.5s infinite; }
   .mc-price { fill: var(--color-ink-muted); }
 
@@ -5692,4 +5677,28 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .fm-r1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
   .fm-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
   .fm-done { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
+  .dc-unchanged, .dc-keep, .dc-upg,
+  .rv-catchl, .rv-burn, .rv-e1, .rv-e2, .rv-e3,
+  .stc-danger2, .stc-guar, .stc-card, .stc-card0, .stc-card1, .stc-card2,
+  .ef-reserved, .ef-use, .ef-use0, .ef-use1,
+  .mc-one, .mc-emit, .mc-step, .mc-st0, .mc-st1, .mc-st2,
+  .cr-now, .cr-det, .cr-detaddr, .cr-s1, .cr-s1b, .cr-s2, .cr-s2b, .cr-s3,
+  .cr-deployed, .cr-in, .cr-in0, .cr-in1, .cr-in2, .mc-fly,
+  .ef-okline, .stc-ok, .rv-sub, .mc-dstt, .dc-thint,
+  .cr-cf1, .cr-cf2, .cr-cf3, .cr-out, .cr-cflbl2 {
+    opacity: 1;
+    animation: none;
+  }
+  .dc-thint { text-anchor: middle; fill: var(--color-ink-muted); }
+  .cr-out { fill: color-mix(in oklab, var(--color-accent) 6%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .cr-cf1 { fill: color-mix(in oklab, var(--color-accent) 4%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-dasharray: 5 3; }
+  .cr-cf2 { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); }
+  .cr-cf3 { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .rvr-changed { opacity: 0; animation: none; }
+  .rvr-restored { opacity: 1; animation: none; }
+  .rvr-blob { opacity: 1; transform: none; animation: none; }
+  .rvr-blobbox { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .rvr-gaslbl, .rv-gaslbl { fill: var(--color-canvas); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; font-weight: 600; }
+  .rv-gaslbl2 { font-size: 9px; }
+  .rv-gburn { animation: none; transform: none; fill: var(--color-changed); }
 </style>

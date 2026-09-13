@@ -333,24 +333,27 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── txfields: every field justified by the attack it blocks ── */}
     {name === "txfields" && (
-      <svg viewBox="0 0 480 318" role="img" aria-label="Anatomy of a transaction, every field justified">
-        <text class="t-mid" x="120" y="22">{L("TRANSACTION")}</text>
-        <text class="t-cap" x="350" y="22">{L("what breaks without it")}</text>
+      <svg viewBox="0 0 480 320" role="img" aria-label="Every transaction field justified by the attack it blocks">
+        <text class="txf-hd" x="22" y="20" style="text-anchor:start">{L("TRANSACTION")}</text>
+        <text class="txf-hd" x="266" y="20" style="text-anchor:start">{L("what breaks without it")}</text>
+        <rect class="txf-tx" x="12" y="26" width="172" height="288" rx="10" />
         {[
           ["chainId", "replay onto another chain"],
           ["nonce", "replay on this chain"],
-          ["to", "no recipient (or: new contract)"],
+          ["to", "no recipient (or new contract)"],
           ["value", "how much ether moves"],
           ["data", "which code + args to run"],
           ["gasLimit", "a loop drains your balance"],
           ["maxFeePerGas", "overpaying a volatile fee"],
-          ["maxPriorityFee", "no tip — proposer skips you"],
+          ["maxPriorityFee", "no tip, proposer skips you"],
           ["sig r,s,yParity", "anyone could forge the sender"],
         ].map(([f, why], i) => (
-          <g class={`txrow tr${i}`}>
-            <rect class="txbar" x="16" y={34 + i * 29} width="448" height="25" rx="4" />
-            <text class="t-field" x="28" y={51 + i * 29}>{f}</text>
-            <text class="t-why" x="210" y={51 + i * 29}>{why}</text>
+          <g>
+            {i % 2 === 1 && <rect class="txf-bar" x="250" y={32 + i * 31} width="218" height="27" rx="4" />}
+            <rect class="onf-chip" x="22" y={35 + i * 31} width="150" height="21" rx="10" />
+            <text class="txf-field" x="32" y={50 + i * 31}>{f}</text>
+            <path class="onf-ar" d={`M186 ${45 + i * 31} H262`} marker-end="url(#wb-arrow)" />
+            <text class="txf-why" x="266" y={50 + i * 31}>{L(why)}</text>
           </g>
         ))}
       </svg>
@@ -1206,13 +1209,21 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-2718: one rigid format, decoders must guess the kind ── */}
     {name === "tx-onefmt" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="One rigid transaction format that decoders must guess at">
-        <text class="t-cap" x="240" y="22">{L("one shape for every transaction")}</text>
-        <rect class="to-rlp" x="64" y="36" width="352" height="34" rx="6" />
-        <text class="t-fld to-rlptext" x="240" y="57">rlp[nonce, gasPrice, gas, to, value, data, v, r, s]</text>
-        <g class="to-feat tf0"><rect class="to-chip" x="74" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="139" y="108">{L("+ access list?")}</text></g>
-        <g class="to-feat tf1"><rect class="to-chip" x="276" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="341" y="108">{L("+ new fee fields?")}</text></g>
-        <rect class="to-parser" x="150" y="142" width="180" height="34" rx="8" />
-        <text class="t-x" x="240" y="163">{L("decoder: which kind? — guess")}</text>
+        <text class="t-cap" x="240" y="20">{L("one shape for every transaction")}</text>
+        <rect class="onf-rlp" x="60" y="30" width="360" height="34" rx="6" />
+        {["nonce", "gasPrice", "gas", "to", "value", "data", "v", "r", "s"].map((f, i) => (
+          <g>
+            <rect class="onf-cell" x={64 + i * 39} y="34" width="37" height="26" rx="3" />
+            <text class="onf-celltext" x={64 + i * 39 + 18} y="51">{f}</text>
+          </g>
+        ))}
+        <rect class="onf-chip" x="74" y="86" width="130" height="24" rx="12" /><text class="t-cap" x="139" y="102">{L("+ access list?")}</text>
+        <rect class="onf-chip" x="276" y="86" width="130" height="24" rx="12" /><text class="t-cap" x="341" y="102">{L("+ new fee fields?")}</text>
+        <path class="onf-ar" d="M139 86 V65" marker-end="url(#wb-arrow)" />
+        <path class="onf-ar" d="M341 86 V65" marker-end="url(#wb-arrow)" />
+        <path class="onf-ar" d="M240 64 V140" marker-end="url(#wb-arrow)" />
+        <rect class="onf-parser" x="135" y="142" width="210" height="34" rx="8" />
+        <text class="t-x" x="240" y="163" style="font-size:10px">{L("decoder: which kind? guess")}</text>
         <text class="t-cap" x="240" y="194">{L("add a feature and decoders must sniff the bytes to guess the kind")}</text>
       </svg>
     )}
@@ -1221,14 +1232,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "tx-typebyte" && (
       <svg viewBox="0 0 480 192" role="img" aria-label="A type byte prefixes the payload and selects the decoder">
         <text class="t-cap" x="102" y="38">{L("type byte")}</text>
-        <text class="t-cap" x="282" y="38">{L("payload")}</text>
-        <rect class="tt-byte" x="62" y="48" width="80" height="46" rx="6" />
-        <text class="tx-byte" x="102" y="78">0x02</text>
-        <rect class="tt-pay" x="150" y="48" width="228" height="46" rx="6" />
-        <text class="t-fld tt-paytext" x="264" y="75">{L("format-specific bytes")}</text>
-        <path class="sarrow tt-a" d="M102 94 V124 H240 V134" />
-        <rect class="tt-dec" x="150" y="140" width="180" height="34" rx="8" />
-        <text class="t-ok" x="240" y="161">{L("decode as EIP-1559 tx")}</text>
+        <text class="t-cap" x="288" y="38">{L("payload")}</text>
+        <rect class="tb-byte" x="62" y="48" width="80" height="46" rx="6" />
+        <text class="tb-bytetext" x="102" y="78">0x02</text>
+        <text class="tb-bytetext" x="153" y="76" style="font-size:14px">++</text>
+        <rect class="tb-pay" x="166" y="48" width="212" height="46" rx="6" />
+        <text class="tb-paytext" x="272" y="75">{L("format-specific bytes")}</text>
+        <path class="tb-ar" d="M102 94 V120 H240 V140" marker-end="url(#wb-arrow-accent)" />
+        <rect class="tb-dec" x="150" y="140" width="180" height="34" rx="8" />
+        <text class="tb-ok" x="240" y="161">{L("decode as EIP-1559 tx")}</text>
         <text class="t-cap" x="240" y="188">{L("a typed tx = type byte ++ payload; the byte says how to read the rest")}</text>
       </svg>
     )}
@@ -1236,37 +1248,40 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-2718: the first byte routes legacy vs typed, no collision ── */}
     {name === "tx-disambig" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="A byte-value axis showing the typed range and legacy range are separated by an unused gap">
-        <text class="t-cap" x="240" y="20">{L("the first byte decides — and the two ranges can't overlap")}</text>
-        <text class="t-cap td-marklbl" x="140" y="46" text-anchor="middle">{L("a first byte")}</text>
-        <circle class="td-mark" cx="140" cy="58" r="5" />
-        <rect class="td-zone td-typedz" x="40" y="70" width="199" height="26" rx="3" />
-        <rect class="td-zone td-gapz" x="239" y="70" width="102" height="26" rx="3" />
-        <rect class="td-zone td-legacyz" x="341" y="70" width="99" height="26" rx="3" />
-        <text class="t-ok td-tl" x="140" y="87" text-anchor="middle">{L("typed · type byte")}</text>
-        <text class="td-gaplbl" x="290" y="87" text-anchor="middle">{L("gap — unused")}</text>
-        <text class="td-legacylbl" x="390" y="87" text-anchor="middle">{L("legacy · RLP list")}</text>
-        <line class="td-axis" x1="40" y1="106" x2="440" y2="106" />
+        <text class="t-cap" x="240" y="20">{L("the first byte decides which decoder runs")}</text>
+        <text class="dis-marklbl" x="140" y="44">{L("a first byte")}</text>
+        <path class="dis-axis" d="M140 48 V66" marker-end="url(#wb-arrow-accent)" style="stroke:var(--color-accent)" />
+        <rect class="dis-typed" x="40" y="68" width="199" height="28" rx="3" />
+        <rect class="dis-gap" x="239" y="68" width="102" height="28" rx="3" />
+        <rect class="dis-legacy" x="341" y="68" width="99" height="28" rx="3" />
+        <text class="dis-zonelbl" x="139" y="86">{L("typed · type byte")}</text>
+        <text class="dis-gaplbl" x="290" y="86">{L("gap · unused")}</text>
+        <text class="dis-zonelbl" x="390" y="86">{L("legacy · RLP")}</text>
+        <line class="dis-axis" x1="40" y1="106" x2="440" y2="106" />
         {[["0x00", 40], ["0x7f", 239], ["0xc0", 341], ["0xff", 440]].map(([lbl, x]) => (
-          <g><line class="td-tick" x1={x} y1="102" x2={x} y2="110" /><text class="td-num" x={x} y="124">{lbl}</text></g>
+          <g><line class="dis-tick" x1={x} y1="102" x2={x} y2="110" /><text class="dis-num" x={x} y="124">{lbl}</text></g>
         ))}
         <text class="t-cap" x="240" y="152" text-anchor="middle">{L("an RLP list always starts ≥ 0xc0; type bytes are ≤ 0x7f")}</text>
-        <text class="t-ok" x="240" y="178" text-anchor="middle">{L("the empty gap 0x80–0xbf guarantees they can never collide")}</text>
+        <text class="sg-ok" x="240" y="178">{L("the empty gap 0x80 to 0xbf means they can never collide")}</text>
       </svg>
     )}
 
     {/* ── EIP-2718: the versioned family, one byte per format ── */}
     {name === "tx-family" && (
-      <svg viewBox="0 0 480 226" role="img" aria-label="The typed-transaction family — one byte per format">
-        <text class="t-cap" x="240" y="20">{L("a versioned family — each feature claims a byte")}</text>
-        {[["0x00", "legacy (pre-2718)"], ["0x01", "access lists — EIP-2930"], ["0x02", "base fee + tip — EIP-1559"], ["0x03", "blobs — EIP-4844"], ["0x04", "set EOA code — EIP-7702"], ["0x05", "… the next type slots in"]].map(([byte, label], i) => (
-          <g class={`tx-row txr${i}`}>
-            <rect class="tx-chip" x="64" y={32 + i * 30} width="62" height="22" rx="6" />
-            <text class="tx-byte3" x="95" y={47 + i * 30}>{byte}</text>
-            <rect class="tx-name" x="134" y={32 + i * 30} width="282" height="22" rx="6" />
-            <text class="t-fld tx-namelbl" x="146" y={47 + i * 30}>{L(label)}</text>
+      <svg viewBox="0 0 480 226" role="img" aria-label="The typed transaction family, one byte per format">
+        <text class="t-cap" x="240" y="20">{L("a versioned family; each feature claims a byte")}</text>
+        <line class="fam-conn" x1="50" y1="43" x2="50" y2="193" />
+        {[["0x00", "legacy (pre-2718)", false], ["0x01", "access lists · EIP-2930", false], ["0x02", "base fee + tip · EIP-1559", false], ["0x03", "blobs · EIP-4844", false], ["0x04", "set EOA code · EIP-7702", false], ["0x05", "the next type slots in", true]].map(([byte, label, next], i) => (
+          <g>
+            <line class="fam-conn" x1="50" y1={43 + i * 30} x2="64" y2={43 + i * 30} />
+            <rect class="fam-chip" x="64" y={32 + i * 30} width="58" height="22" rx="6" />
+            <text class="fam-byte" x="93" y={47 + i * 30}>{byte}</text>
+            <path class="fam-conn" d={`M122 ${43 + i * 30} H138`} marker-end="url(#wb-arrow)" style="stroke:var(--color-accent-dim)" />
+            <rect class={next ? "fam-next" : "fam-name"} x="140" y={32 + i * 30} width="276" height="22" rx="6" />
+            <text class={next ? "fam-nextlbl" : "fam-namelbl"} x="146" y={47 + i * 30}>{L(label)}</text>
           </g>
         ))}
-        <text class="t-cap" x="240" y="220">{L("old clients cleanly reject an unknown type byte")}</text>
+        <text class="t-cap" x="240" y="216">{L("old clients cleanly reject an unknown type byte")}</text>
       </svg>
     )}
 
@@ -3771,7 +3786,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .tp2-note { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9.5px; text-anchor: end; }
 
   .txf-tx { fill: var(--color-surface); stroke: var(--color-accent-dim); stroke-width: 1.6; }
-  .txf-bar { fill: color-mix(in oklab, var(--color-surface-2) 60%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; }
+  .txf-bar { fill: color-mix(in oklab, var(--color-surface-2) 60%, var(--color-surface)); stroke: none; }
+  .onf-cell { fill: color-mix(in oklab, var(--color-surface-2) 55%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1; }
+  .onf-celltext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 6.5px; text-anchor: middle; }
   .txf-field { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; }
   .txf-why { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
   .txf-hd { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; }

@@ -499,11 +499,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <rect class="pc" x="34" y="30" width="132" height="28" rx="6" />
         </g>
         <text class="t-cap" x="100" y="196">{L("code runs the same everywhere")}</text>
-        <g class="stack">
-          <text class="t-cap" x="330" y="30">{L("stack")}</text>
-          <rect class="si s0" x="280" y="120" width="100" height="24" rx="4" /><text class="t-op si-t s0t" x="330" y="137">2</text>
-          <rect class="si s1" x="280" y="92" width="100" height="24" rx="4" /><text class="t-op si-t s1t" x="330" y="109">3</text>
-          <rect class="si s2" x="280" y="92" width="100" height="24" rx="4" /><text class="t-op si-t s2t" x="330" y="109">5</text>
+        <g class="evm-stack">
+          <text class="t-cap" x="330" y="28">{L("stack")}</text>
+          <rect class="evm-si" x="290" y="60" width="80" height="24" rx="4" /><text class="evm-sit" x="330" y="77">2</text>
+          <rect class="evm-si" x="290" y="88" width="80" height="24" rx="4" /><text class="evm-sit" x="330" y="105">3</text>
+          <path class="evm-fold" d="M372 84 C398 84 398 128 374 128" marker-end="url(#wb-arrow-accent)" />
+          <rect class="evm-si evm-res" x="290" y="126" width="80" height="26" rx="4" /><text class="evm-sit evm-rest" x="330" y="144">5</text>
+          <text class="t-cap" x="330" y="170">{L("ADD folds 2+3")}</text>
         </g>
       </svg>
     )}
@@ -3619,12 +3621,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .op { fill: color-mix(in oklab, var(--color-node-branch) 8%, var(--color-surface)); }
   .pc { fill: none; stroke: var(--color-accent); stroke-width: 2; animation: pcstep 4s steps(1) infinite; }
   @keyframes pcstep { 0% { transform: translateY(0) } 25% { transform: translateY(38px) } 50% { transform: translateY(76px) } 75% { transform: translateY(114px) } 100% { transform: translateY(0) } }
-  .si { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); }
-  .si-t { text-anchor: middle; fill: var(--color-node-extension); }
-  .s1, .s1t { opacity: 0; animation: show 4s steps(1) infinite; }
-  .s2, .s2t { opacity: 0; animation: show2 4s steps(1) infinite; }
-  @keyframes show { 0%,25% { opacity: 0 } 26%,50% { opacity: 1 } 51%,100% { opacity: 0 } }
-  @keyframes show2 { 0%,50% { opacity: 0 } 51%,100% { opacity: 1 } }
+  .evm-si { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .evm-sit { text-anchor: middle; fill: var(--color-node-extension); font-family: var(--font-mono); font-size: 12px; }
+  .evm-res { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .evm-rest { fill: var(--color-node-leaf); font-weight: 600; }
+  .evm-fold { fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
 
   /* gas: gauge drains, ops tick, halt */
   .gauge-fill { fill: var(--color-node-leaf); transform-box: fill-box; transform-origin: left; animation: drain 5s ease-in-out infinite; }

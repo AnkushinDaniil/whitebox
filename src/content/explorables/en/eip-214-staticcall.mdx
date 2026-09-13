@@ -6,7 +6,7 @@ topic: EIPs
 order: 26
 spine: true
 prerequisites: ["the EVM call model", "state & reentrancy"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 8
 ---
 
@@ -57,7 +57,7 @@ We need to distinguish *asking* from *acting*. A read should be able to run the 
 >
 Adds `STATICCALL` (`0xFA`), analogous to `CALL` but which executes the callee in a context
 where state modification is disallowed. Any attempt to execute a state-changing operation
-(`SSTORE`, `LOG*`, `CREATE`/`CREATE2`, `SELFDESTRUCT`, or a `CALL` transferring value)
+(`SSTORE`, `LOG*`, `CREATE`, `SELFDESTRUCT`, or a `CALL` transferring value)
 during the static execution — including in nested calls — causes an exception.
 </SpecExcerpt>
 

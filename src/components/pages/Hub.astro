@@ -17,6 +17,7 @@ interface Props {
 }
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const bookParts = t.book.parts as Record<string, { title: string; blurb: string }>;
 
 const all = await getCollection("explorables", ({ data }) => !data.draft);
 const meta = (slug: string) => {
@@ -50,8 +51,8 @@ const eipTag = (e: string) => (/^\d/.test(e) ? `EIP-${e}` : null);
           <section class="part">
             <div class="part-head">
               <span class="part-n">{t.book.part} {part.n}</span>
-              <h2 class="part-title">{t.book.parts[part.n]?.title ?? part.title}</h2>
-              <p class="part-blurb">{t.book.parts[part.n]?.blurb ?? part.blurb}</p>
+              <h2 class="part-title">{bookParts[part.n]?.title ?? part.title}</h2>
+              <p class="part-blurb">{bookParts[part.n]?.blurb ?? part.blurb}</p>
             </div>
             {part.groups.map((g) => (
               <div class="group">

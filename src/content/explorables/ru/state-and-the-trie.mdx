@@ -6,7 +6,7 @@ topic: "Start here"
 order: 1
 spine: true
 prerequisites: ["EVM и хранилище", "хеширование (keccak256)"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 15
 ---
 
@@ -160,7 +160,7 @@ Trie — это ответ сразу на три требования: **одн
     { kind: "spec", label: "Yellow Paper §4.1 & Appendix D", note: "Мировое состояние и дерево Меркла-Патриции, формально", href: "https://ethereum.github.io/yellowpaper/paper.pdf" },
     { kind: "post", label: "Flat DB — reading state in one hop", note: "Как клиенты на самом деле кладут этот trie на диск", href: "/flat-db-nethermind" },
     { kind: "post", label: "EIP-2929/2930 — cold vs warm access", note: "Почему первое обращение к слоту trie стоит дороже", href: "/eip-2929-2930-access-lists" },
-    { kind: "tool", label: "Verkle trees", note: "Предлагаемый преемник: гораздо меньшие доказательства для бессостоятельности", href: "https://ethereum.org/en/roadmap/verkle-trees/" },
+    { kind: "tool", label: "Бинарное дерево состояния (EIP-7864)", note: "Актуальное направление к бессостоятельности — дружественное к SNARK бинарное дерево Меркла, заменившее прежний план с Verkle", href: "https://eips.ethereum.org/EIPS/eip-7864" },
   ]}
 />
 

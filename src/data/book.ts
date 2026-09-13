@@ -151,6 +151,11 @@ export const BOOK: BookPart[] = [
           { slug: "eip-7251-max-effective-balance", eip: "7251" },
         ],
       },
+      {
+        forkName: "Fulu · Osaka (Fusaka)",
+        date: "Dec 2025",
+        chapters: [{ slug: "eip-7594-peerdas", eip: "7594" }],
+      },
     ],
   },
 ];

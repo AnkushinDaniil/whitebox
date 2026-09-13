@@ -6,7 +6,7 @@ topic: EIPs
 order: 17
 spine: true
 prerequisites: ["the EVM & gas", "storage & state access"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 10
 ---
 
@@ -59,8 +59,7 @@ The lasting lesson is bigger than the numbers. <KeyTerm term="gas as a security 
   href="https://eips.ethereum.org/EIPS/eip-150"
   ref="repricing & the 1/64 rule"
 >
-Increases the gas cost of `EXTCODESIZE` to 700, `EXTCODECOPY` base to 700, `BALANCE` and
-`EXTCODEHASH`-class account access to 400, `SLOAD` to 200, and the `CALL`-family base to
+Increases the gas cost of `BALANCE` to 400, `EXTCODESIZE` to 700, `EXTCODECOPY` base to 700, `SLOAD` to 200, and the `CALL`-family base to
 700. Additionally, a call may pass at most `all_but_one_64th` of the remaining gas to a
 sub-call, so a caller always retains at least 1/64 of its gas.
 </SpecExcerpt>

@@ -6,7 +6,7 @@ topic: Networking & sync
 order: 1
 spine: true
 prerequisites: ["how Ethereum stores state", "finality"]
-updated: 2026-06-22
+updated: 2026-09-13
 readingMinutes: 14
 ---
 
@@ -54,7 +54,7 @@ The zero-trust design: download every block from genesis to the head, and **re-e
 
 <Scene name="syncgenesis" caption="Full sync re-executes every transaction since genesis, rebuilding the state from nothing. Maximally trustless — and brutally slow." />
 
-Nothing is more trustworthy: you've personally verified every state transition in Ethereum's history. (Keep *all* the intermediate states and you have an **archive node** — the thing block explorers run, hundreds of terabytes.)
+Nothing is more trustworthy: you've personally verified every state transition in Ethereum's history. (Keep *all* the intermediate states and you have an **archive node** — the thing block explorers run: a few terabytes on a modern path-based layout, up to ~15–20 TB on the legacy hash-based one.)
 
 <Callout type="warning" title="What breaks">
 It's punishingly slow — re-executing well over a billion historical transactions takes days to weeks, and you're grinding through ancient state you don't even care about. But notice: the current state is *already committed* in the head block's stateRoot. Why recompute what's been fingerprinted for us?

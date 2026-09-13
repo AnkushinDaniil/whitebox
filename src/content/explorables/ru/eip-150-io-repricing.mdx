@@ -6,7 +6,7 @@ topic: EIPs
 order: 17
 spine: true
 prerequisites: ["EVM и газ", "хранилище и доступ к состоянию"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 10
 ---
 
@@ -60,8 +60,7 @@ import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
   href="https://eips.ethereum.org/EIPS/eip-150"
   ref="переоценка и правило 1/64"
 >
-Повышает цену `EXTCODESIZE` до 700, базовую цену `EXTCODECOPY` до 700, доступ к
-`BALANCE` и классу `EXTCODEHASH` — до 400, `SLOAD` — до 200, а базовую цену
+Повышает цену `BALANCE` до 400, `EXTCODESIZE` до 700, базовую цену `EXTCODECOPY` до 700, `SLOAD` — до 200, а базовую цену
 семейства `CALL` — до 700. Кроме того, вызов может передать под-вызову не более
 `all_but_one_64th` оставшегося газа, так что вызывающий всегда сохраняет как минимум
 1/64 своего газа.

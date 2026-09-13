@@ -1,0 +1,127 @@
+---
+title: "EIP-7594: PeerDAS, blob data without downloading it all"
+dek: "Blobs made rollup data cheap — but every node still downloaded every blob, so throughput couldn't grow. Derive PeerDAS one fix at a time: erasure-code each blob, split it into columns, custody a slice, and sample the rest until absence is a near-impossibility."
+summary: "A step-by-step derivation of EIP-7594 (PeerDAS), the headline of Ethereum's Fusaka upgrade (mainnet December 3, 2025). EIP-4844 gave rollups a cheap data lane, but every full node still downloaded and stored every blob — capping how far blob throughput could rise. PeerDAS fixes it with data-availability sampling: each blob is erasure-coded so any 50% reconstructs the whole, split into 128 columns spread across the p2p network, each node custodies only a slice, and verifies the rest is available by randomly sampling columns — driving the odds of undetected withheld data to cryptographically negligible. With blob-parameter-only (BPO) forks raising capacity between hardforks, this is Ethereum's first step into Danksharding."
+topic: EIPs
+order: 60
+spine: true
+prerequisites: ["EIP-4844 blobs", "how a node syncs"]
+updated: 2026-09-13
+readingMinutes: 12
+---
+
+import DepthLayer from "@/components/explorable/DepthLayer.astro";
+import Callout from "@/components/explorable/Callout.astro";
+import KeyTerm from "@/components/explorable/KeyTerm.astro";
+import GoDeeper from "@/components/explorable/GoDeeper.astro";
+import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
+import Formula from "@/components/explorable/Formula.astro";
+import JourneyNav from "@/components/explorable/JourneyNav.tsx";
+
+[EIP-4844](/eip-4844-blobs) gave rollups a cheap data lane — but it left one thing untouched: **every full node still downloads and stores every blob**. That's fine at three blobs a block; it's a wall the moment you want thirty. **PeerDAS** (EIP-7594), the headliner of the **Fusaka** upgrade (mainnet December 3, 2025), removes the wall so blob throughput can keep climbing without asking every node to hold more. It looks like magic — a node that stores a fraction of the data still knows all of it is there — until you build it, one fix at a time.
+
+<JourneyNav client:load steps={[
+  { id: "step-1", label: "The download wall" },
+  { id: "step-2", label: "Half is enough" },
+  { id: "step-3", label: "Split and custody a slice" },
+  { id: "step-4", label: "Sample until sure" },
+]} />
+
+<DepthLayer tier="mechanism" id="step-1" num="1" badge="step" title="The download wall">
+
+## Cheap data still meant everyone downloads everything
+
+Blobs solved *price* — a separate lane, dropped after ~18 days, its own fee market. What they didn't solve is *scaling*. To be sure a blob was really published, every full node still had to **download the whole blob and keep it** until it could be pruned. So the per-node cost grows linearly with blob count: double the blobs and you double what every node on Earth must pull down each block. That linear coupling is exactly what caps the target at a handful of blobs — raise it and you price out home stakers on ordinary bandwidth.
+
+<Callout type="warning" title="What breaks">
+The whole point of blobs was to scale rollups. But if availability requires *every* node to hold *every* blob, adding blobs re-centralizes the network onto operators with fat pipes. We need availability without full download.
+</Callout>
+
+**→ Step 2: make half the data enough to rebuild the whole.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-2" num="2" badge="step" title="Half is enough">
+
+## Erasure coding: any 50% reconstructs the rest
+
+Before splitting a blob up, make it **redundant**. Treat the blob as a polynomial and **extend** it with a <KeyTerm term="Reed-Solomon erasure code" def="Encoding that adds redundancy so the original data can be reconstructed from any sufficiently large subset of the pieces. Here each blob is extended so that any 50% of the extended data is enough to rebuild all of it." /> so the encoded data is twice the size — and any **50%** of it reconstructs the original entirely. This flips the availability question from a fragile one to a robust one. Without coding, hiding a single missing byte means checking every byte. With it, the data is unrecoverable *only if more than half is missing* — and "more than half is gone" is an easy thing to catch by looking at a few random spots.
+
+<Callout type="insight" title="Why this is the pivotal trick">
+Erasure coding turns "is all of it here?" into "is at least half of it here?" — and the second question is answerable by random spot-checks, because to break it an adversary has to withhold a *majority* of the data, which no random sample can hide.
+</Callout>
+
+**→ Step 3: cut the coded blob into columns and hold just a few.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-3" num="3" badge="step" title="Split and custody a slice">
+
+## 128 columns, spread across the network
+
+Arrange the extended blobs into a grid and slice it into **columns** — `NUMBER_OF_COLUMNS = 128` of them — each gossiped on its own p2p subnet. Now a node doesn't subscribe to all the data; it **custodies** only a configurable subset of columns (a full node targets roughly **1/8** of them). The data still exists in full *across the network* — every column is held by many nodes — but no single node carries the whole thing. Per-node storage and bandwidth are decoupled from total blob count: raise the number of blobs and each node's slice barely moves.
+
+<SpecExcerpt
+  source="EIP-7594: PeerDAS — Peer Data Availability Sampling"
+  href="https://eips.ethereum.org/EIPS/eip-7594"
+  ref="columns, custody & sampling"
+>
+Each blob is erasure-coded and the block's data is arranged into `NUMBER_OF_COLUMNS = 128`
+columns, each distributed on its own subnet. A node custodies a subset of columns
+(`CUSTODY_REQUIREMENT`) and, to treat a block's data as available, samples additional
+random columns from peers. Because any 50% of the coded data reconstructs the whole,
+sampling a few dozen columns bounds the chance of accepting unavailable data to a
+negligible level.
+</SpecExcerpt>
+
+<Callout type="warning" title="What breaks">
+A node now holds only its slice — so how does it trust the columns it *doesn't* hold are actually out there? Custody alone isn't availability. It has to check the rest without downloading it.
+</Callout>
+
+**→ Step 4: sample random columns until absence is near-impossible.**
+
+</DepthLayer>
+
+<DepthLayer tier="mechanism" id="step-4" num="4" badge="step" title="Sample until sure">
+
+## Data-availability sampling: turning odds into certainty
+
+To consider a block's blob data available, a node asks peers for a handful of **random columns** it doesn't custody. Here's why that suffices. Thanks to the erasure code, a blob is unrecoverable only if **more than half its columns are missing**. So if an adversary tries to withhold enough to make the data unrecoverable, then **every random column a node asks for has under a 50% chance of being answerable**. Ask for `k` independent columns and the probability the node is fooled — accepting a block whose data is genuinely gone — falls off a cliff.
+
+<Formula
+  expr="P(fooled) ≤ (1/2)^k"
+  terms={[
+    { t: "1/2", note: "erasure coding means >50% of columns must be missing to make the data unrecoverable, so each random sample has under a 50% chance of landing on an available column" },
+    { t: "k", note: "the number of independent columns the node samples" },
+  ]}
+  caption="Sample a few dozen columns and the chance of accepting a block whose blob data is actually unavailable drops to roughly one in 10^20–10^24 — cryptographically negligible, with no node holding more than a slice."
+/>
+
+That is the whole reversal: **certainty about all of the data, from a random taste of it.** Every node validates full availability while downloading a fraction, so blob capacity can rise without raising the per-node burden.
+
+<KeyTerm term="Data-availability sampling (DAS)" def="Verifying that a block's data was fully published by fetching a few random pieces rather than the whole. Combined with erasure coding — which forces an attacker to withhold a majority of the data to hide anything — a few dozen samples make undetected withholding astronomically unlikely." />
+
+<Callout type="insight" title="Then let capacity move on its own">
+With sampling in place, the blob target and max are no longer pinned by full-download cost — so Fusaka adds <KeyTerm term="blob-parameter-only (BPO) forks" def="Lightweight scheduled forks (EIP-7892) that change only the blob target/max, letting the network raise capacity on a cadence between full hardforks instead of waiting for the next one." /> (EIP-7892) to raise blob capacity on a schedule, between full upgrades. EIP-4844's launch numbers (target 3 / max 6) had already moved to 6/9 in Pectra; under Fusaka they keep climbing. This is Ethereum's first real step onto the **Danksharding** path.
+</Callout>
+
+**Where it lands.** Blobs (4844) made rollup data cheap; PeerDAS (7594) makes it *scalable* — decoupling what the network can carry from what any one node must hold, and doing it with a probability bound rather than trust.
+
+</DepthLayer>
+
+<DepthLayer tier="deeper" id="refs">
+
+## Go deeper
+
+<GoDeeper
+  links={[
+    { kind: "eip", label: "EIP-7594: PeerDAS", note: "The spec — columns, custody, sampling", href: "https://eips.ethereum.org/EIPS/eip-7594" },
+    { kind: "eip", label: "EIP-7607: Fusaka hardfork meta", note: "Everything that shipped in Fusaka", href: "https://eips.ethereum.org/EIPS/eip-7607" },
+    { kind: "eip", label: "EIP-7892: Blob-parameter-only forks", note: "How capacity rises between hardforks", href: "https://eips.ethereum.org/EIPS/eip-7892" },
+    { kind: "post", label: "EIP-4844 — blobs, derived", note: "The cheap data lane PeerDAS scales", href: "/eip-4844-blobs" },
+    { kind: "post", label: "How a node syncs", note: "Why per-node data cost is the constraint", href: "/how-a-node-syncs" },
+    { kind: "tool", label: "ethereum.org — Fusaka", note: "The upgrade overview", href: "https://ethereum.org/roadmap/fusaka/" },
+  ]}
+/>
+
+</DepthLayer>

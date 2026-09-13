@@ -6,7 +6,7 @@ topic: EIPs
 order: 26
 spine: true
 prerequisites: ["модель вызовов EVM", "состояние и reentrancy"]
-updated: 2026-06-24
+updated: 2026-09-13
 readingMinutes: 8
 ---
 
@@ -58,7 +58,7 @@ import SpecExcerpt from "@/components/explorable/SpecExcerpt.astro";
 >
 Добавляет `STATICCALL` (`0xFA`), аналогичный `CALL`, но выполняющий вызываемого в контексте,
 где изменение состояния запрещено. Любая попытка выполнить операцию, меняющую состояние
-(`SSTORE`, `LOG*`, `CREATE`/`CREATE2`, `SELFDESTRUCT` или `CALL`, передающий значение), во
+(`SSTORE`, `LOG*`, `CREATE`, `SELFDESTRUCT` или `CALL`, передающий значение), во
 время статического выполнения — включая вложенные вызовы — вызывает исключение.
 </SpecExcerpt>
 

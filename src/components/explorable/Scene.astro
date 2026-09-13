@@ -1154,54 +1154,75 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-4337: the rigid EOA — every wish bounces off ── */}
     {name === "aa-eoa" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="A rigid EOA: smart-account wishes bounce off">
-        <rect class="ae-eoa" x="184" y="78" width="112" height="50" rx="8" /><text class="t-cap" x="240" y="98">EOA</text><text class="t-cap" x="240" y="114">{L("1 key · ETH gas · 1 action")}</text>
-        {[["multisig", 56, 36], ["passkey", 360, 36], ["pay in USDC", 64, 150], ["batch", 380, 150], ["social recovery", 200, 178]].map(([label, x, y], i) => (
-          <g class={`ae-wish aw${i}`}>
-            <rect class="ae-chip" x={Number(x) - 38} y={Number(y) - 12} width="76" height="22" rx="11" />
-            <text class="t-cap" x={x} y={Number(y) + 3}>{label}</text>
-            <text class="t-x ae-x" x={Number(x) + 44} y={Number(y) + 3}>✗</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="A rigid EOA: smart-account features bounce off">
+        <text class="t-cap" x="240" y="18">{L("an EOA is rigid — extra powers bounce off")}</text>
+        <rect class="ae-eoa" x="180" y="84" width="120" height="48" rx="8" />
+        <text class="t-s" x="240" y="104">EOA</text>
+        <text class="t-cap" x="240" y="120">{L("1 key · 1 action")}</text>
+        {([["multisig", 94, 52], ["passkey", 386, 52], ["pay in USDC", 94, 162], ["batch", 386, 162], ["social recovery", 240, 182]] as [string, number, number][]).map(([label, x, y]) => (
+          <g class="ae-wish">
+            <rect class="ae-chip" x={x - 62} y={y - 13} width="124" height="24" rx="12" />
+            <text class="t-x ae-x" x={x - 50} y={y + 3}>✗</text>
+            <text class="t-cap" x={x + 10} y={y + 3}>{label}</text>
           </g>
         ))}
-        <text class="t-cap" x="240" y="60">{L("everything else bounces off ✗")}</text>
       </svg>
     )}
 
     {/* ── EIP-4337: a UserOperation in its own mempool ── */}
     {name === "aa-userop" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="A UserOperation in a separate mempool">
-        <rect class="au-acct" x="18" y="34" width="170" height="52" rx="8" /><text class="t-cap" x="103" y="54">{L("smart account (contract)")}</text><text class="t-cap" x="103" y="70">validateUserOp() · {L("any logic")}</text>
-        <path class="au-self" d="M150 30 q24 -16 36 8" /><text class="t-x" x="150" y="20">{L("✗ a contract can’t start a tx")}</text>
-        <rect class="au-op" x="18" y="118" width="170" height="44" rx="6" /><text class="t-cap" x="103" y="138">{L("UserOperation (signed)")}</text><text class="t-cap" x="103" y="153">{L("what you want done")}</text>
-        <path class="sarrow au-a" d="M188 140 H250" />
-        <rect class="au-mem" x="260" y="44" width="200" height="56" rx="8" /><text class="t-cap" x="360" y="68">{L("UserOp mempool")}</text><text class="t-cap" x="360" y="84">{L("a separate, alt lane")}</text>
-        <rect class="au-tmem" x="260" y="120" width="200" height="44" rx="8" /><text class="t-cap" x="360" y="146">{L("regular tx mempool")}</text>
-        <text class="t-cap" x="240" y="190">{L("you sign a UserOperation and broadcast it to its own mempool")}</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="A signed UserOperation rides its own mempool">
+        <text class="t-cap" x="240" y="18">{L("a signed UserOperation rides its own mempool")}</text>
+        <rect class="au-acct" x="16" y="34" width="176" height="46" rx="8" />
+        <text class="t-cap" x="104" y="53">{L("smart account (contract)")}</text>
+        <text class="t-cap au-note" x="104" y="70">{L("✗ can’t start its own tx")}</text>
+        <rect class="au-op" x="16" y="120" width="176" height="46" rx="6" />
+        <text class="t-cap" x="104" y="139">{L("UserOperation")}</text>
+        <text class="t-cap" x="104" y="156">{L("signed · what you want")}</text>
+        <path class="sarrow au-a" d="M192 143 H240 V70 H262" marker-end="url(#wb-arrow)" />
+        <rect class="au-mem" x="264" y="46" width="200" height="52" rx="8" />
+        <text class="t-cap" x="364" y="70">{L("UserOp mempool")}</text>
+        <text class="t-cap" x="364" y="87">{L("a separate lane")}</text>
+        <rect class="au-tmem" x="264" y="120" width="200" height="46" rx="8" />
+        <text class="t-cap au-tt" x="364" y="147">{L("regular tx mempool")}</text>
       </svg>
     )}
 
     {/* ── EIP-4337: a bundler wraps UserOps into one tx to the EntryPoint ── */}
     {name === "aa-bundler" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Three UserOps collapse into one transaction that travels to the EntryPoint">
-        <text class="t-cap" x="240" y="18">{L("the bundler packs many UserOps into one transaction")}</text>
-        {[0, 1, 2].map((i) => (<g class={`ab-op ao${i}`}><rect class="au-op" x="20" y={40 + i * 40} width="92" height="30" rx="5" /><text class="t-cap" x="66" y={59 + i * 40}>UserOp</text></g>))}
-        <rect class="ab-bundler" x="176" y="70" width="96" height="52" rx="7" /><text class="t-cap" x="224" y="90">{L("bundler")}</text><text class="t-cap" x="224" y="106">{L("packs a batch")}</text>
-        <g class="ab-batch"><rect class="ab-batchbox" x="188" y="82" width="72" height="28" rx="5" /><text class="t-ok" x="224" y="100">1 tx</text></g>
-        <rect class="ab-entry" x="308" y="60" width="158" height="80" rx="8" /><text class="t-cap" x="387" y="82">EntryPoint</text><text class="t-cap" x="387" y="100">{L("for each UserOp:")}</text><text class="t-ok ab-exec" x="387" y="118">validate → execute</text>
-        <text class="t-cap" x="240" y="182" text-anchor="middle">{L("three UserOps collapse into one tx → the EntryPoint runs each")}</text>
+      <svg viewBox="0 0 480 200" role="img" aria-label="A bundler packs many UserOps into one transaction to the EntryPoint">
+        <text class="t-cap" x="240" y="18">{L("a bundler packs many UserOps into one tx")}</text>
+        {([[40, 96], [86, 102], [132, 108]] as [number, number][]).map(([oy, by]) => (
+          <g>
+            <rect class="au-op" x="16" y={oy} width="96" height="34" rx="5" />
+            <text class="t-cap" x="64" y={oy + 21}>UserOp</text>
+            <path class="sarrow ab-in" d={`M112 ${oy + 17} L166 ${by}`} marker-end="url(#wb-arrow)" />
+          </g>
+        ))}
+        <rect class="ab-bundler" x="168" y="76" width="96" height="52" rx="7" />
+        <text class="t-cap" x="216" y="98">{L("bundler")}</text>
+        <text class="t-cap" x="216" y="114">{L("packs a batch")}</text>
+        <path class="sarrow ab-out" d="M264 102 H310" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-ok ab-1tx" x="288" y="94">1 tx</text>
+        <rect class="ab-entry" x="312" y="66" width="152" height="72" rx="8" />
+        <text class="t-cap" x="388" y="88">EntryPoint</text>
+        <text class="t-cap" x="388" y="106">{L("for each UserOp")}</text>
+        <text class="t-ok ab-exec" x="388" y="124">validate → execute</text>
       </svg>
     )}
 
     {/* ── EIP-4337: a paymaster sponsors gas or accepts tokens ── */}
     {name === "aa-paymaster" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="A paymaster sponsors gas or accepts tokens">
-        <rect class="au-op" x="16" y="42" width="120" height="44" rx="6" /><text class="t-cap" x="76" y="62">{L("your UserOp")}</text><text class="t-cap" x="76" y="77">{L("pays in USDC?")}</text>
-        <path class="sarrow ap-a1" d="M136 64 H190" />
-        <rect class="ab-entry" x="190" y="44" width="110" height="44" rx="7" /><text class="t-cap" x="245" y="70">EntryPoint</text>
-        <path class="sarrow ap-a2" d="M300 64 H354" />
-        <rect class="ap-pm" x="354" y="40" width="112" height="52" rx="7" /><text class="t-cap" x="410" y="60">{L("paymaster")}</text><text class="t-ok" x="410" y="76">{L("pays ETH gas")}</text>
-        <path class="sarrow ap-a3" d="M245 120 V146 H198" /><rect class="ap-bundler" x="78" y="130" width="120" height="34" rx="6" /><text class="t-ok" x="138" y="151">{L("bundler reimbursed")}</text>
-        <text class="t-cap" x="240" y="186">{L("a paymaster sponsors gas or takes any token — bundler reimbursed")}</text>
+        <text class="t-cap" x="240" y="18">{L("a paymaster sponsors the gas")}</text>
+        <rect class="au-op" x="16" y="46" width="118" height="46" rx="6" /><text class="t-cap" x="75" y="65">{L("your UserOp")}</text><text class="t-cap" x="75" y="82">{L("pay in USDC?")}</text>
+        <path class="sarrow ap-a1" d="M134 69 H186" marker-end="url(#wb-arrow)" />
+        <rect class="ab-entry" x="186" y="46" width="106" height="46" rx="7" /><text class="t-cap" x="239" y="72">EntryPoint</text>
+        <path class="sarrow ap-a2" d="M292 69 H344" marker-end="url(#wb-arrow)" />
+        <rect class="ap-pm" x="344" y="44" width="120" height="52" rx="7" /><text class="t-cap" x="404" y="64">{L("paymaster")}</text><text class="t-ok" x="404" y="81">{L("pays ETH gas")}</text>
+        <path class="sarrow ap-a3" d="M239 92 V150 H272" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap ap-rl" x="200" y="122">{L("reimburse")}</text>
+        <rect class="ap-bundler" x="272" y="132" width="150" height="36" rx="6" /><text class="t-ok" x="347" y="154">{L("bundler reimbursed")}</text>
       </svg>
     )}
 
@@ -1702,9 +1723,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="br-root" x="200" y="34" width="80" height="26" rx="6" />
         <text class="t-addr" x="240" y="52">root</text>
         <rect class="br-n" x="150" y="82" width="70" height="24" rx="5" />
+        <text class="t-cap" x="185" y="98">validators</text>
         <rect class="br-n" x="260" y="82" width="70" height="24" rx="5" />
+        <text class="t-cap" x="295" y="98">state</text>
         <rect class="br-leafhi" x="28" y="126" width="84" height="28" rx="6" />
-        <text class="t-ok" x="70" y="144">balance</text>
+        <text class="br-leaftxt" x="70" y="144" text-anchor="middle">balance</text>
         <rect class="br-leaf" x="140" y="126" width="84" height="28" rx="6" />
         <text class="t-cap" x="182" y="144">status</text>
         <rect class="br-leaf" x="252" y="126" width="84" height="28" rx="6" />
@@ -1720,17 +1743,20 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "br-stamp" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="Each block, a system call writes the parent beacon block root into a ring-buffer predeploy">
         <text class="t-cap" x="240" y="18">{L("the protocol stamps the parent beacon root each block")}</text>
-        <rect class="br-hdr" x="40" y="36" width="220" height="32" rx="6" />
-        <text class="t-fld br-hdrt" x="52" y="56">header.parentBeaconBlockRoot</text>
-        <text class="t-cap br-salbl" x="320" y="50">{L("system call · 0xff…fe")}</text>
-        <path class="sarrow br-sa" d="M150 68 V92" />
-        <rect class="br-ring" x="50" y="92" width="380" height="74" rx="8" />
-        <text class="t-cap" x="240" y="110">{L("beacon-roots predeploy · 0x000F3df6…beac02")}</text>
+        <rect class="br-hdr" x="76" y="34" width="248" height="32" rx="6" />
+        <text class="t-fld br-hdrt" x="200" y="54" text-anchor="middle">header.parentBeaconBlockRoot</text>
+        <path class="sarrow br-sa" d="M150 66 V90" marker-end="url(#wb-arrow)" />
+        <text class="t-cap br-salbl" x="300" y="84" text-anchor="middle">{L("system call each block")}</text>
+        <rect class="br-ring" x="50" y="92" width="380" height="78" rx="8" />
+        <text class="t-cap" x="240" y="110">{L("beacon-roots predeploy · 0x000F…beac02")}</text>
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <rect class={i === 5 ? "br-cell br-cnew" : "br-cell"} x={78 + i * 52} y="122" width="44" height="24" rx="5" />
+          <g>
+            <rect class={i === 5 ? "br-cell br-cnew" : "br-cell"} x={78 + i * 52} y="120" width="44" height="26" rx="5" />
+            <text class="t-cap br-cidx" x={78 + i * 52 + 22} y="137" text-anchor="middle">{i === 5 ? "new" : "root"}</text>
+          </g>
         ))}
-        <text class="t-fld br-ringt" x="240" y="160">ring buffer · timestamp → root · ~8191 slots (~27h)</text>
-        <text class="t-cap" x="240" y="192">{L("a system call writes (timestamp → root) every block — no user, no oracle")}</text>
+        <text class="t-fld br-ringt" x="240" y="162" text-anchor="middle">ring buffer · timestamp → root · ~8191 slots</text>
+        <text class="t-cap" x="240" y="192">{L("a system call writes each block — no user, no oracle")}</text>
       </svg>
     )}
 
@@ -2666,12 +2692,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="zk-bytecode" x="222" y="42" width="150" height="48" rx="8" />
         <text class="t-cap" x="297" y="62">{L("pairing in bytecode")}</text>
         <text class="t-fld zk-pc" x="297" y="80">{L("thousands of ops")}</text>
-        <rect class="zk-gtrack" x="30" y="108" width="330" height="16" rx="4" />
-        <rect class="zk-gfill" x="30" y="108" width="330" height="16" rx="4" />
-        <line class="zk-limit" x1="240" y1="102" x2="240" y2="130" />
-        <text class="zk-limitlbl" x="240" y="140" text-anchor="middle">{L("block gas limit")}</text>
-        <text class="t-x zk-explode" x="380" y="120" text-anchor="start">{L("≫ blows past it")}</text>
-        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("hundreds of millions of gas — on-chain proof verification is a non-starter")}</text>
+        <rect class="zk-gtrack" x="30" y="106" width="360" height="16" rx="4" />
+        <rect class="zk-gfill" x="30" y="106" width="360" height="16" rx="4" />
+        <line class="zk-limit" x1="150" y1="100" x2="150" y2="128" />
+        <text class="zk-limitlbl" x="150" y="140" text-anchor="middle">{L("block gas limit")}</text>
+        <path class="sarrow zk-over" d="M392 114 H426" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-x zk-explode" x="410" y="103" text-anchor="middle">≫</text>
+        <text class="t-cap" x="240" y="168" text-anchor="middle">{L("hundreds of millions of gas — on-chain verification is a non-starter")}</text>
       </svg>
     )}
 
@@ -2682,7 +2709,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="zk-ctr" x="24" y="46" width="140" height="54" rx="8" />
         <text class="t-cap" x="94" y="68">{L("verifier contract")}</text>
         <text class="t-fld zk-call" x="94" y="86">CALL 0x08</text>
-        <path class="sarrow zk-a2" d="M164 73 H228" /><text class="t-cap zk-al" x="196" y="65">{L("like a call")}</text>
+        <path class="sarrow zk-a2" d="M164 73 H226" marker-end="url(#wb-arrow)" /><text class="t-cap zk-al" x="195" y="66">{L("a CALL")}</text>
         <rect class="zk-pre" x="228" y="38" width="228" height="70" rx="8" />
         <text class="t-cap" x="342" y="58">{L("precompile · 0x08")}</text>
         <text class="t-fld zk-pt" x="342" y="76">alt_bn128 pairing</text>
@@ -2701,8 +2728,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("on-chain proof verification, cheap enough to use")}</text>
         <rect class="zk-prefix2" x="196" y="34" width="88" height="34" rx="8" />
         <text class="t-cap" x="240" y="55">{L("verify SNARK")}</text>
-        <path class="sarrow zk-u1" d="M212 68 L120 98" />
-        <path class="sarrow zk-u2" d="M268 68 L360 98" />
+        <path class="sarrow zk-u1" d="M212 68 L128 96" marker-end="url(#wb-arrow-accent)" />
+        <path class="sarrow zk-u2" d="M268 68 L352 96" marker-end="url(#wb-arrow-accent)" />
         <rect class="zk-use zk-use0" x="24" y="100" width="184" height="52" rx="8" />
         <text class="t-cap" x="116" y="120">{L("private transactions")}</text>
         <text class="t-fld zk-uc" x="116" y="138">{L("prove validity, hide details")}</text>
@@ -3285,15 +3312,19 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "ec-copy" && (
       <svg viewBox="0 0 480 186" role="img" aria-label="Before EIP-1052 getting another contract's code hash meant copying the whole code into memory and hashing it">
         <text class="t-cap" x="240" y="20">{L("want: a 32-byte fingerprint of another contract's code")}</text>
-        <rect class="ec-code" x="24" y="40" width="220" height="30" rx="5" />
-        <text class="t-fld ec-ct" x="134" y="59" text-anchor="middle">{L("other contract's code (could be huge)")}</text>
-        <path class="sarrow ec-a1" d="M244 55 H300" /><text class="t-cap ec-al" x="272" y="46">EXTCODECOPY</text>
-        <rect class="ec-mem" x="300" y="40" width="156" height="30" rx="5" />
-        <text class="t-cap ec-mt" x="378" y="59" text-anchor="middle">{L("copy all of it → memory")}</text>
-        <path class="sarrow ec-a2" d="M378 70 V96" /><text class="t-cap ec-kl" x="378" y="90" text-anchor="middle">KECCAK256</text>
-        <rect class="ec-hashbox" x="300" y="98" width="156" height="26" rx="5" />
-        <text class="t-ok ec-ht" x="378" y="115" text-anchor="middle">{L("32-byte hash")}</text>
-        <text class="t-x ec-cost" x="240" y="152" text-anchor="middle">{L("O(code size) + memory expansion — just to get 32 bytes")}</text>
+        <rect class="ec-code" x="24" y="48" width="184" height="40" rx="6" />
+        <text class="t-fld ec-ct" x="116" y="65" text-anchor="middle">{L("other contract's code")}</text>
+        <text class="t-fld ec-ct" x="116" y="80" text-anchor="middle">{L("(could be huge)")}</text>
+        <text class="t-cap ec-al" x="256" y="42" text-anchor="middle">EXTCODECOPY</text>
+        <path class="sarrow ec-a1" d="M208 68 H302" marker-end="url(#wb-arrow)" />
+        <rect class="ec-mem" x="302" y="48" width="154" height="40" rx="6" />
+        <text class="t-cap ec-mt" x="379" y="72" text-anchor="middle">{L("copy all → memory")}</text>
+        <path class="sarrow ec-a2" d="M379 88 V114" marker-end="url(#wb-arrow)" />
+        <text class="t-cap ec-kl" x="388" y="105" text-anchor="start">KECCAK256</text>
+        <rect class="ec-hashbox" x="302" y="116" width="154" height="30" rx="6" />
+        <text class="t-ok ec-ht" x="379" y="135" text-anchor="middle">{L("32-byte hash")}</text>
+        <text class="t-x ec-cost" x="150" y="128" text-anchor="middle">{L("O(code size) + memory")}</text>
+        <text class="t-cap" x="150" y="146" text-anchor="middle">{L("just to get 32 bytes")}</text>
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("expensive and wasteful for a simple identity check")}</text>
       </svg>
     )}
@@ -3304,7 +3335,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("EXTCODEHASH(addr): the code hash, in one opcode")}</text>
         <rect class="ec-addr" x="150" y="36" width="180" height="26" rx="5" />
         <text class="t-fld ec-at" x="240" y="53">addr</text>
-        <path class="sarrow ec-a3" d="M240 62 V86" />
+        <path class="sarrow ec-a3" d="M240 62 V86" marker-end="url(#wb-arrow)" />
         <rect class="ec-out" x="120" y="88" width="240" height="28" rx="6" />
         <text class="t-ok ec-ot" x="240" y="107" text-anchor="middle">{L("keccak256(code) — O(1), no copying")}</text>
         <text class="t-cap ec-edge" x="240" y="140" text-anchor="middle">{L("non-existent account → 0")}</text>
@@ -4206,46 +4237,44 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .au-op { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-node-extension); }
   .ab-entry { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
 
+  /* batch2 aa+precompiles: the shared .t-ok carries a global fade-in animation;
+     these scenes are meant to read statically, so pin their positive labels visible */
+  [data-scene="aa-eoa"] .t-ok, [data-scene="aa-userop"] .t-ok, [data-scene="aa-bundler"] .t-ok,
+  [data-scene="aa-paymaster"] .t-ok, [data-scene="bls-gap"] .t-ok, [data-scene="bls-precompile"] .t-ok,
+  [data-scene="bls-use"] .t-ok, [data-scene="br-blind"] .t-ok, [data-scene="br-commit"] .t-ok,
+  [data-scene="br-prove"] .t-ok, [data-scene="br-stamp"] .t-ok, [data-scene="zk-cost"] .t-ok,
+  [data-scene="zk-precompile"] .t-ok, [data-scene="zk-unlock"] .t-ok, [data-scene="ec-copy"] .t-ok,
+  [data-scene="ec-hash"] .t-ok, [data-scene="ec-use"] .t-ok { animation: none; opacity: 1; }
+
   /* EIP-4337 — aa-eoa: each wish gets rejected (✗) in turn */
   .ae-eoa { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .ae-chip { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .ae-x { fill: var(--color-changed); opacity: 0; }
-  .aw0 .ae-x { animation: ae-rej 5s ease-in-out infinite; } .aw1 .ae-x { animation: ae-rej 5s ease-in-out 0.4s infinite; }
-  .aw2 .ae-x { animation: ae-rej 5s ease-in-out 0.8s infinite; } .aw3 .ae-x { animation: ae-rej 5s ease-in-out 1.2s infinite; }
-  .aw4 .ae-x { animation: ae-rej 5s ease-in-out 1.6s infinite; }
-  @keyframes ae-rej { 0%,10% { opacity: 0 } 22%,88% { opacity: 1 } 100% { opacity: 0 } }
+  .ae-x { fill: var(--color-changed); animation: ae-rej 4.5s ease-in-out infinite; }
+  @keyframes ae-rej { 0%,45% { fill: var(--color-changed) } 62%,88% { fill: color-mix(in oklab, var(--color-changed) 55%, var(--color-ink-faint)) } 100% { fill: var(--color-changed) } }
 
   /* EIP-4337 — aa-userop: the op flows into its own mempool */
   .au-acct { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .au-self { fill: none; stroke: var(--color-changed); stroke-width: 1.4; }
-  .au-a { stroke-dasharray: 70; stroke-dashoffset: 70; animation: au-draw 5s ease-in-out infinite; }
-  @keyframes au-draw { 0%,16% { stroke-dashoffset: 70 } 40%,100% { stroke-dashoffset: 0 } }
+  .au-note { fill: var(--color-changed); }
+  .au-a { fill: none; }
   .au-mem { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); animation: au-mem 5s ease-in-out infinite; }
   @keyframes au-mem { 0%,46% { filter: none } 60% { filter: drop-shadow(0 0 7px var(--color-accent-dim)) } 100% { filter: none } }
-  .au-tmem { fill: var(--color-surface); stroke: var(--color-border); opacity: 0.55; }
+  .au-tmem { fill: color-mix(in oklab, var(--color-surface-2) 60%, var(--color-surface)); stroke: var(--color-border); }
+  .au-tt { fill: var(--color-ink-faint); }
 
   /* EIP-4337 — aa-bundler: 3 UserOps collapse into 1 tx, which travels to EntryPoint (6s) */
-  .ab-op { transform-box: fill-box; }
-  .ao0 { animation: ab-col0 6s ease-in-out infinite; }
-  .ao1 { animation: ab-col1 6s ease-in-out infinite; }
-  .ao2 { animation: ab-col2 6s ease-in-out infinite; }
-  @keyframes ab-col0 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,41px) } 44%,100% { opacity: 0; transform: translate(140px,41px) } }
-  @keyframes ab-col1 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,1px) } 44%,100% { opacity: 0; transform: translate(140px,1px) } }
-  @keyframes ab-col2 { 0%,8% { opacity: 1; transform: translate(0,0) } 36% { opacity: 1; transform: translate(126px,-39px) } 44%,100% { opacity: 0; transform: translate(140px,-39px) } }
+  .ab-in { fill: none; }
+  .ab-out { fill: none; stroke: var(--color-accent); }
   .ab-bundler { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
-  .ab-batchbox { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .ab-batch { animation: ab-batch 6s ease-in-out infinite; }
-  @keyframes ab-batch { 0%,42% { opacity: 0; transform: translateX(0) } 48% { opacity: 1; transform: translateX(0) } 68% { opacity: 1; transform: translateX(120px) } 74%,100% { opacity: 0; transform: translateX(128px) } }
-  .ab-exec { opacity: 0; animation: ab-exec 6s ease-in-out infinite; }
-  @keyframes ab-exec { 0%,72% { opacity: 0 } 82%,100% { opacity: 1 } }
+  .ab-1tx { fill: var(--color-accent-strong); }
+  .ab-exec { animation: ab-exec 5s ease-in-out infinite; }
+  @keyframes ab-exec { 0%,45% { fill: var(--color-node-leaf) } 60%,90% { fill: var(--color-accent-strong) } 100% { fill: var(--color-node-leaf) } }
 
   /* EIP-4337 — aa-paymaster: arrows settle gas; bundler reimbursed */
   .ap-pm { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .ap-bundler { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: ap-late 5.5s ease-in-out infinite; }
-  .ap-a1, .ap-a2, .ap-a3 { stroke-dasharray: 80; stroke-dashoffset: 80; }
-  .ap-a1 { animation: ap-draw 5.5s ease-out infinite; } .ap-a2 { animation: ap-draw 5.5s ease-out 0.5s infinite; } .ap-a3 { animation: ap-draw 5.5s ease-out 1.4s infinite; }
-  @keyframes ap-draw { 0%,10% { stroke-dashoffset: 80 } 30%,100% { stroke-dashoffset: 0 } }
-  @keyframes ap-late { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
+  .ap-bundler { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .ap-a1, .ap-a2 { fill: none; }
+  .ap-a3 { fill: none; stroke: var(--color-accent); }
+  .ap-rl { fill: var(--color-accent-strong); }
 
   /* EIP-7702 — se-migrate: the EOA is abandoned for a new smart account */
   .sm-eoa { fill: var(--color-surface); stroke: var(--color-border-strong); animation: sm-leave 5s ease-in-out infinite; }
@@ -4603,17 +4632,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .br-leaf { fill: var(--color-surface); stroke: var(--color-border); }
   .br-leafhi { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .br-edge { stroke: var(--color-border); stroke-width: 1.2; fill: none; }
-  .br-path { stroke: var(--color-node-leaf); stroke-width: 1.8; fill: none; stroke-dasharray: 200; stroke-dashoffset: 200; animation: br-pdraw 5s ease-in-out infinite; }
-  @keyframes br-pdraw { 0%,24% { stroke-dashoffset: 200 } 46%,100% { stroke-dashoffset: 0 } }
-  .br-verok { opacity: 0; animation: br-okin 5s ease-in-out infinite; }
-  @keyframes br-okin { 0%,52% { opacity: 0 } 66%,100% { opacity: 1 } }
+  .br-path { stroke: var(--color-node-leaf); stroke-width: 1.8; fill: none; }
+  .br-leaftxt { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .br-verok { fill: var(--color-node-leaf); }
 
   /* EIP-4788 — br-stamp: per-block system write into the ring buffer */
   .br-hdr { fill: color-mix(in oklab, var(--color-hash) 8%, var(--color-surface)); stroke: var(--color-hash); }
   .br-hdrt { fill: var(--color-ink-muted); }
-  .br-sa { stroke-dasharray: 26; stroke-dashoffset: 26; animation: br-sadraw 5s ease-in-out infinite; }
-  @keyframes br-sadraw { 0%,20% { stroke-dashoffset: 26 } 40%,100% { stroke-dashoffset: 0 } }
+  .br-sa { fill: none; }
   .br-salbl { fill: var(--color-ink-faint); }
+  .br-cidx { font-size: 8px; fill: var(--color-ink-faint); }
+  .br-cnew + .br-cidx { fill: var(--color-node-leaf); }
   .br-ring { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .br-ringt { text-anchor: middle; fill: var(--color-ink-muted); }
   .br-cell { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-border); }
@@ -4623,17 +4652,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* EIP-4788 — br-prove: read the root, verify a Merkle proof */
   .br-ctr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .br-c { text-anchor: middle; fill: var(--color-accent-strong); }
-  .br-pa1 { stroke-dasharray: 80; stroke-dashoffset: 80; animation: br-pa1draw 5s ease-in-out infinite; }
-  @keyframes br-pa1draw { 0%,14% { stroke-dashoffset: 80 } 32%,100% { stroke-dashoffset: 0 } }
+  .br-pa1 { fill: none; }
   .br-pa1l { fill: var(--color-ink-faint); }
   .br-roots { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .br-c2 { opacity: 0; animation: br-c2in 5s ease-in-out infinite; }
-  @keyframes br-c2in { 0%,38% { opacity: 0 } 52%,100% { opacity: 1 } }
-  .br-pa2 { stroke-dasharray: 28; stroke-dashoffset: 28; animation: br-pa2draw 5s ease-in-out infinite; }
-  @keyframes br-pa2draw { 0%,52% { stroke-dashoffset: 28 } 66%,100% { stroke-dashoffset: 0 } }
-  .br-verify { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: br-vin 5s ease-in-out infinite; }
-  .br-ok { opacity: 0; animation: br-vin 5s ease-in-out infinite; }
-  @keyframes br-vin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
+  .br-c2 { fill: var(--color-node-leaf); }
+  .br-pa2 { fill: none; stroke: var(--color-node-leaf); }
+  .br-verify { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .br-ok { fill: var(--color-node-leaf); }
 
   /* EIP-2929 — ga-flat: flat underpriced access enables a DoS */
   .ga-tx { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
@@ -5223,33 +5248,31 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* ── EIP-196/197 — zk-cost: pairing in bytecode blows past the gas limit ── */
   .zk-proof { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
   .zk-pc { text-anchor: middle; fill: var(--color-ink-muted); }
-  .zk-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 5s ease-in-out infinite; }
+  .zk-a1 { fill: none; }
   .zk-bytecode { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); }
   .zk-gtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .zk-gfill { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: zk-explode 4s ease-in-out infinite; }
-  @keyframes zk-explode { 0% { transform: scaleX(0.05) } 90%,100% { transform: scaleX(1) } }
-  .zk-limit { stroke: var(--color-hash); stroke-width: 1.4; stroke-dasharray: 3 2; }
+  .zk-gfill { fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)); animation: zk-gpulse 3s ease-in-out infinite; }
+  @keyframes zk-gpulse { 0%,100% { fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)) } 50% { fill: color-mix(in oklab, var(--color-changed) 70%, var(--color-surface)) } }
+  .zk-limit { stroke: var(--color-hash); stroke-width: 1.6; stroke-dasharray: 3 2; }
   .zk-limitlbl { fill: var(--color-hash); font-family: var(--font-mono); font-size: 9px; }
-  .zk-explode { animation: mg-en 4s ease-in-out infinite; }
+  .zk-over { fill: none; stroke: var(--color-accent); }
+  .zk-explode { fill: var(--color-changed); font-size: 16px; }
 
   /* ── EIP-196/197 — zk-precompile: native math at reserved addresses ── */
   .zk-ctr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .zk-call { text-anchor: middle; fill: var(--color-accent-strong); }
-  .zk-a2 { stroke-dasharray: 66; stroke-dashoffset: 66; animation: st-draw 5s ease-in-out infinite; }
+  .zk-a2 { fill: none; }
   .zk-al { fill: var(--color-ink-faint); }
   .zk-pre { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .zk-pt { text-anchor: middle; fill: var(--color-accent-strong); }
   .zk-native { text-anchor: middle; }
   .zk-plist { fill: var(--color-ink-muted); }
-  .zk-verify { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .zk-verify { fill: var(--color-node-leaf); }
 
   /* ── EIP-196/197 — zk-unlock: privacy & zk-rollups ── */
   .zk-prefix2 { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); animation: tt-pulse 5s ease-in-out infinite; }
-  .zk-u1 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out infinite; }
-  .zk-u2 { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 5s ease-in-out 0.3s infinite; }
-  .zk-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
-  .zk-use0 { animation: tw-rowin 5s ease-out infinite; }
-  .zk-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .zk-u1, .zk-u2 { fill: none; stroke: var(--color-accent); }
+  .zk-use { fill: color-mix(in oklab, var(--color-node-leaf) 6%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .zk-uc { text-anchor: middle; fill: var(--color-ink-faint); }
 
   /* ── EIP-214 — stc-danger: a CALL to read lets the callee do anything ── */
@@ -5413,19 +5436,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     100% { transform: translateX(0); opacity: 0; }
   }
   .bls-evm { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .bls-gap2 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .bls-gap2 { opacity: 1; }
 
   /* ── EIP-2537 — bls-precompile: native BLS12-381 ── */
   .bls-pre { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .bls-pt { text-anchor: middle; }
   .bls-op rect { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .bls-op { opacity: 0; }
-  .bls-op0 { animation: tw-rowin 5s ease-out infinite; }
-  .bls-op1 { animation: tw-rowin 5s ease-out 0.2s infinite; }
-  .bls-op2 { animation: tw-rowin 5s ease-out 0.4s infinite; }
   .bls-opt { text-anchor: middle; fill: var(--color-accent-strong); }
   .bls-opn { text-anchor: middle; fill: var(--color-ink-faint); }
-  .bls-cheap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .bls-cheap { fill: var(--color-node-leaf); }
   /* a signature runs through the precompile row and emerges verified */
   .bls-tok { fill: var(--color-node-leaf); animation: bls-through 5s ease-in-out infinite; }
   @keyframes bls-through {
@@ -5434,15 +5453,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     68% { transform: translateX(420px); opacity: 1; }
     80%, 100% { transform: translateX(420px); opacity: 0; }
   }
-  .bls-verified { opacity: 0; animation: bls-vfade 5s ease-in-out infinite; }
+  .bls-verified { opacity: 1; }
   @keyframes bls-vfade { 0%, 68% { opacity: 0; } 80%, 100% { opacity: 1; } }
 
   /* ── EIP-2537 — bls-use: trustless bridges & aggregation ── */
-  .bls-usebox { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
-  .bls-usebox0 { animation: tw-rowin 5s ease-out infinite; }
-  .bls-usebox1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .bls-usebox { fill: color-mix(in oklab, var(--color-node-leaf) 6%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .bls-uc { text-anchor: middle; fill: var(--color-ink-faint); }
-  .bls-align { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .bls-align { opacity: 1; }
   /* a sync-committee signature crosses into the bridge and is verified */
   .bls-brtok { fill: var(--color-node-leaf); animation: bls-cross 5s ease-in-out infinite; }
   @keyframes bls-cross {
@@ -5451,7 +5468,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     55% { transform: translateX(196px); opacity: 1; }
     66%, 100% { transform: translateX(196px); opacity: 0; }
   }
-  .bls-brok { opacity: 0; animation: bls-vfade 5s ease-in-out infinite; }
+  .bls-brok { opacity: 1; }
 
   /* ── EIP-6110 — dp-poll: the CL polled+voted on the deposit contract ── */
   .dp-dc { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
@@ -5608,33 +5625,30 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* ── EIP-1052 — ec-copy: the copy-then-hash detour ── */
   .ec-code { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .ec-ct { fill: var(--color-ink-muted); }
-  .ec-a1 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .ec-a1 { fill: none; }
   .ec-al { text-anchor: middle; fill: var(--color-ink-faint); }
   .ec-mem { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
   .ec-mt { fill: var(--color-ink-muted); }
-  .ec-a2 { opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
-  .ec-kl { fill: var(--color-ink-faint); }
-  .ec-hashbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
+  .ec-a2 { fill: none; }
+  .ec-kl { fill: var(--color-ink-faint); text-anchor: start; }
+  .ec-hashbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .ec-ht { text-anchor: middle; }
-  .ec-cost { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+  .ec-cost { fill: var(--color-changed); }
 
   /* ── EIP-1052 — ec-hash: one opcode ── */
   .ec-addr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .ec-at { text-anchor: middle; fill: var(--color-ink-muted); }
-  .ec-a3 { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
-  .ec-out { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.3s infinite; }
+  .ec-a3 { fill: none; }
+  .ec-out { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .ec-ot { text-anchor: middle; }
-  .ec-edge { fill: var(--color-ink-muted); opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
-  .ec-edge2 { fill: var(--color-ink-muted); opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
+  .ec-edge { fill: var(--color-ink-muted); }
+  .ec-edge2 { fill: var(--color-ink-muted); }
 
   /* ── EIP-1052 — ec-use: cheap identity checks ── */
   .ec-chip { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .ec-cl { fill: var(--color-ink-muted); text-anchor: start; }
-  .ec-row { opacity: 0; }
-  .ec-r0 { animation: tw-rowin 5s ease-out infinite; }
-  .ec-r1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
-  .ec-r2 { animation: tw-rowin 5s ease-out 0.6s infinite; }
-  .ec-fast { opacity: 0; animation: dc-late 5s ease-in-out 1s infinite; }
+  .ec-row { opacity: 1; }
+  .ec-fast { opacity: 1; }
 
   /* ── EIP-145 — sh-emul: bits actually slide left (a shift, done via a MUL) ── */
   .sh-want { fill: var(--color-ink-muted); text-anchor: start; }

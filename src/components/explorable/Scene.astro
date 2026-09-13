@@ -228,76 +228,82 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── signatures: a seal stamps, verifies, then a tamper breaks it ── */}
     {name === "sign" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Signing and verifying">
-        <rect class="msg" x="40" y="74" width="150" height="60" rx="8" />
-        <text class="t-s" x="115" y="100">{L("“send 5 Ξ")}</text>
-        <text class="t-s" x="115" y="118">{L("to Bob”")}</text>
-        <text class="t-cap" x="115" y="158">{L("message (public)")}</text>
-        <g class="seal">
-          <circle class="seal-c" cx="300" cy="104" r="30" />
-          <text class="seal-m" x="300" y="110">✓</text>
-        </g>
-        <g class="crack"><text class="t-x" x="300" y="160">{L("✗ tampered")}</text></g>
-        <path class="arrow" d="M196 104 L262 104" />
-        <text class="t-cap" x="300" y="62">{L("signature")}</text>
-        <text class="t-cap" x="430" y="110">{L("verify")}</text>
-        <path class="arrow2" d="M332 104 L398 104" />
+      <svg viewBox="0 0 480 190" role="img" aria-label="A message is signed into a signature, then verified as authentic">
+        <rect class="sg-box" x="16" y="60" width="120" height="54" rx="8" />
+        <text class="t-s" x="76" y="84">send 5 Ξ</text>
+        <text class="t-s" x="76" y="102">to Bob</text>
+        <text class="t-cap" x="76" y="132">{L("message (public)")}</text>
+
+        <path class="sg-ar" d="M138 87 H204" marker-end="url(#wb-arrow)" />
+        <text class="t-cap" x="171" y="78">{L("sign")}</text>
+        <text class="t-cap sg-key" x="171" y="104">{L("with key")}</text>
+
+        <circle class="sg-seal" cx="240" cy="87" r="30" />
+        <text class="sg-sealm" x="240" y="95">✓</text>
+        <text class="t-cap" x="240" y="132">{L("signature")}</text>
+
+        <path class="sg-ar" d="M272 87 H332" marker-end="url(#wb-arrow)" />
+        <text class="t-cap" x="302" y="78">{L("verify")}</text>
+
+        <rect class="sg-vbox" x="332" y="63" width="130" height="48" rx="8" />
+        <text class="sg-ok" x="397" y="85">{L("✓ authentic")}</text>
+        <text class="t-cap" x="397" y="102">signer 0xYou</text>
+
+        <text class="t-cap" x="240" y="172">{L("a signature proves the message came from the key holder")}</text>
       </svg>
     )}
 
     {/* ── verify: one signature accepts a true message, rejects a tampered one ── */}
     {name === "verify" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Verification: a valid message passes, a tampered one fails">
+      <svg viewBox="0 0 480 200" role="img" aria-label="Verification: a valid message passes, a tampered one fails">
         {/* positive lane */}
-        <text class="t-cap vlbl ok-t" x="92" y="24">{L("✓ untouched message")}</text>
-        <rect class="vmsg ok" x="16" y="30" width="152" height="46" rx="7" />
-        <text class="t-s" x="92" y="50">{L("send 5 Ξ")}</text>
-        <text class="t-s" x="92" y="67">{L("to Bob")}</text>
-        <rect class="vsig" x="188" y="42" width="40" height="22" rx="4" />
-        <text class="t-cap" x="208" y="57">sig</text>
-        <path class="varrow va-a" d="M228 53 H276" />
-        <rect class="vbox" x="276" y="36" width="52" height="34" rx="6" />
-        <text class="t-cap" x="302" y="57">{L("verify")}</text>
-        <path class="varrow va-b" d="M328 53 H368" />
-        <g class="vres v-ok">
-          <circle class="vmark-c ok-c" cx="388" cy="53" r="15" />
-          <text class="vmark ok-m" x="388" y="59">✓</text>
-          <text class="t-ok" x="430" y="50">{L("VALID")}</text>
-          <text class="t-cap" x="430" y="65">{L("signer 0xYou")}</text>
-        </g>
+        <text class="vf-okt" x="16" y="24">{L("✓ untouched message")}</text>
+        <rect class="vf-msg vf-ok" x="16" y="30" width="140" height="44" rx="7" />
+        <text class="t-s" x="86" y="50">send 5 Ξ</text>
+        <text class="t-s" x="86" y="66">to Bob</text>
+        <path class="vf-ar" d="M156 52 H194" marker-end="url(#wb-arrow)" />
+        <rect class="vf-sig" x="194" y="40" width="40" height="24" rx="4" />
+        <text class="t-cap" x="214" y="56">sig</text>
+        <path class="vf-ar" d="M234 52 H276" marker-end="url(#wb-arrow)" />
+        <rect class="vf-box" x="276" y="36" width="58" height="32" rx="6" />
+        <text class="t-cap" x="305" y="56">{L("verify")}</text>
+        <path class="vf-ar" d="M334 52 H362" marker-end="url(#wb-arrow)" />
+        <circle class="vf-okc" cx="378" cy="52" r="13" />
+        <text class="vf-okm" x="378" y="57">✓</text>
+        <text class="vf-okt" x="400" y="49" style="text-anchor:start">{L("VALID")}</text>
+        <text class="t-cap" x="400" y="63" style="text-anchor:start">signer 0xYou</text>
         {/* negative lane */}
-        <text class="t-cap vlbl bad-t" x="92" y="120">{L("✗ one byte flipped")}</text>
-        <rect class="vmsg bad" x="16" y="126" width="152" height="46" rx="7" />
-        <text class="t-s" x="92" y="146">{L("send 5 Ξ")}</text>
-        <text class="t-s bad-word" x="92" y="163">{L("to Eve")}</text>
-        <rect class="vsig" x="188" y="138" width="40" height="22" rx="4" />
-        <text class="t-cap" x="208" y="153">sig</text>
-        <path class="varrow va-c" d="M228 149 H276" />
-        <rect class="vbox" x="276" y="132" width="52" height="34" rx="6" />
-        <text class="t-cap" x="302" y="153">{L("verify")}</text>
-        <path class="varrow va-d" d="M328 149 H368" />
-        <g class="vres v-bad">
-          <circle class="vmark-c bad-c" cx="388" cy="149" r="15" />
-          <text class="vmark bad-m" x="388" y="155">✗</text>
-          <text class="t-x" x="430" y="146">{L("INVALID")}</text>
-          <text class="t-cap" x="430" y="161">{L("signer ≠ you")}</text>
-        </g>
+        <text class="vf-badt" x="16" y="118">{L("✗ one byte flipped")}</text>
+        <rect class="vf-msg vf-bad" x="16" y="124" width="140" height="44" rx="7" />
+        <text class="t-s" x="86" y="144">send 5 Ξ</text>
+        <text class="t-s vf-word" x="86" y="160">to Eve</text>
+        <path class="vf-ar" d="M156 146 H194" marker-end="url(#wb-arrow)" />
+        <rect class="vf-sig" x="194" y="134" width="40" height="24" rx="4" />
+        <text class="t-cap" x="214" y="150">sig</text>
+        <path class="vf-ar" d="M234 146 H276" marker-end="url(#wb-arrow)" />
+        <rect class="vf-box" x="276" y="130" width="58" height="32" rx="6" />
+        <text class="t-cap" x="305" y="150">{L("verify")}</text>
+        <path class="vf-ar" d="M334 146 H362" marker-end="url(#wb-arrow)" />
+        <circle class="vf-badc" cx="378" cy="146" r="13" />
+        <text class="vf-badm" x="378" y="151">✗</text>
+        <text class="vf-badt" x="400" y="143" style="text-anchor:start">{L("INVALID")}</text>
+        <text class="t-cap" x="400" y="157" style="text-anchor:start">signer ≠ you</text>
       </svg>
     )}
 
     {/* ── recovery: the signer's address materializes from the signature ── */}
     {name === "recover" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Recovering the signer from a signature">
-        <circle class="seal-c2" cx="110" cy="100" r="34" />
-        <text class="seal-m2" x="110" y="106">✦</text>
-        <text class="t-cap" x="110" y="156">{L("signature only")}</text>
-        <path class="arrow3" d="M152 100 L250 100" />
-        <text class="t-mid recover-q" x="201" y="88">{L("who signed?")}</text>
-        <g class="addr-reveal">
-          <rect class="addr-box" x="270" y="78" width="180" height="44" rx="8" />
-          <text class="t-addr" x="360" y="106">0xBob…a3f1</text>
-        </g>
-        <text class="t-cap" x="360" y="146">{L("no “from” field needed")}</text>
+      <svg viewBox="0 0 480 190" role="img" aria-label="Recovering the signer address from a signature">
+        <circle class="rc-seal" cx="86" cy="88" r="32" />
+        <text class="rc-sealm" x="86" y="95">✦</text>
+        <text class="t-cap" x="86" y="140">{L("signature only")}</text>
+        <path class="rc-ar" d="M124 88 H250" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="187" y="78">ecrecover</text>
+        <text class="t-cap" x="187" y="104">{L("who signed?")}</text>
+        <rect class="rc-box" x="258" y="64" width="192" height="48" rx="8" />
+        <text class="rc-addr" x="354" y="93">0xBob…a3f1</text>
+        <text class="t-cap" x="354" y="140">{L("the recovered signer")}</text>
+        <text class="t-cap" x="240" y="174">{L("no “from” field needed; the signature reveals the sender")}</text>
       </svg>
     )}
 
@@ -327,24 +333,27 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── txfields: every field justified by the attack it blocks ── */}
     {name === "txfields" && (
-      <svg viewBox="0 0 480 318" role="img" aria-label="Anatomy of a transaction, every field justified">
-        <text class="t-mid" x="120" y="22">{L("TRANSACTION")}</text>
-        <text class="t-cap" x="350" y="22">{L("what breaks without it")}</text>
+      <svg viewBox="0 0 480 320" role="img" aria-label="Every transaction field justified by the attack it blocks">
+        <text class="txf-hd" x="22" y="20" style="text-anchor:start">{L("TRANSACTION")}</text>
+        <text class="txf-hd" x="266" y="20" style="text-anchor:start">{L("what breaks without it")}</text>
+        <rect class="txf-tx" x="12" y="26" width="172" height="288" rx="10" />
         {[
           ["chainId", "replay onto another chain"],
           ["nonce", "replay on this chain"],
-          ["to", "no recipient (or: new contract)"],
+          ["to", "no recipient (or new contract)"],
           ["value", "how much ether moves"],
           ["data", "which code + args to run"],
           ["gasLimit", "a loop drains your balance"],
           ["maxFeePerGas", "overpaying a volatile fee"],
-          ["maxPriorityFee", "no tip — proposer skips you"],
+          ["maxPriorityFee", "no tip, proposer skips you"],
           ["sig r,s,yParity", "anyone could forge the sender"],
         ].map(([f, why], i) => (
-          <g class={`txrow tr${i}`}>
-            <rect class="txbar" x="16" y={34 + i * 29} width="448" height="25" rx="4" />
-            <text class="t-field" x="28" y={51 + i * 29}>{f}</text>
-            <text class="t-why" x="210" y={51 + i * 29}>{why}</text>
+          <g>
+            {i % 2 === 1 && <rect class="txf-bar" x="250" y={32 + i * 31} width="218" height="27" rx="4" />}
+            <rect class="onf-chip" x="22" y={35 + i * 31} width="150" height="21" rx="10" />
+            <text class="txf-field" x="32" y={50 + i * 31}>{f}</text>
+            <path class="onf-ar" d={`M186 ${45 + i * 31} H262`} marker-end="url(#wb-arrow)" />
+            <text class="txf-why" x="266" y={50 + i * 31}>{L(why)}</text>
           </g>
         ))}
       </svg>
@@ -352,103 +361,110 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── decentralize: a single host censors; a replicated network survives ── */}
     {name === "network" && (
-      <svg viewBox="0 0 480 214" role="img" aria-label="A single host can drop your edit; a replicated network re-checks and keeps it">
-        {/* BEFORE: one host can censor */}
-        <g class="net-before">
-          <rect class="node net-server" x="200" y="76" width="90" height="54" rx="8" />
-          <text class="t-cap" x="245" y="98">{L("one server")}</text>
-          <text class="t-cap" x="245" y="114">{L("single copy")}</text>
-          <text class="t-fld net-el" x="34" y="86" text-anchor="start">{L("your edit")}</text>
-          <path class="sarrow net-edit" d="M34 98 H192" />
-          <text class="t-x net-censor" x="150" y="86" text-anchor="middle">{L("✗ dropped")}</text>
-          <text class="t-cap" x="240" y="170" text-anchor="middle">{L("a single host can silently drop or rewrite your edit")}</text>
-        </g>
-        {/* AFTER: replicated, everyone re-checks */}
-        <g class="net-after">
-          <rect class="node net-hub" x="208" y="86" width="64" height="44" rx="8" />
-          {[[60, 30], [380, 30], [40, 152], [400, 152]].map(([x, y], i) => (
-            <g class={`copy c${i}`}>
-              <rect class="node" x={x} y={y} width="64" height="44" rx="8" />
-              <line class="hair2" x1={x + 8} y1={y + 15} x2={x + 56} y2={y + 15} /><line class="hair2" x1={x + 8} y1={y + 25} x2={x + 56} y2={y + 25} /><line class="hair2" x1={x + 8} y1={y + 34} x2={x + 48} y2={y + 34} />
-              <text class="t-ok net-tick" x={x + 32} y={y + 28}>✓</text>
-            </g>
-          ))}
-          <text class="t-cap" x="240" y="206" text-anchor="middle">{L("everyone re-checks it — no host can silence it")}</text>
-        </g>
+      <svg viewBox="0 0 480 232" role="img" aria-label="One server can silently drop your edit; a replicated network re-checks and keeps it">
+        {/* one host can censor */}
+        <rect class="nw-box" x="16" y="40" width="88" height="30" rx="6" />
+        <text class="t-cap" x="60" y="59">{L("your edit")}</text>
+        <path class="nw-ar" d="M104 55 H186" marker-end="url(#wb-arrow)" />
+        <text class="t-x" x="150" y="34">{L("✗ dropped")}</text>
+        <rect class="nw-server" x="190" y="38" width="100" height="42" rx="8" />
+        <text class="t-cap" x="240" y="56">{L("one server")}</text>
+        <text class="t-cap" x="240" y="71">{L("single copy")}</text>
+        <text class="t-cap" x="240" y="104" text-anchor="middle">{L("a single host can silently drop or rewrite your edit")}</text>
+
+        {/* replicated: every node re-checks */}
+        <rect class="nw-box" x="16" y="151" width="80" height="30" rx="6" />
+        <text class="t-cap" x="56" y="170">{L("your edit")}</text>
+        <path class="nw-ar" d="M96 166 H140" marker-end="url(#wb-arrow)" />
+        {[144, 226, 308, 390].map((x, i) => (
+          <g>
+            <rect class="nw-node" x={x} y="146" width="64" height="48" rx="7" />
+            <rect class="bk-fchip" x={x + 8} y="153" width="48" height="9" rx="2" />
+            <line class="nw-hair" x1={x + 8} y1={168} x2={x + 48} y2={168} />
+            <line class="nw-hair" x1={x + 8} y1={175} x2={x + 40} y2={175} />
+            <circle class="vf-okc" cx={x + 50} cy={183} r="8" />
+            <text class="nw-tick" x={x + 50} y={187}>✓</text>
+            {i < 3 && <line class="nw-peer" x1={x + 64} y1={170} x2={x + 82} y2={170} marker-end="url(#wb-arrow)" />}
+          </g>
+        ))}
+        <text class="t-cap" x="240" y="216" text-anchor="middle">{L("every node re-checks it; no single host can silence it")}</text>
       </svg>
     )}
 
     {/* ── blocks: a full state trie; one balance edit recomputes the path up
          to a new stateRoot, into the header, then breaks every later block ── */}
     {name === "blocks" && (
-      <svg viewBox="0 0 480 326" role="img" aria-label="A full state trie recomputing one path into the block chain">
+      <svg viewBox="0 0 480 328" role="img" aria-label="One balance edit recomputes the trie path into a new stateRoot in the block header">
         {/* the block chain, top */}
         {[0, 1, 2].map((i) => {
           const x = 14 + i * 162;
           const sr = i === 1 ? "71c4" : "0db8";
           const h = i === 0 ? "3a07" : i === 1 ? "88b2" : "f0c5";
           return (
-            <g class="blk-g">
-              <rect class="block" x={x} y="12" width="132" height="86" rx="8" />
+            <g>
+              <rect class="bk-block" x={x} y="12" width="132" height="86" rx="8" />
               <text class="t-cap" x={x + 66} y="27">block #{i + 1}</text>
-              <rect class="fchip" x={x + 8} y="33" width="116" height="17" rx="3" />
-              {i === 0 && <text class="t-fld old oD" x={x + 14} y="45">stateRoot 9f12</text>}
-              {i === 0 && <text class="t-fld new nD" x={x + 14} y="45">stateRoot a2e0</text>}
-              {i !== 0 && <text class="t-fld" x={x + 14} y="45">stateRoot {sr}</text>}
-              <rect class="fchip" x={x + 8} y="53" width="116" height="17" rx="3" />
-              <text class="t-fld" x={x + 14} y="65">txsRoot c1{i}9</text>
+              <rect class="bk-fchip" x={x + 8} y="33" width="116" height="17" rx="3" />
+              {i === 0 && <text class="bk-new" x={x + 14} y="45">stateRoot a2e0</text>}
+              {i !== 0 && <text class="bk-fld" x={x + 14} y="45">stateRoot {sr}</text>}
+              <rect class="bk-fchip" x={x + 8} y="53" width="116" height="17" rx="3" />
+              <text class="bk-fld" x={x + 14} y="65">txsRoot c1{i}9</text>
               <text class="t-cap" x={x + 18} y="90">prev</text>
-              <rect class={`hchip ${i === 0 ? "gE" : i === 1 ? "gF" : "gG"}`} x={x + 48} y="76" width="76" height="17" rx="3" />
-              <text class="t-fld" x={x + 55} y="89">hash {h}</text>
+              <rect class="bk-hchip" x={x + 48} y="76" width="76" height="17" rx="3" />
+              <text class="bk-fld" x={x + 55} y="89">hash {h}</text>
             </g>
           );
         })}
-        <path class="plink gF" d="M146 85 H176" /><path class="plink gG" d="M308 85 H338" />
-        <path class="feed" d="M160 143 H6 V44 H22" />
-        <text class="t-cap feed-lbl" x="350" y="128">root → block.stateRoot</text>
+        <path class="bk-plink" d="M176 85 H150" marker-end="url(#wb-arrow)" />
+        <path class="bk-plink" d="M338 85 H312" marker-end="url(#wb-arrow)" />
+        <path class="bk-feed" d="M160 143 H6 V44 H12" marker-end="url(#wb-arrow-accent)" />
+        <text class="bk-feedlbl" x="30" y="120">{L("new root")}</text>
+        <text class="bk-feedlbl" x="30" y="132">{L("→ block.stateRoot")}</text>
 
         {/* root branch */}
-        <rect class="tnode branch" x="160" y="128" width="100" height="30" rx="6" />
-        <text class="t-fld" x="172" y="141">{L("branch")}</text>
-        <text class="t-h old oC" x="172" y="153">root 91f3</text>
-        <text class="t-h new nC" x="172" y="153">root 2d7a</text>
+        <rect class="bk-node bk-changed" x="160" y="128" width="104" height="30" rx="6" />
+        <text class="bk-fld" x="172" y="141">{L("branch")}</text>
+        <text class="bk-new" x="172" y="153">root 2d7a</text>
 
         {/* edges from root */}
-        <path class="edge edge-on" d="M198 158 L120 190" /><text class="t-nib" x="148" y="178">a</text>
-        <path class="edge" d="M224 158 L312 190" /><text class="t-nib" x="276" y="178">f</text>
+        <path class="bk-edgeon" d="M196 158 L120 190" marker-end="url(#wb-arrow-accent)" />
+        <path class="bk-edge" d="M228 158 L312 190" marker-end="url(#wb-arrow)" />
+        <rect class="bk-nibchip" x="141" y="166" width="16" height="15" rx="3" /><text class="bk-nib" x="149" y="177">a</text>
+        <rect class="bk-nibchip" x="272" y="166" width="16" height="15" rx="3" /><text class="bk-nib" x="280" y="177">f</text>
 
         {/* on-path branch (prefix a) and off-path branch (prefix f) */}
-        <rect class="tnode branch" x="64" y="190" width="92" height="30" rx="6" />
-        <text class="t-fld" x="74" y="203">{L("branch")}</text>
-        <text class="t-h old oB" x="74" y="215">a· 3c08</text>
-        <text class="t-h new nB" x="74" y="215">a· 8a41</text>
-        <rect class="tnode branch" x="274" y="190" width="92" height="30" rx="6" />
-        <text class="t-fld" x="284" y="203">{L("branch")}</text>
-        <text class="t-h" x="284" y="215">f· 77c2</text>
+        <rect class="bk-node bk-changed" x="64" y="190" width="92" height="30" rx="6" />
+        <text class="bk-fld" x="74" y="203">{L("branch")}</text>
+        <text class="bk-new" x="74" y="215">a· 8a41</text>
+        <rect class="bk-node" x="274" y="190" width="92" height="30" rx="6" />
+        <text class="bk-fld" x="284" y="203">{L("branch")}</text>
+        <text class="bk-h" x="284" y="215">f· 77c2</text>
 
         {/* edges to leaves */}
-        <path class="edge edge-on" d="M100 220 L74 264" /><text class="t-nib" x="80" y="246">7</text>
-        <path class="edge" d="M120 220 L162 264" /><text class="t-nib" x="150" y="246">9</text>
-        <path class="edge" d="M312 220 L300 264" /><text class="t-nib" x="300" y="246">2</text>
-        <path class="edge" d="M330 220 L388 264" /><text class="t-nib" x="366" y="246">5</text>
+        <path class="bk-edgeon" d="M98 220 L78 261" marker-end="url(#wb-arrow-accent)" />
+        <path class="bk-edge" d="M122 220 L162 262" marker-end="url(#wb-arrow)" />
+        <path class="bk-edge" d="M312 220 L300 262" marker-end="url(#wb-arrow)" />
+        <path class="bk-edge" d="M330 220 L388 262" marker-end="url(#wb-arrow)" />
+        <rect class="bk-nibchip" x="80" y="232" width="14" height="15" rx="3" /><text class="bk-nib" x="87" y="243">7</text>
+        <rect class="bk-nibchip" x="147" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="154" y="245">9</text>
+        <rect class="bk-nibchip" x="296" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="303" y="245">2</text>
+        <rect class="bk-nibchip" x="360" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="367" y="245">5</text>
 
         {/* the four accounts — only Alice (a7) changes */}
-        <rect class="tnode leaf changed-leaf" x="24" y="264" width="92" height="50" rx="6" />
-        <text class="t-fld leaf-t" x="34" y="278">a7 · Alice</text>
-        <text class="t-bal old oA" x="34" y="293">{L("bal 14 Ξ")}</text>
-        <text class="t-bal new nA" x="34" y="293">{L("bal 9 Ξ")}</text>
-        <text class="t-h old oA" x="34" y="307">h 3c1a</text>
-        <text class="t-h new nA" x="34" y="307">h 8a47</text>
+        <rect class="bk-leaf bk-changed" x="24" y="264" width="92" height="52" rx="6" />
+        <text class="bk-leaft" x="34" y="278">a7 · Alice</text>
+        <text class="bk-new" x="34" y="294">{L("bal 9 Ξ")}</text>
+        <text class="bk-new" x="34" y="309">h 8a47</text>
         {[
           [120, "a9 · Bob", "bal 6 Ξ", "h 55de"],
           [250, "f2 · Carol", "bal 20 Ξ", "h 9e10"],
           [346, "f5 · Dave", "bal 3 Ξ", "h b204"],
         ].map(([x, who, bal, h]) => (
           <g>
-            <rect class="tnode leaf" x={x} y="264" width="92" height="50" rx="6" />
-            <text class="t-fld leaf-t" x={Number(x) + 10} y="278">{who}</text>
-            <text class="t-bal" x={Number(x) + 10} y="293">{bal}</text>
-            <text class="t-h" x={Number(x) + 10} y="307">{h}</text>
+            <rect class="bk-leaf" x={x} y="264" width="92" height="52" rx="6" />
+            <text class="bk-leaft" x={Number(x) + 10} y="278">{who}</text>
+            <text class="bk-bal" x={Number(x) + 10} y="294">{bal}</text>
+            <text class="bk-h" x={Number(x) + 10} y="309">{h}</text>
           </g>
         ))}
       </svg>
@@ -456,18 +472,37 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── sybil: free identities overwhelm a vote; cost makes them safe ── */}
     {name === "sybil" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Sybil attack and costly identity">
-        <circle class="attacker" cx="64" cy="98" r="22" />
-        <text class="t-emoji" x="64" y="105">😈</text>
-        <text class="t-cap" x="64" y="138">{L("one actor")}</text>
-        {[[180, 44], [250, 40], [320, 60], [200, 110], [280, 120], [360, 110]].map(([x, y], i) => (
-          <g class={`clone ${i === 2 ? "clone-keep" : "clone-doom"} sc${i}`}>
-            <circle class="clone-c" cx={x} cy={y} r="13" />
-            <text class="t-vote" x={x} y={y + 4}>+1</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="Free identities flood a vote; a required stake makes an army unaffordable">
+        <line x1="240" y1="30" x2="240" y2="196" style="stroke:var(--color-border);stroke-width:1;stroke-dasharray:3 3" />
+        {/* left: free identities flood */}
+        <text class="vf-badt" x="118" y="22" style="text-anchor:middle">{L("identities are free")}</text>
+        <rect class="sy-attacker" x="14" y="84" width="56" height="30" rx="7" />
+        <text class="t-cap" x="42" y="103">{L("1 actor")}</text>
+        {[[112, 52], [156, 74], [166, 118], [120, 140], [196, 96]].map(([x, y]) => (
+          <g>
+            <path class="sy-ar" d={`M70 99 L${Number(x) - 12} ${y}`} marker-end="url(#wb-arrow)" />
+            <circle class="sy-clone" cx={x} cy={y} r="13" />
+            <text class="sy-vote" x={x} y={Number(y) + 4}>+1</text>
           </g>
         ))}
-        <text class="t-x sybil-free" x="300" y="166">{L("free identities → outvote everyone")}</text>
-        <text class="t-ok sybil-cost" x="300" y="166">{L("each must stake real money → can’t afford an army")}</text>
+        <text class="t-x" x="118" y="192" style="text-anchor:middle">{L("free → flood the vote")}</text>
+        {/* right: a stake caps the army */}
+        <text class="sy-ok" x="360" y="22" style="text-anchor:middle">{L("identity costs a stake")}</text>
+        <rect class="sy-attacker" x="252" y="84" width="56" height="30" rx="7" />
+        <text class="t-cap" x="280" y="103">{L("1 actor")}</text>
+        <path class="sy-arkeep" d="M308 99 H324" marker-end="url(#wb-arrow)" />
+        <rect class="sy-keep" x="328" y="85" width="78" height="28" rx="6" />
+        <text class="sy-ok" x="367" y="103" style="font-size:9px">stake 32 Ξ</text>
+        <path class="sy-arkeep" d="M406 99 H426" marker-end="url(#wb-arrow)" />
+        <circle class="sy-keep" cx="444" cy="99" r="12" />
+        <text class="sy-votekeep" x="444" y="103">+1</text>
+        {[[356, 150], [420, 150]].map(([x, y]) => (
+          <g>
+            <circle cx={x} cy={y} r="12" style="fill:none;stroke:var(--color-border);stroke-width:1.2;stroke-dasharray:3 3" />
+            <text class="t-x" x={x} y={Number(y) + 4} style="text-anchor:middle">✗</text>
+          </g>
+        ))}
+        <text class="sy-ok" x="360" y="192" style="text-anchor:middle">{L("an army is unaffordable")}</text>
       </svg>
     )}
 
@@ -520,43 +555,52 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── gas: a meter drains as instructions run, then halts ── */}
     {name === "gas" && (
-      <svg viewBox="0 0 480 180" role="img" aria-label="Gas metering">
-        <text class="t-cap" x="60" y="56">{L("gas")}</text>
-        <rect class="gauge" x="60" y="64" width="360" height="22" rx="11" />
-        <rect class="gauge-fill" x="62" y="66" width="356" height="18" rx="9" />
-        <g class="ops">
-          {["PUSH −3", "ADD −3", "SSTORE −20000", "out of gas ✋"].map((op, i) => (<text class={`t-op opx o${i}`} x="240" y="118">{op}</text>))}
-        </g>
-        <text class="t-cap" x="240" y="156">{L("every step costs — no program runs forever")}</text>
+      <svg viewBox="0 0 480 176" role="img" aria-label="A gas budget falls as each opcode runs, then halts">
+        <text class="t-cap" x="240" y="20">{L("every step costs gas; the budget only falls")}</text>
+        <text class="t-cap" x="180" y="38">{L("spent")}</text>
+        <text class="ga-op" x="392" y="38">{L("remaining")}</text>
+        <rect class="ga-track" x="40" y="42" width="400" height="24" rx="12" />
+        <rect class="ga-spent" x="44" y="46" width="302" height="16" rx="6" />
+        <rect class="ga-fill" x="348" y="46" width="88" height="16" rx="6" />
+        {[["PUSH -3", 92], ["ADD -3", 180], ["SSTORE -20000", 320]].map(([op, x]) => (
+          <g>
+            <line class="ga-tick" x1={x} y1="68" x2={x} y2="80" />
+            <text class="ga-op" x={x} y="94">{op}</text>
+          </g>
+        ))}
+        <text class="ga-halt" x="240" y="124">{L("out of gas → revert (all changes undone)")}</text>
+        <text class="t-cap" x="240" y="152">{L("charge per step and cap it, so every program terminates")}</text>
       </svg>
     )}
 
     {/* ── triepath: an address is a path of nibbles down typed nodes ── */}
     {name === "triepath" && (
-      <svg viewBox="0 0 460 250" role="img" aria-label="Walking an address down the trie">
-        <text class="t-cap" x="44" y="22">{L("address")}</text>
+      <svg viewBox="0 0 460 250" role="img" aria-label="An address is a path of nibbles walked down typed trie nodes">
+        <text class="t-cap" x="40" y="22" style="text-anchor:start">{L("address")}</text>
         {["a", "7", "3", "f", "c"].map((n, i) => (
           <g>
-            <rect class={`nib nb${i}`} x={96 + i * 34} y="9" width="28" height="20" rx="4" />
-            <text class={`t-nib nbt${i}`} x={110 + i * 34} y="24">{n}</text>
+            <rect class="tp2-chip-on" x={98 + i * 32} y="9" width="26" height="20" rx="4" />
+            <text class="tp2-nib-on" x={111 + i * 32} y="24">{n}</text>
           </g>
         ))}
-        <rect class="root-chip" x="300" y="8" width="146" height="22" rx="5" />
-        <text class="t-root tp-root" x="373" y="23">stateRoot ⟳</text>
         {[
-          ["branch", "follow slot a"],
-          ["branch", "follow slot 7"],
-          ["extension", "shared “3 f c”"],
-          ["leaf", "value → 9 Ξ"],
+          ["branch", "root node — take slot a"],
+          ["branch", "next node — take slot 7"],
+          ["extension", "shared nibbles 3 f c"],
+          ["leaf", "value = 9 Ξ"],
         ].map(([kind, note], i) => (
-          <g class={`tn tn${i}`}>
-            <rect class={`tnode ${kind}`} x="90" y={52 + i * 46} width="280" height="34" rx="6" />
-            <text class="t-field" x="106" y={73 + i * 46}>{kind}</text>
-            <text class="t-cap tnote" x="356" y={73 + i * 46}>{note}</text>
+          <g>
+            <rect class={`tp2-node tp2-${kind}`} x="70" y={46 + i * 48} width="264" height="32" rx="6" />
+            <text class="tp2-kind" x="86" y={66 + i * 48}>{kind}</text>
+            <text class="tp2-note" x="322" y={66 + i * 48}>{note}</text>
           </g>
         ))}
-        <path class="tarrow ta0" d="M230 86 V98" /><path class="tarrow ta1" d="M230 132 V144" /><path class="tarrow ta2" d="M230 178 V190" />
-        <text class="t-cap tp-rehash" x="230" y="244">{L("edit the leaf → re-hash up the path → new root")}</text>
+        {[0, 1, 2].map((i) => (
+          <path class="tp2-ar" d={`M150 ${78 + i * 48} V${94 + i * 48}`} marker-end="url(#wb-arrow-accent)" />
+        ))}
+        <path class="tp2-ar" d="M334 206 C414 206 414 62 338 62" marker-end="url(#wb-arrow-accent)" />
+        <text class="tp2-kind" x="434" y="134" style="text-anchor:middle;font-size:9.5px">re-hash</text>
+        <text class="t-cap" x="200" y="244">{L("edit the leaf, re-hash up the path, new root")}</text>
       </svg>
     )}
 
@@ -1213,13 +1257,21 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-2718: one rigid format, decoders must guess the kind ── */}
     {name === "tx-onefmt" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="One rigid transaction format that decoders must guess at">
-        <text class="t-cap" x="240" y="22">{L("one shape for every transaction")}</text>
-        <rect class="to-rlp" x="64" y="36" width="352" height="34" rx="6" />
-        <text class="t-fld to-rlptext" x="240" y="57">rlp[nonce, gasPrice, gas, to, value, data, v, r, s]</text>
-        <g class="to-feat tf0"><rect class="to-chip" x="74" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="139" y="108">{L("+ access list?")}</text></g>
-        <g class="to-feat tf1"><rect class="to-chip" x="276" y="92" width="130" height="24" rx="12" /><text class="t-cap" x="341" y="108">{L("+ new fee fields?")}</text></g>
-        <rect class="to-parser" x="150" y="142" width="180" height="34" rx="8" />
-        <text class="t-x" x="240" y="163">{L("decoder: which kind? — guess")}</text>
+        <text class="t-cap" x="240" y="20">{L("one shape for every transaction")}</text>
+        <rect class="onf-rlp" x="60" y="30" width="360" height="34" rx="6" />
+        {["nonce", "gasPrice", "gas", "to", "value", "data", "v", "r", "s"].map((f, i) => (
+          <g>
+            <rect class="onf-cell" x={64 + i * 39} y="34" width="37" height="26" rx="3" />
+            <text class="onf-celltext" x={64 + i * 39 + 18} y="51">{f}</text>
+          </g>
+        ))}
+        <rect class="onf-chip" x="74" y="86" width="130" height="24" rx="12" /><text class="t-cap" x="139" y="102">{L("+ access list?")}</text>
+        <rect class="onf-chip" x="276" y="86" width="130" height="24" rx="12" /><text class="t-cap" x="341" y="102">{L("+ new fee fields?")}</text>
+        <path class="onf-ar" d="M139 86 V65" marker-end="url(#wb-arrow)" />
+        <path class="onf-ar" d="M341 86 V65" marker-end="url(#wb-arrow)" />
+        <path class="onf-ar" d="M240 64 V140" marker-end="url(#wb-arrow)" />
+        <rect class="onf-parser" x="135" y="142" width="210" height="34" rx="8" />
+        <text class="t-x" x="240" y="163" style="font-size:10px">{L("decoder: which kind? guess")}</text>
         <text class="t-cap" x="240" y="194">{L("add a feature and decoders must sniff the bytes to guess the kind")}</text>
       </svg>
     )}
@@ -1228,14 +1280,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "tx-typebyte" && (
       <svg viewBox="0 0 480 192" role="img" aria-label="A type byte prefixes the payload and selects the decoder">
         <text class="t-cap" x="102" y="38">{L("type byte")}</text>
-        <text class="t-cap" x="282" y="38">{L("payload")}</text>
-        <rect class="tt-byte" x="62" y="48" width="80" height="46" rx="6" />
-        <text class="tx-byte" x="102" y="78">0x02</text>
-        <rect class="tt-pay" x="150" y="48" width="228" height="46" rx="6" />
-        <text class="t-fld tt-paytext" x="264" y="75">{L("format-specific bytes")}</text>
-        <path class="sarrow tt-a" d="M102 94 V124 H240 V134" />
-        <rect class="tt-dec" x="150" y="140" width="180" height="34" rx="8" />
-        <text class="t-ok" x="240" y="161">{L("decode as EIP-1559 tx")}</text>
+        <text class="t-cap" x="288" y="38">{L("payload")}</text>
+        <rect class="tb-byte" x="62" y="48" width="80" height="46" rx="6" />
+        <text class="tb-bytetext" x="102" y="78">0x02</text>
+        <text class="tb-bytetext" x="153" y="76" style="font-size:14px">++</text>
+        <rect class="tb-pay" x="166" y="48" width="212" height="46" rx="6" />
+        <text class="tb-paytext" x="272" y="75">{L("format-specific bytes")}</text>
+        <path class="tb-ar" d="M102 94 V120 H240 V140" marker-end="url(#wb-arrow-accent)" />
+        <rect class="tb-dec" x="150" y="140" width="180" height="34" rx="8" />
+        <text class="tb-ok" x="240" y="161">{L("decode as EIP-1559 tx")}</text>
         <text class="t-cap" x="240" y="188">{L("a typed tx = type byte ++ payload; the byte says how to read the rest")}</text>
       </svg>
     )}
@@ -1243,37 +1296,40 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-2718: the first byte routes legacy vs typed, no collision ── */}
     {name === "tx-disambig" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="A byte-value axis showing the typed range and legacy range are separated by an unused gap">
-        <text class="t-cap" x="240" y="20">{L("the first byte decides — and the two ranges can't overlap")}</text>
-        <text class="t-cap td-marklbl" x="140" y="46" text-anchor="middle">{L("a first byte")}</text>
-        <circle class="td-mark" cx="140" cy="58" r="5" />
-        <rect class="td-zone td-typedz" x="40" y="70" width="199" height="26" rx="3" />
-        <rect class="td-zone td-gapz" x="239" y="70" width="102" height="26" rx="3" />
-        <rect class="td-zone td-legacyz" x="341" y="70" width="99" height="26" rx="3" />
-        <text class="t-ok td-tl" x="140" y="87" text-anchor="middle">{L("typed · type byte")}</text>
-        <text class="td-gaplbl" x="290" y="87" text-anchor="middle">{L("gap — unused")}</text>
-        <text class="td-legacylbl" x="390" y="87" text-anchor="middle">{L("legacy · RLP list")}</text>
-        <line class="td-axis" x1="40" y1="106" x2="440" y2="106" />
+        <text class="t-cap" x="240" y="20">{L("the first byte decides which decoder runs")}</text>
+        <text class="dis-marklbl" x="140" y="44">{L("a first byte")}</text>
+        <path class="dis-axis" d="M140 48 V66" marker-end="url(#wb-arrow-accent)" style="stroke:var(--color-accent)" />
+        <rect class="dis-typed" x="40" y="68" width="199" height="28" rx="3" />
+        <rect class="dis-gap" x="239" y="68" width="102" height="28" rx="3" />
+        <rect class="dis-legacy" x="341" y="68" width="99" height="28" rx="3" />
+        <text class="dis-zonelbl" x="139" y="86">{L("typed · type byte")}</text>
+        <text class="dis-gaplbl" x="290" y="86">{L("gap · unused")}</text>
+        <text class="dis-zonelbl" x="390" y="86">{L("legacy · RLP")}</text>
+        <line class="dis-axis" x1="40" y1="106" x2="440" y2="106" />
         {[["0x00", 40], ["0x7f", 239], ["0xc0", 341], ["0xff", 440]].map(([lbl, x]) => (
-          <g><line class="td-tick" x1={x} y1="102" x2={x} y2="110" /><text class="td-num" x={x} y="124">{lbl}</text></g>
+          <g><line class="dis-tick" x1={x} y1="102" x2={x} y2="110" /><text class="dis-num" x={x} y="124">{lbl}</text></g>
         ))}
         <text class="t-cap" x="240" y="152" text-anchor="middle">{L("an RLP list always starts ≥ 0xc0; type bytes are ≤ 0x7f")}</text>
-        <text class="t-ok" x="240" y="178" text-anchor="middle">{L("the empty gap 0x80–0xbf guarantees they can never collide")}</text>
+        <text class="sg-ok" x="240" y="178">{L("the empty gap 0x80 to 0xbf means they can never collide")}</text>
       </svg>
     )}
 
     {/* ── EIP-2718: the versioned family, one byte per format ── */}
     {name === "tx-family" && (
-      <svg viewBox="0 0 480 226" role="img" aria-label="The typed-transaction family — one byte per format">
-        <text class="t-cap" x="240" y="20">{L("a versioned family — each feature claims a byte")}</text>
-        {[["0x00", "legacy (pre-2718)"], ["0x01", "access lists — EIP-2930"], ["0x02", "base fee + tip — EIP-1559"], ["0x03", "blobs — EIP-4844"], ["0x04", "set EOA code — EIP-7702"], ["0x05", "… the next type slots in"]].map(([byte, label], i) => (
-          <g class={`tx-row txr${i}`}>
-            <rect class="tx-chip" x="64" y={32 + i * 30} width="62" height="22" rx="6" />
-            <text class="tx-byte3" x="95" y={47 + i * 30}>{byte}</text>
-            <rect class="tx-name" x="134" y={32 + i * 30} width="282" height="22" rx="6" />
-            <text class="t-fld tx-namelbl" x="146" y={47 + i * 30}>{L(label)}</text>
+      <svg viewBox="0 0 480 226" role="img" aria-label="The typed transaction family, one byte per format">
+        <text class="t-cap" x="240" y="20">{L("a versioned family; each feature claims a byte")}</text>
+        <line class="fam-conn" x1="50" y1="43" x2="50" y2="193" />
+        {([["0x00", "legacy (pre-2718)", false], ["0x01", "access lists · EIP-2930", false], ["0x02", "base fee + tip · EIP-1559", false], ["0x03", "blobs · EIP-4844", false], ["0x04", "set EOA code · EIP-7702", false], ["0x05", "the next type slots in", true]] as [string, string, boolean][]).map(([byte, label, next], i) => (
+          <g>
+            <line class="fam-conn" x1="50" y1={43 + i * 30} x2="64" y2={43 + i * 30} />
+            <rect class="fam-chip" x="64" y={32 + i * 30} width="58" height="22" rx="6" />
+            <text class="fam-byte" x="93" y={47 + i * 30}>{byte}</text>
+            <path class="fam-conn" d={`M122 ${43 + i * 30} H138`} marker-end="url(#wb-arrow)" style="stroke:var(--color-accent-dim)" />
+            <rect class={next ? "fam-next" : "fam-name"} x="140" y={32 + i * 30} width="276" height="22" rx="6" />
+            <text class={next ? "fam-nextlbl" : "fam-namelbl"} x="146" y={47 + i * 30}>{L(label)}</text>
           </g>
         ))}
-        <text class="t-cap" x="240" y="220">{L("old clients cleanly reject an unknown type byte")}</text>
+        <text class="t-cap" x="240" y="216">{L("old clients cleanly reject an unknown type byte")}</text>
       </svg>
     )}
 
@@ -1843,22 +1899,25 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EVM: a fixed action becomes a program the account runs ── */}
     {name === "evm-why" && (
-      <svg viewBox="0 0 480 188" role="img" aria-label="A transaction's fixed action is replaced by a program stored in the account">
-        <text class="t-cap" x="120" y="26">{L("before — one fixed action")}</text>
-        <rect class="ev-fixed" x="30" y="38" width="180" height="70" rx="8" />
-        <text class="t-fld ev-cc" x="120" y="66">if transfer:</text>
-        <text class="t-fld ev-cc" x="120" y="84">  balance[to] += v</text>
-        <text class="t-x ev-rigid" x="120" y="130">{L("the protocol hard-codes it")}</text>
-        <path class="sarrow ev-morph" d="M214 74 H266" />
-        <text class="t-cap ev-ml" x="240" y="64">{L("put code in")}</text>
-        <text class="t-cap" x="360" y="26">{L("after — arbitrary code")}</text>
-        <rect class="ev-prog" x="270" y="38" width="180" height="70" rx="8" />
-        <text class="t-fld ev-op evo0" x="284" y="58">PUSH 2</text>
-        <text class="t-fld ev-op evo1" x="284" y="74">PUSH 3</text>
-        <text class="t-fld ev-op evo2" x="284" y="90">ADD  MUL …</text>
-        <text class="t-fld ev-cc" x="360" y="102" />
-        <text class="t-ok ev-free" x="360" y="130">{L("the account runs your program")}</text>
-        <text class="t-cap" x="240" y="172">{L("give the account a code field and a machine to run it — that machine is the EVM")}</text>
+      <svg viewBox="0 0 480 190" role="img" aria-label="A transaction's fixed action is replaced by a program stored in the account">
+        <text class="t-cap" x="114" y="24">{L("before: one fixed action")}</text>
+        <rect class="evw-fixed" x="24" y="34" width="180" height="66" rx="8" />
+        <text class="evw-cc" x="38" y="60">if transfer:</text>
+        <text class="evw-cc" x="52" y="80">balance[to] += v</text>
+        <text class="evw-rigid" x="114" y="122">{L("the protocol hard-codes it")}</text>
+
+        <path class="evw-ar" d="M206 67 H270" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="238" y="60">{L("add code")}</text>
+
+        <text class="t-cap" x="366" y="24">{L("after: arbitrary code")}</text>
+        <rect class="evw-prog" x="272" y="34" width="184" height="66" rx="8" />
+        <text class="evw-op" x="286" y="54">PUSH 2</text>
+        <text class="evw-op" x="286" y="70">PUSH 3</text>
+        <text class="evw-op" x="286" y="86">ADD  MUL …</text>
+        <text class="evw-free" x="366" y="122">{L("the account runs your program")}</text>
+
+        <text class="t-cap" x="240" y="164">{L("give the account a code field and a machine to run it")}</text>
+        <text class="sg-ok" x="240" y="180">{L("that machine is the EVM")}</text>
       </svg>
     )}
 
@@ -1901,52 +1960,63 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EVM: gas — pay per step, bound the run ── */}
     {name === "evm-gas" && (
-      <svg viewBox="0 0 480 186" role="img" aria-label="Gas meters each opcode and bounds execution">
-        <text class="t-cap" x="240" y="22">{L("every opcode costs gas — the budget only falls")}</text>
-        <rect class="ev-gtrack" x="40" y="38" width="400" height="22" rx="6" />
-        <rect class="ev-gfill" x="40" y="38" width="400" height="22" rx="6" />
-        <text class="t-fld ev-gremain" x="240" y="53" text-anchor="middle">{L("gas remaining")}</text>
-        {[["PUSH 3", 60], ["PUSH 3", 156], ["ADD 3", 252], ["SSTORE 20000", 330]].map(([lbl, x], i) => (
-          <g class={`ev-tick ev-tk${i}`}>
-            <line x1={x} y1="66" x2={x} y2="78" />
-            <text class="t-fld" x={x} y="92" text-anchor="middle">{lbl}</text>
+      <svg viewBox="0 0 480 186" role="img" aria-label="A gas budget falls as each opcode runs, then halts">
+        <text class="t-cap" x="240" y="20">{L("every opcode costs gas; the budget only falls")}</text>
+        <text class="evg-op" x="176" y="38">{L("spent")}</text>
+        <text class="evg-op" x="392" y="38">{L("remaining")}</text>
+        <rect class="evg-track" x="40" y="42" width="400" height="24" rx="12" />
+        <rect class="evg-spent" x="44" y="46" width="308" height="16" rx="6" />
+        <rect class="evg-fill" x="356" y="46" width="80" height="16" rx="6" />
+        {[["PUSH -3", 92], ["PUSH -3", 176], ["ADD -3", 260], ["SSTORE -20000", 344]].map(([lbl, x]) => (
+          <g>
+            <line class="evg-tick" x1={x} y1="66" x2={x} y2="78" />
+            <text class="evg-op" x={x} y="92">{lbl}</text>
           </g>
         ))}
-        <text class="t-x ev-halt" x="240" y="126" text-anchor="middle">{L("out of gas → revert (all changes undone)")}</text>
-        <text class="t-cap" x="240" y="156">{L("you can't tell if a program halts — so charge per step and cap it")}</text>
-        <text class="t-cap" x="240" y="174">{L("computation is now paid for and always terminates")}</text>
+        <text class="evg-halt" x="240" y="122">{L("out of gas → revert, all changes undone")}</text>
+        <text class="t-cap" x="240" y="150">{L("you can't tell if a program halts, so charge per step and cap it")}</text>
+        <text class="sg-ok" x="240" y="168">{L("computation is paid for and always terminates")}</text>
       </svg>
     )}
 
     {/* ── EVM: three places for data — stack, memory, storage ── */}
     {name === "evm-regions" && (
-      <svg viewBox="0 0 480 214" role="img" aria-label="Watch a call fill stack and memory then end: stack and memory are wiped while storage survives">
-        <text class="t-cap" x="240" y="18">{L("three places to put data — priced by how long they last")}</text>
-        <text class="ev-ph ev-phA" x="240" y="36" text-anchor="middle">{L("① call runs — fill stack & memory, write storage")}</text>
-        <text class="ev-ph ev-phB" x="240" y="36" text-anchor="middle">{L("② call ends — stack & memory wiped")}</text>
-        <text class="ev-ph ev-phC" x="240" y="36" text-anchor="middle">{L("③ next call — only storage survived")}</text>
+      <svg viewBox="0 0 480 214" role="img" aria-label="Three data regions: stack and memory are cheap and wiped after the call; storage is costly and survives">
+        <text class="t-cap" x="240" y="18">{L("three places to put data, priced by how long they last")}</text>
 
-        <rect class="ev-reg ev-rstack" x="16" y="48" width="146" height="120" rx="8" />
-        <text class="t-cap" x="89" y="66">{L("stack")}</text>
-        {[0, 1, 2].map((i) => (<rect class="ev-eph ev-sk" x="52" y={82 + i * 18} width="74" height="14" rx="3" />))}
-        <text class="t-ok ev-cheap" x="89" y="156">{L("+3 gas · wiped")}</text>
+        <rect class="evr-reg" x="16" y="34" width="146" height="126" rx="8" />
+        <text class="t-cap" x="89" y="52">{L("stack")}</text>
+        {[["2", 0], ["3", 1], ["5", 2]].map(([v, i]) => (
+          <g>
+            <rect class="evr-stack-cell" x="52" y={68 + Number(i) * 20} width="74" height="16" rx="3" />
+            <text class="evr-persistval" x="89" y={80 + Number(i) * 20}>{v}</text>
+          </g>
+        ))}
+        <text class="evr-sub" x="89" y="142">{L("LIFO scratch")}</text>
+        <text class="evr-cheap" x="89" y="156">{L("+3 gas · wiped")}</text>
 
-        <rect class="ev-reg ev-rmem" x="170" y="48" width="146" height="120" rx="8" />
-        <text class="t-cap" x="243" y="66">{L("memory")}</text>
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<rect class="ev-eph ev-byte" x={186 + i * 15} y="86" width="12" height="18" rx="2" />))}
-        <text class="t-cap ev-subm" x="243" y="124">{L("linear scratch")}</text>
-        <text class="t-ok ev-cheap" x="243" y="156">{L("cheap · wiped")}</text>
+        <rect class="evr-reg" x="170" y="34" width="146" height="126" rx="8" />
+        <text class="t-cap" x="243" y="52">{L("memory")}</text>
+        {["2a", "1f", "00", "c4", "07", "9b", "3d", "e1"].map((b, i) => (
+          <g>
+            <rect class="evr-mem-cell" x={186 + i * 15} y="72" width="12" height="20" rx="2" />
+            <text class="evr-membyte" x={192 + i * 15} y="86">{b}</text>
+          </g>
+        ))}
+        <text class="evr-sub" x="243" y="118">{L("linear scratch")}</text>
+        <text class="evr-cheap" x="243" y="156">{L("cheap · wiped")}</text>
 
-        <rect class="ev-reg ev-rstore" x="324" y="48" width="140" height="120" rx="8" />
-        <text class="t-cap" x="394" y="66">{L("storage")}</text>
-        <ellipse class="ev-disk" cx="394" cy="88" rx="34" ry="9" />
-        <rect class="ev-diskbody" x="360" y="88" width="68" height="26" rx="2" />
-        <ellipse class="ev-disk" cx="394" cy="114" rx="34" ry="9" />
-        <rect class="ev-persist" x="366" y="92" width="56" height="16" rx="3" />
-        <text class="ev-persistval" x="394" y="104">42</text>
-        <text class="t-x ev-exp" x="394" y="156">{L("20000 gas · survives")}</text>
+        <rect class="evr-reg" x="324" y="34" width="140" height="126" rx="8" />
+        <text class="t-cap" x="394" y="52">{L("storage")}</text>
+        <ellipse class="evr-disk" cx="394" cy="76" rx="34" ry="9" />
+        <rect class="evr-diskbody" x="360" y="76" width="68" height="30" rx="2" />
+        <ellipse class="evr-disk" cx="394" cy="108" rx="34" ry="9" />
+        <rect class="evr-disk" x="370" y="80" width="48" height="15" rx="3" />
+        <text class="evr-persistval" x="394" y="92">42</text>
+        <text class="evr-sub" x="394" y="142">{L("permanent")}</text>
+        <text class="evr-exp" x="394" y="156">{L("20000 gas · survives")}</text>
 
-        <text class="t-cap" x="240" y="200">{L("ephemeral data is cheap; data that outlives the call costs ~1000× more")}</text>
+        <text class="t-cap" x="240" y="188">{L("ephemeral data is cheap; data that outlives the call costs about 1000x more")}</text>
       </svg>
     )}
 
@@ -3701,6 +3771,159 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .root-badge { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); animation: rootpulse 5s ease-in-out infinite; }
   .t-root { font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
   @keyframes flow { 0% { stroke-dashoffset: 120 } 60%,100% { stroke-dashoffset: 0 } }
+
+  /* ── batch-txevm: static, glanceable rebuilds (scene-namespaced) ── */
+  .sg-box, .sg-vbox { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .sg-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.8; }
+  .sg-seal { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; }
+  .sg-sealm { fill: var(--color-node-leaf); font-size: 22px; text-anchor: middle; }
+  .sg-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .sg-key { fill: var(--color-ink-faint); }
+
+  .vf-msg { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .vf-msg.vf-ok { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .vf-msg.vf-bad { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); }
+  .vf-sig { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); stroke-width: 1.4; }
+  .vf-box { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .vf-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .vf-okc { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 2; }
+  .vf-okm { fill: var(--color-node-leaf); font-size: 15px; text-anchor: middle; }
+  .vf-badc { fill: color-mix(in oklab, var(--color-changed) 16%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2; }
+  .vf-badm { fill: var(--color-changed); font-size: 15px; text-anchor: middle; }
+  .vf-okt { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; }
+  .vf-badt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; }
+  .vf-word { fill: var(--color-changed); }
+
+  .rc-seal { fill: color-mix(in oklab, var(--color-hash) 16%, var(--color-surface)); stroke: var(--color-hash); stroke-width: 1.6; }
+  .rc-sealm { fill: var(--color-hash); font-size: 22px; text-anchor: middle; }
+  .rc-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.9; }
+  .rc-box { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-width: 1.6; }
+  .rc-addr { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 14px; text-anchor: middle; }
+
+  .nw-box { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .nw-server { fill: var(--color-surface); stroke: var(--color-changed); stroke-width: 1.6; }
+  .nw-node { fill: color-mix(in oklab, var(--color-node-extension) 10%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .nw-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.7; }
+  .nw-arbad { fill: none; stroke: var(--color-changed); stroke-width: 1.7; }
+  .nw-hair { stroke: var(--color-border); stroke-width: 1; }
+  .nw-tick { fill: var(--color-node-leaf); font-size: 12px; text-anchor: middle; }
+  .nw-peer { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 3 3; }
+
+  .bk-block { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .bk-changed { stroke: var(--color-changed); stroke-width: 1.8; }
+  .bk-fchip { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-border); }
+  .bk-hchip { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .bk-fld { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; }
+  .bk-new { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9px; }
+  .bk-h { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8px; }
+  .bk-bal { fill: var(--color-ink); font-family: var(--font-mono); font-size: 10px; }
+  .bk-leaft { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9px; }
+  .bk-plink { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .bk-feed { fill: none; stroke: var(--color-accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .bk-feedlbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9px; }
+  .bk-node { fill: var(--color-surface); stroke: var(--color-node-branch); stroke-width: 1.4; }
+  .bk-leaf { fill: var(--color-surface); stroke: var(--color-node-leaf); stroke-width: 1.4; }
+  .bk-edge { fill: none; stroke: var(--color-border); stroke-width: 1.3; }
+  .bk-edgeon { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+  .bk-nib { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .bk-nibchip { fill: var(--color-surface); stroke: var(--color-border); }
+
+  .sy-attacker { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.6; }
+  .sy-face { fill: var(--color-changed); font-size: 15px; text-anchor: middle; }
+  .sy-clone { fill: color-mix(in oklab, var(--color-changed) 12%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.4; }
+  .sy-keep { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.6; }
+  .sy-vote { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .sy-votekeep { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .sy-ar { fill: none; stroke: var(--color-changed); stroke-width: 1.5; }
+  .sy-arkeep { fill: none; stroke: var(--color-node-leaf); stroke-width: 1.6; }
+  .sy-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+
+  .ga-track { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .ga-fill { fill: var(--color-node-leaf); }
+  .ga-spent { fill: color-mix(in oklab, var(--color-changed) 20%, var(--color-surface)); }
+  .ga-tick { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .ga-op { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .ga-halt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .tp2-chip { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.3; }
+  .tp2-chip-on { fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.5; }
+  .tp2-nib { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .tp2-nib-on { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .tp2-node { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .tp2-branch { stroke: var(--color-node-branch); }
+  .tp2-ext { stroke: var(--color-node-extension); }
+  .tp2-leaf { stroke: var(--color-node-leaf); }
+  .tp2-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
+  .tp2-root { fill: color-mix(in oklab, var(--color-accent) 14%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.5; }
+  .tp2-kind { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .tp2-note { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9.5px; text-anchor: end; }
+
+  .txf-tx { fill: var(--color-surface); stroke: var(--color-accent-dim); stroke-width: 1.6; }
+  .txf-bar { fill: color-mix(in oklab, var(--color-surface-2) 60%, var(--color-surface)); stroke: none; }
+  .onf-cell { fill: color-mix(in oklab, var(--color-surface-2) 55%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1; }
+  .onf-celltext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 6.5px; text-anchor: middle; }
+  .txf-field { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; }
+  .txf-why { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
+  .txf-hd { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; }
+
+  .onf-rlp { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .onf-rlptext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .onf-chip { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); stroke-width: 1.2; }
+  .onf-parser { fill: color-mix(in oklab, var(--color-changed) 8%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 1.5; }
+  .onf-ar { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+
+  .tb-byte { fill: color-mix(in oklab, var(--color-accent) 18%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.6; }
+  .tb-bytetext { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 18px; text-anchor: middle; }
+  .tb-pay { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .tb-paytext { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .tb-ar { fill: none; stroke: var(--color-accent); stroke-width: 1.8; }
+  .tb-dec { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.5; }
+  .tb-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .fam-chip { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.3; }
+  .fam-byte { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .fam-name { fill: var(--color-surface); stroke: var(--color-border); stroke-width: 1; }
+  .fam-namelbl { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .fam-next { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 4 3; }
+  .fam-nextlbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 11px; }
+  .fam-conn { fill: none; stroke: var(--color-border); stroke-width: 1.2; }
+
+  .dis-typed { fill: color-mix(in oklab, var(--color-node-leaf) 18%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.4; }
+  .dis-gap { fill: color-mix(in oklab, var(--color-ink-faint) 10%, var(--color-surface)); stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 3 3; }
+  .dis-legacy { fill: color-mix(in oklab, var(--color-accent) 16%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 1.4; }
+  .dis-zonelbl { fill: var(--color-ink); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .dis-gaplbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .dis-axis { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .dis-tick { stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .dis-num { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .dis-mark { fill: var(--color-accent); }
+  .dis-marklbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+
+  .evw-fixed { fill: var(--color-surface); stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .evw-prog { fill: var(--color-surface); stroke: var(--color-node-leaf); stroke-width: 1.5; }
+  .evw-cc { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; }
+  .evw-op { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; }
+  .evw-ar { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+  .evw-rigid { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .evw-free { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+
+  .evg-track { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evg-fill { fill: var(--color-node-leaf); }
+  .evg-spent { fill: color-mix(in oklab, var(--color-changed) 18%, var(--color-surface)); }
+  .evg-tick { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evg-op { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
+  .evg-halt { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+  .evr-reg { fill: color-mix(in oklab, var(--color-surface-2) 50%, var(--color-surface)); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .evr-stack-cell { fill: color-mix(in oklab, var(--color-node-extension) 30%, var(--color-surface)); stroke: var(--color-node-extension); stroke-width: 1.2; }
+  .evr-mem-cell { fill: color-mix(in oklab, var(--color-node-branch) 26%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1; }
+  .evr-disk { fill: color-mix(in oklab, var(--color-node-leaf) 22%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
+  .evr-diskbody { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
+  .evr-persistval { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .evr-membyte { fill: var(--color-node-branch); font-family: var(--font-mono); font-size: 6px; text-anchor: middle; }
+  .evr-cheap { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .evr-exp { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
+  .evr-sub { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
   @keyframes rootpulse { 0%,55% { filter: none } 70% { filter: drop-shadow(0 0 8px var(--color-accent-dim)) } 100% { filter: none } }
   /* editing a cell flips the root value 9f2e → a2e0 (5s) */
   .rt-editcell { animation: rt-editcell 5s ease-in-out infinite; }

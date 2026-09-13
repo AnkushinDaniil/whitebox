@@ -1,0 +1,40 @@
+---
+import Scene from "@/components/explorable/Scene.astro";
+
+const scenes = [
+  "state","sign","verify","recover","replay","txfields","network","blocks","sybil",
+  "consensus","evm","gas","triepath","root","syncgenesis","synctrie","syncsnap",
+  "synclight","synccheckpoint","dbtrie","dbhalfpath","dbflat","dbcompact","dbdiff",
+  "dbmerge","dblayers","cl-slots","cl-randao","cl-attest","cl-epoch","cl-pbs","cl-life",
+  "fee-auction","fee-elastic","fee-burn","blob-calldata","blob-sidecar","blob-prune","blob-fee",
+];
+
+export function getStaticPaths() {
+  const all = [
+    "state","sign","verify","recover","replay","txfields","network","blocks","sybil",
+    "consensus","evm","gas","triepath","root","syncgenesis","synctrie","syncsnap",
+    "synclight","synccheckpoint","dbtrie","dbhalfpath","dbflat","dbcompact","dbdiff",
+    "dbmerge","dblayers","cl-slots","cl-randao","cl-attest","cl-epoch","cl-pbs","cl-life",
+    "fee-auction","fee-elastic","fee-burn","blob-calldata","blob-sidecar","blob-prune","blob-fee",
+  ];
+  return all.map((s) => ({ params: { scene: s } }));
+}
+
+const { scene } = Astro.params;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>QA {scene}</title>
+    <style is:global>
+      @import "@/styles/global.css";
+      body { background: #0a0c10; padding: 24px; }
+      .qa-name { color: #4cc9e6; font-family: monospace; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="qa-name">{scene}</div>
+    <Scene name={scene as any} caption={scene} wide />
+  </body>
+</html>

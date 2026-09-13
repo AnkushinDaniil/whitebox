@@ -179,6 +179,35 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
 <figure class:list={["scene", wide && "scene-wide"]}>
   <div class="scene-stage" data-scene={name}>
+    <svg class="wb-defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <marker id="wb-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="var(--color-border-strong)" />
+        </marker>
+        <marker id="wb-arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+          <path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="var(--color-accent)" />
+        </marker>
+        <linearGradient id="wb-node" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="color-mix(in oklab, var(--color-surface-3) 55%, var(--color-border-strong))" />
+          <stop offset="0.5" stop-color="var(--color-surface-2)" />
+          <stop offset="1" stop-color="var(--color-surface)" />
+        </linearGradient>
+        <linearGradient id="wb-accent-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="color-mix(in oklab, var(--color-accent) 26%, var(--color-surface))" />
+          <stop offset="1" stop-color="var(--color-surface)" />
+        </linearGradient>
+        <radialGradient id="wb-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="color-mix(in oklab, var(--color-accent) 55%, transparent)" />
+          <stop offset="1" stop-color="transparent" />
+        </radialGradient>
+        <filter id="wb-soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.5" />
+        </filter>
+        <pattern id="wb-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="var(--color-border-strong)" stroke-width="1" />
+        </pattern>
+      </defs>
+    </svg>
     {/* ── the shared state: a spreadsheet an edit mutates ── */}
     {name === "state" && (
       <svg viewBox="0 0 480 210" role="img" aria-label="A shared world-state spreadsheet being edited">
@@ -522,18 +551,34 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── state root: the whole sheet folds into one hash in a header ── */}
     {name === "root" && (
-      <svg viewBox="0 0 480 210" role="img" aria-label="Editing one account produces a brand-new state root in the header">
-        {[40, 78, 116].map((y, i) => (<rect class={`cell cl${i}${i === 0 ? " rt-editcell" : ""}`} x="24" y={y} width="70" height="24" rx="4" />))}
-        <text class="t-fld rt-editlbl" x="59" y="56" text-anchor="middle">edit ✎</text>
-        <path class="conv c0" d="M94 52 C150 52 150 96 196 96" /><path class="conv c1" d="M94 90 H196" /><path class="conv c2" d="M94 128 C150 128 150 100 196 100" />
-        <rect class="trie" x="196" y="80" width="56" height="34" rx="6" /><text class="t-cap" x="224" y="101">trie</text>
-        <path class="conv c3" d="M252 97 H300" />
-        <rect class="hdr" x="300" y="56" width="156" height="84" rx="8" />
-        <text class="t-cap" x="378" y="76">{L("BLOCK HEADER")}</text>
-        <rect class="root-badge" x="312" y="88" width="132" height="28" rx="5" />
-        <text class="t-root rt-before" x="378" y="106">stateRoot 9f2e</text>
-        <text class="t-root rt-after" x="378" y="106">stateRoot a2e0</text>
-        <text class="t-cap" x="240" y="194">{L("edit one account → a brand-new state root falls out")}</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="Editing one account produces a brand-new state root">
+        {[0, 1, 2].map((i) => (
+          <g class={`rt-row rr${i}`}>
+            <rect class={`cell${i === 0 ? " rt-editcell" : ""}`} x="18" y={44 + i * 34} width="124" height="26" rx="5" />
+            <text class="t-l" x="30" y={62 + i * 34}>{["0xA1…", "0xB2…", "0xC3…"][i]}</text>
+            <text class="t-r" x="130" y={62 + i * 34}>{["14 Ξ", "9 Ξ", "2 Ξ"][i]}</text>
+          </g>
+        ))}
+        <text class="rt-pencil" x="154" y="52">✎</text>
+        <path class="rt-flow" d="M150 66 H234" marker-end="url(#wb-arrow-accent)" />
+        <g class="rt-trie">
+          <line class="rt-edge rt-edge-hot" x1="256" y1="84" x2="230" y2="112" />
+          <line class="rt-edge" x1="256" y1="84" x2="256" y2="112" />
+          <line class="rt-edge" x1="256" y1="84" x2="282" y2="112" />
+          <circle class="rt-leaf rt-leaf-hot" cx="230" cy="118" r="8" />
+          <circle class="rt-leaf" cx="256" cy="118" r="8" />
+          <circle class="rt-leaf" cx="282" cy="118" r="8" />
+          <circle class="rt-root" cx="256" cy="66" r="18" />
+          <text class="rt-trielbl" x="256" y="70" text-anchor="middle">trie</text>
+        </g>
+        <path class="rt-flow" d="M276 70 C300 80 308 102 321 102" marker-end="url(#wb-arrow-accent)" />
+        <rect class="hdr" x="320" y="54" width="144" height="80" rx="8" />
+        <text class="t-cap" x="392" y="74">{L("BLOCK HEADER")}</text>
+        <circle class="rt-hashchip" cx="344" cy="102" r="13" />
+        <text class="rt-hashglyph" x="344" y="107" text-anchor="middle">#</text>
+        <text class="t-root rt-before" x="372" y="107" text-anchor="start">9f2e</text>
+        <text class="t-root rt-after" x="372" y="107" text-anchor="start">a2e0</text>
+        <text class="t-cap" x="240" y="196">{L("edit one account → a brand-new state root falls out")}</text>
       </svg>
     )}
 
@@ -3209,9 +3254,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
   /* shared primitives */
   .sheet, .node, .msg, .op, .blk, .cell, .trie, .hdr, .gauge, .si, .pkt, .addr-box {
-    fill: var(--color-surface);
+    fill: url(#wb-node);
     stroke: var(--color-border-strong);
-    stroke-width: 1.2;
+    stroke-width: 1.4;
   }
   .hair, .hair2 { stroke: var(--color-border); stroke-width: 1; }
   .t-mid { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
@@ -3219,10 +3264,28 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .t-r { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 12px; text-anchor: end; }
   .t-s { fill: var(--color-ink); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
   .t-op { fill: var(--color-ink); font-family: var(--font-mono); font-size: 12px; }
-  .t-cap { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .t-cap { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
   .t-x { fill: var(--color-changed); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
-  .arrow, .arrow2, .arrow3, .link, .conv { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .arrow, .arrow2, .arrow3, .link, .conv { fill: none; stroke: var(--color-border-strong); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .link.dashed { stroke-dasharray: 4 4; }
+  .wb-defs { position: absolute; width: 0; height: 0; overflow: visible; }
+
+  /* root (redesigned): directed accent flow, a tree glyph, a hashing root chip */
+  .rt-flow { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+  .rt-edge { stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .rt-edge-hot { animation: rt-edgehot 4s ease-in-out infinite; }
+  @keyframes rt-edgehot { 0%,45% { stroke: var(--color-border-strong) } 58%,82% { stroke: var(--color-changed); stroke-width: 2.2 } 100% { stroke: var(--color-border-strong) } }
+  .rt-root { fill: url(#wb-accent-fill); stroke: var(--color-accent); stroke-width: 1.6; animation: rt-roothot 4s ease-in-out infinite; }
+  @keyframes rt-roothot { 0%,52% { stroke: var(--color-accent) } 64%,86% { stroke: var(--color-changed); stroke-width: 2.4 } 100% { stroke: var(--color-accent) } }
+  .rt-trielbl { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; }
+  .rt-leaf { fill: var(--color-surface-3); stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .rt-leaf-hot { animation: rt-leafhot 4s ease-in-out infinite; }
+  @keyframes rt-leafhot { 0%,40% { fill: var(--color-surface-3) } 55%,80% { fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)); stroke: var(--color-changed) } 100% { fill: var(--color-surface-3) } }
+  .rt-editcell { stroke: var(--color-changed); }
+  .rt-pencil { fill: var(--color-changed); font-size: 14px; text-anchor: middle; }
+  .rt-hashchip { fill: url(#wb-glow); stroke: var(--color-hash); stroke-width: 1.8; animation: rt-pulse 4s ease-in-out infinite; }
+  .rt-hashglyph { fill: var(--color-hash); font-family: var(--font-mono); font-size: 13px; }
+  @keyframes rt-pulse { 0%,42% { stroke: var(--color-hash) } 56%,82% { stroke: var(--color-changed) } 100% { stroke: var(--color-hash) } }
 
   /* state: an edit pulses a row and floats a +5 up */
   .rowhl { fill: color-mix(in oklab, var(--color-accent) 12%, transparent); stroke: none; opacity: 0; animation: hl 4s ease-in-out infinite; }

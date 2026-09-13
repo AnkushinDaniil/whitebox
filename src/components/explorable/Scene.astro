@@ -1847,7 +1847,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-fld" x="36" y="96">[addr A, keys k1 k2]</text>
         <text class="t-fld" x="36" y="112">[addr B, key k3]</text>
         <text class="t-cap ga-aal" x="247" y="74">{L("pre-warm")}</text>
-        <path class="sarrow ga-aa" d="M214 84 H280" />
+        <path class="sarrow ga-aa" d="M214 84 H276" marker-end="url(#wb-arrow-accent)" />
         <rect class="ga-warmset" x="280" y="56" width="176" height="56" rx="8" />
         <text class="t-ok" x="368" y="80">{L("declared = warm")}</text>
         <text class="t-fld ga-c" x="368" y="98">first access: 100</text>
@@ -2224,7 +2224,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "tw-underpriced" && (
       <svg viewBox="0 0 480 202" role="img" aria-label="Underpriced IO-heavy opcodes let cheap transactions grind every node to a halt">
         <text class="t-cap" x="240" y="20">{L("the price tag sat far below the real cost")}</text>
-        {[["SLOAD", "50 gas", "reads a storage slot from disk", 0], ["CALL", "40 gas", "loads another account", 1], ["EXTCODESIZE", "20 gas", "reads a contract's code", 2], ["BALANCE", "20 gas", "reads account state", 3]].map(([op, price, real, i]) => (
+        {[["SLOAD", "50 gas", "disk read", 0], ["CALL", "40 gas", "loads account", 1], ["EXTCODESIZE", "20 gas", "reads code", 2], ["BALANCE", "20 gas", "reads state", 3]].map(([op, price, real, i]) => (
           <g>
             <rect class="tw-oprow" x="20" y={34 + Number(i) * 30} width="300" height="24" rx="4" />
             <text class="t-fld tw-op" x="32" y={51 + Number(i) * 30}>{op}</text>
@@ -2235,6 +2235,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="tw-atk" x="336" y="42" width="130" height="52" rx="7" />
         <text class="t-cap" x="401" y="62">{L("attacker tx")}</text>
         <text class="t-fld tw-atkt" x="401" y="80">call ×5000, cheap</text>
+        <text class="t-fld tw-nodelbl" x="336" y="112" text-anchor="start">node work / block</text>
         <rect class="tw-nodetrack" x="336" y="118" width="130" height="16" rx="4" />
         <rect class="tw-nodefill" x="336" y="118" width="130" height="16" rx="4" />
         <text class="t-x tw-stall" x="401" y="150" text-anchor="middle">{L("~30s/block · stalls")}</text>
@@ -2270,11 +2271,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="tw-sliver" x="386" y="52" width="54" height="24" rx="4" />
         <text class="t-fld tw-fwdlbl" x="211" y="68" text-anchor="middle">forwarded ≤ 63/64</text>
         <text class="t-fld tw-slivlbl" x="413" y="68" text-anchor="middle">1/64</text>
-        <path class="sarrow tw-fwd2" d="M211 84 V104" />
+        <path class="sarrow tw-fwd2" d="M211 84 V104" marker-end="url(#wb-arrow)" />
         <rect class="tw-callee2" x="118" y="106" width="186" height="34" rx="7" />
-        <text class="t-cap tw-recv" x="211" y="127" text-anchor="middle">{L("callee runs…")}</text>
-        <text class="t-x tw-burned" x="211" y="127" text-anchor="middle">{L("callee burned it all")}</text>
-        <path class="sarrow tw-slivarrow" d="M413 84 V104" />
+        <text class="t-cap tw-recv" x="211" y="127" text-anchor="middle">{L("callee runs, may burn it all")}</text>
+        <path class="sarrow tw-slivarrow" d="M413 84 V104" marker-end="url(#wb-arrow-accent)" />
         <text class="t-ok tw-survive" x="413" y="120" text-anchor="middle">{L("survives ✓")}</text>
         <text class="t-ok tw-handle2" x="240" y="164" text-anchor="middle">{L("the kept 1/64 lets the caller handle the failure cleanly")}</text>
         <text class="t-cap" x="240" y="184" text-anchor="middle">{L("so a deep call can never strand the caller with zero gas")}</text>
@@ -2475,7 +2475,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="122" y="58">{L("gas cheap → mint")}</text>
         {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-fill" x={44 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
         <text class="t-fld rf-ct" x="122" y="104">SSTORE many slots</text>
-        <path class="sarrow rf-ga" d="M220 74 H260" />
+        <path class="sarrow rf-ga" d="M222 74 H256" marker-end="url(#wb-arrow-accent)" />
         <rect class="rf-dear" x="260" y="38" width="196" height="72" rx="8" />
         <text class="t-cap" x="358" y="58">{L("gas dear → harvest")}</text>
         {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-clear" x={280 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
@@ -2495,8 +2495,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <g class="rf-rrow" style={`animation-delay:${(Number(i) * 0.2).toFixed(2)}s`}>
             <text class="t-fld rf-rl" x="24" y={70 + Number(i) * 30} text-anchor="start">{lbl}</text>
             <text class="t-fld rf-bef" x="238" y={70 + Number(i) * 30} text-anchor="end">{bef}</text>
-            <path class="sarrow rf-ra" d={`M250 ${65 + Number(i) * 30} H310`} />
-            <text class={`t-ok rf-aft${Number(i) === 0 ? " rf-zero" : ""}`} x="330" y={70 + Number(i) * 30} text-anchor="start">{aft}</text>
+            <path class="sarrow rf-ra" d={`M250 ${65 + Number(i) * 30} H292`} marker-end="url(#wb-arrow-accent)" />
+            <text class={`t-ok rf-aft${Number(i) === 0 ? " rf-zero" : ""}`} x="340" y={70 + Number(i) * 30} text-anchor="start">{aft}</text>
           </g>
         ))}
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a modest refund for freeing state stays; the gaming does not")}</text>
@@ -2584,7 +2584,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="p0-way" x="250" y="40" width="200" height="66" rx="8" />
         <text class="t-fld p0-code" x="350" y="62">RETURNDATASIZE</text>
         <text class="t-cap p0-cost2" x="350" y="82">1 byte · 2 gas</text>
-        <text class="t-x p0-note" x="350" y="98">{L("a hack — it just happens to be 0")}</text>
+        <text class="t-cap p0-note" x="350" y="98">{L("a hack: it just happens to be 0")}</text>
         <text class="t-ok p0-both" x="240" y="134" text-anchor="middle">{L("both leave 0 on the stack — but neither is a clean, cheap 'push zero'")}</text>
         <text class="t-cap" x="240" y="168" text-anchor="middle">{L("and 0 is pushed constantly, so the waste is everywhere")}</text>
       </svg>
@@ -3167,7 +3167,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="20">{L("creating a contract: run initcode → return runtime code")}</text>
         <rect class="ic-init" x="24" y="36" width="250" height="30" rx="6" />
         <text class="t-fld ic-it" x="149" y="55">{L("initcode — uncapped, per-byte scan unpriced")}</text>
-        <path class="sarrow ic-a1" d="M274 51 H330" />
+        <path class="sarrow ic-a1" d="M274 51 H326" marker-end="url(#wb-arrow-accent)" />
         <rect class="ic-rt" x="330" y="36" width="126" height="30" rx="6" />
         <text class="t-ok ic-rtt" x="393" y="55">{L("runtime ≤ 24576")}</text>
         <text class="t-cap ic-cap" x="240" y="88" text-anchor="middle">{L("every node runs JUMPDEST analysis over the whole initcode — O(n)")}</text>
@@ -3182,12 +3182,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "ic-meter" && (
       <svg viewBox="0 0 480 190" role="img" aria-label="EIP-3860 charges 2 gas per 32-byte word of initcode and caps initcode size, so cost tracks the work">
         <text class="t-cap" x="240" y="20">{L("EIP-3860: price the initcode by its size")}</text>
-        <rect class="ic-words" x="40" y="38" width="400" height="26" rx="5" />
-        <line class="ic-tick" x1="120" y1="38" x2="120" y2="64" /><line class="ic-tick" x1="200" y1="38" x2="200" y2="64" /><line class="ic-tick" x1="280" y1="38" x2="280" y2="64" /><line class="ic-tick" x1="360" y1="38" x2="360" y2="64" />
-        <text class="t-fld ic-wt" x="240" y="55">{L("initcode, split into 32-byte words")}</text>
+        <text class="t-fld ic-wt" x="40" y="44" text-anchor="start">{L("initcode, split into 32-byte words")}</text>
+        <rect class="ic-words" x="40" y="50" width="400" height="26" rx="5" />
+        <line class="ic-tick" x1="120" y1="50" x2="120" y2="76" /><line class="ic-tick" x1="200" y1="50" x2="200" y2="76" /><line class="ic-tick" x1="280" y1="50" x2="280" y2="76" /><line class="ic-tick" x1="360" y1="50" x2="360" y2="76" />
+        {[80, 160, 240, 320, 400].map((cx) => (<text class="t-fld ic-word" x={cx} y="67" text-anchor="middle">32B</text>))}
         <text class="t-ok ic-charge" x="240" y="92" text-anchor="middle">{L("+2 gas per word — cost now tracks the scan")}</text>
-        <rect class="ic-cap2" x="90" y="112" width="300" height="30" rx="6" />
-        <text class="t-ok ic-capt" x="240" y="131" text-anchor="middle">{L("and a hard cap: initcode ≤ 49152 bytes (2× runtime)")}</text>
+        <rect class="ic-cap2" x="40" y="112" width="400" height="30" rx="6" />
+        <text class="t-ok ic-capt" x="240" y="131" text-anchor="middle">{L("hard cap: initcode ≤ 49152 B (2× runtime)")}</text>
         <text class="t-cap" x="240" y="170" text-anchor="middle">{L("no unbounded initcode, no unpriced O(n) work")}</text>
       </svg>
     )}
@@ -3364,8 +3365,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <rect class="sh-cell" x={150 + i * 36} y="48" width="30" height="30" rx="4" />
         ))}
         <g class="sh-bits">
-          {[3, 5, 6].map((p) => (
-            <text class="sh-one" x={165 + p * 36} y="69" text-anchor="middle">1</text>
+          {[0, 0, 0, 1, 0, 1, 1, 0].map((b, p) => (
+            <text class={b === 1 ? "sh-one" : "sh-zero"} x={165 + p * 36} y="69" text-anchor="middle">{b}</text>
           ))}
         </g>
         <text class="t-x sh-cost" x="240" y="108" text-anchor="middle">{L("a multiply/divide + a pushed constant, for a basic bit shift")}</text>
@@ -3376,28 +3377,34 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EIP-145: native SHL / SHR / SAR ── */}
     {name === "sh-ops" && (
-      <svg viewBox="0 0 480 178" role="img" aria-label="EIP-145 adds native SHL, SHR, and SAR shift opcodes">
+      <svg viewBox="0 0 480 182" role="img" aria-label="EIP-145 adds native SHL, SHR, and SAR shift opcodes, each mapping an input byte to a shifted output byte">
         <text class="t-cap" x="240" y="18">{L("EIP-145: three native shift opcodes")}</text>
+        <text class="t-fld sh-colh" x="183" y="36" text-anchor="middle">{L("input")}</text>
+        <text class="t-fld sh-colh" x="345" y="36" text-anchor="middle">{L("output")}</text>
         {[
-          { op: "SHL", lbl: "shift left", y: 44, cls: "sh-move0", bits: [2, 4, 5], sign: false },
-          { op: "SHR", lbl: "logical right", y: 82, cls: "sh-move1", bits: [1, 2, 4], sign: false },
-          { op: "SAR", lbl: "arithmetic right", y: 120, cls: "sh-move2", bits: [1, 3, 4], sign: true },
+          { op: "SHL", lbl: "left", cy: 60, in: [0, 1, 1, 0, 1, 0], out: [1, 1, 0, 1, 0, 0], sgn: [] },
+          { op: "SHR", lbl: "logical", cy: 100, in: [0, 1, 1, 0, 1, 0], out: [0, 0, 1, 1, 0, 1], sgn: [] },
+          { op: "SAR", lbl: "signed", cy: 140, in: [1, 0, 1, 1, 0, 0], out: [1, 1, 0, 1, 1, 0], sgn: [0, 1] },
         ].map((r) => (
           <g>
-            <text class="sh-opn2" x="26" y={r.y - 2} text-anchor="start">{r.op}</text>
-            <text class="sh-opd2" x="26" y={r.y + 14} text-anchor="start">{L(r.lbl)}</text>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <rect class="sh-cell" x={170 + i * 30} y={r.y - 12} width="26" height="26" rx="4" />
+            <text class="sh-opn2" x="22" y={r.cy - 3} text-anchor="start">{r.op}</text>
+            <text class="sh-opd2" x="22" y={r.cy + 12} text-anchor="start">{L(r.lbl)}</text>
+            {r.in.map((b, i) => (
+              <g>
+                <rect class="sh-cell" x={118 + i * 22} y={r.cy - 13} width="20" height="26" rx="4" />
+                <text class={b === 1 ? "sh-one" : "sh-zero"} x={128 + i * 22} y={r.cy + 5} text-anchor="middle">{b}</text>
+              </g>
             ))}
-            {r.sign && <text class="sh-one sh-sign" x="183" y={r.y + 6} text-anchor="middle">1</text>}
-            <g class={`sh-move ${r.cls}`}>
-              {r.bits.map((p) => (
-                <text class="sh-one" x={183 + p * 30} y={r.y + 6} text-anchor="middle">1</text>
-              ))}
-            </g>
+            <path class="sarrow sh-sharrow" d={`M250 ${r.cy} H274`} marker-end="url(#wb-arrow-accent)" />
+            {r.out.map((b, i) => (
+              <g>
+                <rect class="sh-cell" x={280 + i * 22} y={r.cy - 13} width="20" height="26" rx="4" />
+                <text class={(b === 1 ? "sh-one" : "sh-zero") + (r.sgn.includes(i) ? " sh-sign" : "")} x={290 + i * 22} y={r.cy + 5} text-anchor="middle">{b}</text>
+              </g>
+            ))}
           </g>
         ))}
-        <text class="t-cap sh-3" x="240" y="166" text-anchor="middle">{L("SAR preserves the sign bit — signed shifts finally correct")}</text>
+        <text class="t-cap sh-3" x="240" y="172" text-anchor="middle">{L("SAR keeps the sign bit (orange) — signed shifts finally correct")}</text>
       </svg>
     )}
 
@@ -5656,6 +5663,56 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sh-one { fill: var(--color-node-leaf); font-family: ui-monospace, "SF Mono", monospace; font-size: 14px; font-weight: 600; }
   .sh-bits { animation: sh-slideL 4.5s ease-in-out infinite; }
   @keyframes sh-slideL { 0%, 24% { transform: translateX(0); } 54%, 76% { transform: translateX(-36px); } 100% { transform: translateX(0); } }
+
+  /* ── viz/batch2 deterministic overrides: never let content hide at capture ──
+     Reveal animations that base at opacity:0 land invisible at the virtual-time
+     capture point. Scope by data-scene so nothing collides with other scenes;
+     force the content-bearing elements static + visible (fill-only, per spec). */
+  [data-scene="ga-coldwarm"] .ga-warm,
+  [data-scene="ga-coldwarm"] .ga-first,
+  [data-scene="ga-coldwarm"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="ga-acl"] .ga-warmset,
+  [data-scene="ga-acl"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="ga-acl"] .ga-aa { stroke-dashoffset: 0 !important; animation: none !important; }
+  [data-scene="ic-gap"] .ic-cap,
+  [data-scene="ic-gap"] .ic-atk,
+  [data-scene="ic-gap"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="ic-gap"] .ic-a1 { opacity: 1 !important; stroke-dashoffset: 0 !important; animation: none !important; }
+  [data-scene="ic-gap"] .ic-huge { animation: none !important; }
+  [data-scene="ic-meter"] .ic-word { fill: var(--color-ink-faint); text-anchor: middle; }
+  [data-scene="ic-meter"] .ic-charge,
+  [data-scene="ic-meter"] .ic-cap2,
+  [data-scene="ic-meter"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="ic-result"] .ic-box,
+  [data-scene="ic-result"] .ic-safe,
+  [data-scene="ic-result"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="tw-reprice"] .tw-aft,
+  [data-scene="tw-reprice"] .tw-bar { opacity: 1 !important; animation: none !important; }
+  [data-scene="tw-6364"] .tw-fwdchunk,
+  [data-scene="tw-6364"] .tw-recv,
+  [data-scene="tw-6364"] .tw-survive,
+  [data-scene="tw-6364"] .tw-handle2,
+  [data-scene="tw-6364"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="tw-6364"] .tw-fwd2,
+  [data-scene="tw-6364"] .tw-slivarrow { stroke-dashoffset: 0 !important; animation: none !important; }
+  [data-scene="rf-gastoken"] .rf-refund,
+  [data-scene="rf-gastoken"] .rf-2x,
+  [data-scene="rf-gastoken"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="rf-gastoken"] .rf-fill { animation: none !important; fill: color-mix(in oklab, var(--color-node-leaf) 34%, var(--color-surface)) !important; }
+  [data-scene="rf-gastoken"] .rf-clear { animation: none !important; fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)) !important; }
+  [data-scene="rf-gastoken"] .rf-ga { stroke-dashoffset: 0 !important; animation: none !important; }
+  [data-scene="rf-reduce"] .rf-rrow,
+  [data-scene="rf-reduce"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="rf-reduce"] .rf-ra { stroke-dashoffset: 0 !important; animation: none !important; }
+  [data-scene="p0-hacks"] .p0-both,
+  [data-scene="p0-hacks"] .t-ok { opacity: 1 !important; animation: none !important; }
+  [data-scene="sh-ops"] .sh-3 { opacity: 1 !important; animation: none !important; }
+  [data-scene="sh-ops"] .sh-zero { fill: var(--color-ink-faint); font-family: ui-monospace, "SF Mono", monospace; font-size: 14px; }
+  [data-scene="sh-ops"] .sh-colh { fill: var(--color-ink-faint); text-anchor: middle; }
+  [data-scene="sh-emul"] .sh-cost,
+  [data-scene="sh-emul"] .sh-signed { opacity: 1 !important; animation: none !important; }
+  [data-scene="sh-emul"] .sh-bits { animation: none !important; }
+  [data-scene="sh-emul"] .sh-zero { fill: var(--color-ink-faint); font-family: ui-monospace, "SF Mono", monospace; font-size: 14px; }
   .sh-cost { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.7s infinite; }
   .sh-signed { fill: var(--color-changed); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
 

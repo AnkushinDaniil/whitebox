@@ -652,214 +652,231 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── full sync: replay every block from genesis, rebuilding state ── */}
     {name === "syncgenesis" && (
-      <svg viewBox="0 0 480 196" role="img" aria-label="Full sync replays every block from genesis">
-        <text class="t-cap" x="40" y="26">{L("genesis")}</text>
-        <text class="t-cap" x="442" y="26">{L("head")}</text>
+      <svg viewBox="0 0 480 178" role="img" aria-label="Full sync replays every block from genesis">
+        <text class="sg-lbl" x="24" y="22">{L("genesis")}</text>
+        <text class="sg-lbl sg-end" x="456" y="22">{L("head")}</text>
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <rect class="block" x={24 + i * 56} y="34" width="44" height="30" rx="5" />
-        ))}
-        <rect class="sg-marker" x="24" y="32" width="44" height="34" rx="6" />
-        <text class="t-cap" x="240" y="90">{L("re-execute every transaction, block by block")}</text>
-        <rect class="sg-track" x="24" y="106" width="432" height="20" rx="6" />
-        <rect class="sg-fill" x="26" y="108" width="428" height="16" rx="5" />
-        <text class="t-fld sg-state" x="240" y="121">{L("rebuilding state…")}</text>
-        <text class="t-x" x="240" y="162">{L("⏱ days — but every state transition personally verified")}</text>
-      </svg>
-    )}
-
-    {/* ── fast sync: download the state trie node by node, verify by hash ── */}
-    {name === "synctrie" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Fast sync downloads the state trie node by node">
-        <path class="sedge" d="M240 46 L150 78" /><path class="sedge" d="M240 46 L240 78" /><path class="sedge" d="M240 46 L330 78" />
-        <path class="sedge" d="M150 104 L96 136" /><path class="sedge" d="M150 104 L150 136" /><path class="sedge" d="M330 104 L330 136" /><path class="sedge" d="M330 104 L384 136" />
-        <g class="st-n s0"><rect class="tnode branch" x="208" y="22" width="64" height="24" rx="5" /><text class="t-cap" x="240" y="38">{L("root")}</text><text class="st-ok" x="278" y="30">✓</text></g>
-        <g class="st-n s1"><rect class="tnode branch" x="118" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="150" y="96">{L("node")}</text><text class="st-ok" x="188" y="88">✓</text></g>
-        <g class="st-n s2"><rect class="tnode branch" x="208" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="240" y="96">{L("node")}</text><text class="st-ok" x="278" y="88">✓</text></g>
-        <g class="st-n s3"><rect class="tnode branch" x="298" y="80" width="64" height="24" rx="5" /><text class="t-cap" x="330" y="96">{L("node")}</text><text class="st-ok" x="368" y="88">✓</text></g>
-        {[[64, "s4"], [118, "s5"], [298, "s6"], [352, "s7"]].map(([x, c]) => (
-          <g class={`st-n ${c}`}><rect class="tnode leaf" x={x} y="138" width="48" height="22" rx="5" /><text class="t-cap" x={Number(x) + 24} y="153">{L("leaf")}</text></g>
-        ))}
-        <text class="t-cap" x="240" y="188">{L("verify each node against its parent’s hash — but millions of tiny requests, and the pivot keeps moving")}</text>
-      </svg>
-    )}
-
-    {/* ── snap sync: download flat key ranges with proofs, rebuild, heal ── */}
-    {name === "syncsnap" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Snap sync downloads flat ranges then heals the trie">
-        <text class="t-cap" x="104" y="26">{L("flat state, in big ranges")}</text>
-        {[0, 1, 2, 3].map((i) => (
-          <g class={`sn-range r${i}`}>
-            <rect class="sn-bar" x="20" y={36 + i * 30} width="176" height="22" rx="5" />
-            <text class="t-fld" x="30" y={51 + i * 30}>0x{i}0…{i}f</text>
-            <text class="st-ok" x="180" y={51 + i * 30}>✓</text>
+          <g>
+            <rect class={`sg-blk ${i === 3 ? "sg-cur" : ""}`} x={24 + i * 56} y="30" width="44" height="30" rx="5" />
+            <text class="t-cap" x={46 + i * 56} y="49">#{i + 1}</text>
+            {i < 7 && <path class="sg-link" d={`M${68 + i * 56} 45 H${80 + i * 56}`} marker-end="url(#wb-arrow)" />}
           </g>
         ))}
-        <path class="sarrow sn-arrow" d="M200 96 H250" />
-        <text class="t-cap" x="350" y="26">{L("rebuilt locally")}</text>
-        <rect class="tnode branch sn-t0" x="300" y="40" width="100" height="22" rx="5" /><text class="t-cap" x="350" y="55">{L("root")}</text>
-        <rect class="tnode leaf sn-t1" x="288" y="74" width="56" height="20" rx="4" /><rect class="tnode leaf sn-t2" x="356" y="74" width="56" height="20" rx="4" />
-        <g class="sn-heal"><rect class="tnode leaf sn-heal-n" x="356" y="74" width="56" height="20" rx="4" /><text class="st-ok" x="384" y="112">{L("heal ✓")}</text></g>
-        <text class="t-cap" x="240" y="182">{L("a handful of big sequential ranges, not a million nodes — hours, not days")}</text>
+        <text class="sg-tag" x="214" y="80">{L("replaying")}</text>
+        <rect class="sg-track" x="24" y="96" width="432" height="18" rx="5" />
+        <rect class="sg-fill" x="26" y="98" width="198" height="14" rx="4" />
+        <text class="sg-pctin" x="34" y="110">{L("46% rebuilt")}</text>
+        <text class="t-cap" x="240" y="146">{L("re-execute every transaction, block by block")}</text>
+        <text class="t-x" x="240" y="168">{L("correct but slow: days of CPU work")}</text>
       </svg>
     )}
 
-    {/* ── light client: only headers; fetch state on demand with a proof ── */}
+    {name === "synctrie" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Fast sync downloads the state trie node by node">
+        <path class="sedge" d="M240 46 L150 78" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M240 46 L240 78" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M240 46 L330 78" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M150 102 L100 140" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M150 102 L168 140" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M240 102 L240 140" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M330 102 L312 140" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M330 102 L380 140" marker-end="url(#wb-arrow)" />
+        <g><rect class="tnode branch" x="210" y="22" width="60" height="24" rx="5" /><text class="t-cap" x="240" y="38">{L("root")}</text><text class="st-ok" x="280" y="30">✓</text></g>
+        <g><rect class="tnode branch" x="120" y="78" width="60" height="24" rx="5" /><text class="t-cap" x="150" y="94">{L("node")}</text><text class="st-ok" x="190" y="86">✓</text></g>
+        <g><rect class="tnode branch" x="210" y="78" width="60" height="24" rx="5" /><text class="t-cap" x="240" y="94">{L("node")}</text><text class="st-ok" x="280" y="86">✓</text></g>
+        <g><rect class="tnode branch" x="300" y="78" width="60" height="24" rx="5" /><text class="t-cap" x="330" y="94">{L("node")}</text><text class="st-ok" x="370" y="86">✓</text></g>
+        {[73, 145, 217, 289, 361].map((x) => (
+          <g><rect class="tnode leaf" x={x} y="140" width="46" height="22" rx="5" /><text class="t-cap" x={x + 23} y="155">{L("leaf")}</text></g>
+        ))}
+        <text class="t-cap" x="240" y="182">{L("download the trie node by node, verify each by hash")}</text>
+        <text class="t-x" x="240" y="196">{L("millions of tiny requests; the pivot keeps moving")}</text>
+      </svg>
+    )}
+
+    {name === "syncsnap" && (
+      <svg viewBox="0 0 480 200" role="img" aria-label="Snap sync downloads flat ranges then heals the trie">
+        <text class="t-cap" x="105" y="26">{L("flat state, in big ranges")}</text>
+        {[0, 1, 2, 3].map((i) => (
+          <g>
+            <rect class="sn-bar" x="20" y={36 + i * 30} width="170" height="22" rx="5" />
+            <text class="t-fld" x="30" y={51 + i * 30}>0x{i}0…{i}f</text>
+            <text class="st-ok" x="176" y={51 + i * 30}>✓</text>
+          </g>
+        ))}
+        <text class="sn-tag" x="250" y="44">{L("rebuild")}</text>
+        <path class="sarrow sn-arrow" d="M196 51 H320" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="372" y="26">{L("rebuilt locally")}</text>
+        <rect class="tnode branch" x="330" y="40" width="84" height="22" rx="5" /><text class="t-cap" x="372" y="55">{L("root")}</text>
+        <path class="sedge" d="M372 62 L344 84" marker-end="url(#wb-arrow)" />
+        <path class="sedge" d="M372 62 L404 84" marker-end="url(#wb-arrow)" />
+        <rect class="tnode leaf" x="316" y="86" width="52" height="22" rx="4" /><text class="t-cap" x="342" y="101">a…f</text>
+        <rect class="tnode leaf sn-heal-n" x="380" y="86" width="52" height="22" rx="4" /><text class="t-cap" x="406" y="101">g…z</text>
+        <text class="st-ok" x="406" y="126">{L("healed ✓")}</text>
+        <text class="t-cap" x="240" y="182">{L("a few big sequential ranges, not a million nodes: hours, not days")}</text>
+      </svg>
+    )}
+
     {name === "synclight" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="A light client keeps only headers and verifies proofs on demand">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <g><rect class="lhdr" x={20 + i * 74} y="26" width="62" height="26" rx="5" /><text class="t-cap" x={51 + i * 74} y="43">root #{i}</text></g>
         ))}
-        <path class="sarrow" d="M51 52 V70" /><text class="t-fld lq" x="120" y="92">{L("balance 0xA?")}</text>
-        <path class="sarrow lp" d="M60 78 L60 110 L160 110" />
-        <g class="lproof">
-          <rect class="tnode branch" x="160" y="98" width="50" height="22" rx="4" /><rect class="tnode branch" x="230" y="98" width="50" height="22" rx="4" /><rect class="tnode leaf" x="300" y="98" width="56" height="22" rx="4" />
-          <path class="sedge on" d="M210 109 H230" /><path class="sedge on" d="M280 109 H300" />
-          <text class="t-ok" x="392" y="114">✓ 12 Ξ</text>
+        <path class="sarrow" d="M60 52 L60 93 L158 93" marker-end="url(#wb-arrow)" />
+        <text class="t-fld lq" x="132" y="72">{L("get balance 0xA7?")}</text>
+        <g>
+          <rect class="tnode branch" x="160" y="82" width="50" height="22" rx="4" /><text class="t-cap" x="185" y="97">3a…</text>
+          <rect class="tnode branch" x="230" y="82" width="50" height="22" rx="4" /><text class="t-cap" x="255" y="97">b1…</text>
+          <rect class="tnode leaf" x="300" y="82" width="56" height="22" rx="4" /><text class="t-cap" x="328" y="97">acct</text>
+          <path class="sedge on" d="M210 93 H230" marker-end="url(#wb-arrow-accent)" />
+          <path class="sedge on" d="M280 93 H300" marker-end="url(#wb-arrow-accent)" />
+          <text class="t-ok" x="392" y="98">✓ 12 Ξ</text>
         </g>
-        <text class="t-cap" x="240" y="172">{L("stores only headers — asks a full node for state, gets a Merkle proof, verifies it itself")}</text>
+        <text class="t-cap" x="240" y="140">{L("keeps only headers; asks a full node and checks a Merkle proof")}</text>
+        <text class="t-cap" x="240" y="164">{L("verifies state itself, without storing it")}</text>
       </svg>
     )}
 
-    {/* ── checkpoint sync: trust a recent finalized anchor, skip genesis ── */}
     {name === "synccheckpoint" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="Checkpoint sync starts from a recent trusted finalized block">
-        <g class="ck-old">
-          <rect class="block" x="20" y="34" width="40" height="26" rx="5" /><text class="t-cap" x="40" y="50">gen</text>
-          <path class="ck-crawl" d="M62 47 H430" />
-          <text class="t-cap" x="430" y="50">{L("head")}</text>
-          <text class="t-x" x="240" y="78">{L("replay/verify all of history from genesis — weeks")}</text>
-        </g>
-        <text class="t-cap ck-instead" x="60" y="116">{L("instead:")}</text>
-        <rect class="ck-anchor" x="280" y="124" width="96" height="30" rx="6" /><text class="t-cap" x="328" y="138">{L("checkpoint")}</text><text class="ck-lock" x="328" y="150">{L("🔒 finalized")}</text>
-        <path class="sarrow ck-hop" d="M376 139 H424" />
-        <rect class="block" x="424" y="126" width="34" height="26" rx="5" /><text class="t-cap" x="441" y="142">{L("head")}</text>
-        <text class="t-ok" x="180" y="186">{L("trusted recent anchor → snap forward → minutes")}</text>
+        <rect class="block" x="20" y="30" width="40" height="26" rx="5" /><text class="t-cap" x="40" y="46">gen</text>
+        <path class="ck-crawl" d="M62 43 H408" marker-end="url(#wb-arrow)" />
+        <rect class="block" x="410" y="30" width="40" height="26" rx="5" /><text class="t-cap" x="430" y="46">{L("head")}</text>
+        <text class="t-x" x="240" y="78">{L("replay all history from genesis: weeks")}</text>
+        <text class="t-cap ck-instead" x="40" y="120">{L("instead:")}</text>
+        <rect class="ck-anchor" x="150" y="106" width="120" height="34" rx="6" /><text class="t-cap" x="210" y="122">{L("checkpoint")}</text><text class="ck-lock" x="210" y="134">{L("finalized")}</text>
+        <path class="sarrow ck-hop" d="M270 123 H406" marker-end="url(#wb-arrow-accent)" />
+        <rect class="block" x="410" y="110" width="40" height="26" rx="5" /><text class="t-cap" x="430" y="126">{L("head")}</text>
+        <text class="t-ok" x="240" y="182">{L("trusted recent anchor → snap forward → minutes")}</text>
       </svg>
     )}
 
-    {/* ── flat-db: reading a value by walking the trie = many scattered disk reads ── */}
     {name === "dbtrie" && (
       <svg viewBox="0 0 480 210" role="img" aria-label="Reading one account walks the trie as several scattered disk reads">
         <rect class="db-q" x="14" y="12" width="168" height="26" rx="5" /><text class="t-fld" x="24" y="29">{L("read 0xA7… balance")}</text>
-        <path class="da da1" d="M70 70 L300 60" /><path class="da da2" d="M334 72 L150 104" /><path class="da da3" d="M118 116 L350 116" /><path class="da da4" d="M350 128 L246 150" />
-        <g class="dr dr0"><rect class="db-node" x="36" y="56" width="68" height="24" rx="5" /><text class="t-cap" x="70" y="72">{L("root")}</text></g>
-        <g class="dr dr1"><rect class="db-node" x="300" y="48" width="68" height="24" rx="5" /><text class="t-cap" x="334" y="64">{L("node")}</text></g>
-        <g class="dr dr2"><rect class="db-node" x="84" y="104" width="68" height="24" rx="5" /><text class="t-cap" x="118" y="120">{L("node")}</text></g>
-        <g class="dr dr3"><rect class="db-node" x="316" y="104" width="68" height="24" rx="5" /><text class="t-cap" x="350" y="120">{L("node")}</text></g>
-        <g class="dr dr4"><rect class="db-node db-val" x="212" y="150" width="68" height="24" rx="5" /><text class="t-cap" x="246" y="166">{L("value")}</text></g>
-        <text class="t-x" x="240" y="200">{L("one account = 4–6 random disk reads, walking the trie node by node")}</text>
+        <path class="da" d="M96 40 L80 58" marker-end="url(#wb-arrow)" />
+        <path class="da" d="M104 72 L326 66" marker-end="url(#wb-arrow)" />
+        <path class="da" d="M358 78 L128 118" marker-end="url(#wb-arrow)" />
+        <path class="da" d="M156 124 L296 126" marker-end="url(#wb-arrow)" />
+        <path class="da da-hit" d="M312 138 L248 160" marker-end="url(#wb-arrow-accent)" />
+        <g><rect class="db-node" x="40" y="58" width="64" height="24" rx="5" /><text class="t-cap" x="72" y="74">{L("root")}</text></g>
+        <g><rect class="db-node" x="326" y="54" width="64" height="24" rx="5" /><text class="t-cap" x="358" y="70">{L("node")}</text></g>
+        <g><rect class="db-node" x="96" y="118" width="64" height="24" rx="5" /><text class="t-cap" x="128" y="134">{L("node")}</text></g>
+        <g><rect class="db-node" x="296" y="114" width="64" height="24" rx="5" /><text class="t-cap" x="328" y="130">{L("node")}</text></g>
+        <g><rect class="db-node db-val" x="216" y="160" width="64" height="24" rx="5" /><text class="t-cap" x="248" y="176">{L("value")}</text></g>
+        <text class="t-x" x="240" y="202">{L("one account = 4 to 6 random disk reads down the trie")}</text>
       </svg>
     )}
 
-    {/* ── halfpath: keying nodes by trie path clusters them on disk (locality) ── */}
     {name === "dbhalfpath" && (
       <svg viewBox="0 0 480 232" role="img" aria-label="HalfPath keys nodes by trie path so neighbouring nodes sit together on disk">
-        <text class="t-fld hp-bad" x="28" y="26">{L("hash-keyed — random disk slots")}</text>
+        <text class="t-fld hp-bad" x="28" y="26">{L("hash-keyed: random disk slots")}</text>
         {Array.from({ length: 16 }).map((_, i) => (
           <rect class={`hp-cell ${[1, 4, 6, 10, 14].includes(i) ? "hp-node" : ""}`} x={28 + i * 26} y="38" width="24" height="22" rx="3" />
         ))}
         <rect class="hp-head hp-head-a" x="0" y="34" width="6" height="30" rx="2" />
-        <text class="t-x" x="240" y="94">{L("six hops, each to a random slot — a cache miss every time")}</text>
-        <text class="t-fld hp-ok" x="28" y="142">{L("path-keyed — neighbours sit together")}</text>
+        <text class="t-x" x="240" y="94">{L("six hops, each to a random slot, a cache miss every time")}</text>
+        <text class="t-fld hp-ok" x="28" y="142">{L("path-keyed: neighbours sit together")}</text>
         {Array.from({ length: 16 }).map((_, i) => (
           <rect class={`hp-cell ${[6, 7, 8, 9, 10].includes(i) ? "hp-node-ok" : ""}`} x={28 + i * 26} y="154" width="24" height="22" rx="3" />
         ))}
         <rect class="hp-head hp-head-b" x="0" y="150" width="6" height="30" rx="2" />
-        <text class="t-ok" x="240" y="210">{L("one sweep over neighbouring slots — ~50% faster, ~25% smaller")}</text>
+        <text class="t-ok" x="240" y="210">{L("one sweep over neighbouring slots, ~50% faster, ~25% smaller")}</text>
       </svg>
     )}
 
-    {/* ── flat-db: read the value directly from a flat column, trie kept only for the root ── */}
     {name === "dbflat" && (
       <svg viewBox="0 0 480 200" role="img" aria-label="Flat DB reads the value in one direct lookup; the trie is kept only to recompute the root">
         <rect class="db-q" x="14" y="22" width="150" height="26" rx="5" /><text class="t-fld" x="24" y="39">{L("read 0xA7… balance")}</text>
-        <text class="df-six" x="24" y="62">{L("✗ 6 disk hops")}</text><text class="df-one" x="24" y="62">{L("✓ 1 lookup")}</text>
-        <path class="sarrow df-arrow" d="M164 35 H214" />
-        <text class="t-cap" x="280" y="20">{L("flat account column")}</text>
+        <text class="df-six" x="24" y="64">{L("✗ 6 disk hops")}</text><text class="df-one" x="120" y="64">{L("✓ 1 lookup")}</text>
+        <path class="sarrow" d="M164 42 L216 63" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="300" y="20">{L("flat account column")}</text>
         {[0, 1, 2, 3].map((i) => (
           <g class={`df-row ${i === 1 ? "df-hit" : ""}`}>
-            <rect class="db-flatrow" x="220" y={28 + i * 26} width="170" height="22" rx="4" />
+            <rect class="db-flatrow" x="220" y={28 + i * 26} width="180" height="22" rx="4" />
             <text class="t-fld" x="230" y={43 + i * 26}>0x{i === 1 ? "A7" : i + "" + i}… → {i === 1 ? "12 Ξ" : "…"}</text>
+            {i === 1 && <text class="t-ok df-ok" x="392" y={43 + i * 26}>✓</text>}
           </g>
         ))}
-        <text class="t-ok df-ok" x="430" y="59">{L("✓ 1 read")}</text>
         <g class="df-trie">
           <rect class="tnode branch" x="196" y="150" width="88" height="22" rx="5" /><text class="t-cap" x="240" y="165">{L("trie root")}</text>
-          <text class="t-cap" x="240" y="190">{L("kept aside — only to recompute the stateRoot at commit")}</text>
+          <text class="t-cap" x="240" y="190">{L("kept only to recompute the stateRoot at commit")}</text>
         </g>
       </svg>
     )}
 
-    {/* ── flat-db: compaction merges layers in powers of two (8→4→2→1) ── */}
     {name === "dbcompact" && (
       <svg viewBox="0 0 480 214" role="img" aria-label="Compaction merges snapshot layers in powers of two, halving the count each round">
-        <g class="cl cl3"><rect class="cbox c8" x="48" y="18" width="384" height="26" rx="5" /><text class="t-fld c-on" x="240" y="35">1 layer — blocks 1–8</text></g>
-        <g class="cl cl2">{[0, 1].map((i) => (<g><rect class="cbox c4" x={48 + i * 196} y="64" width="188" height="24" rx="5" /><text class="t-fld c-on" x={142 + i * 196} y="80">blocks {i * 4 + 1}–{i * 4 + 4}</text></g>))}</g>
-        <g class="cl cl1">{[0, 1, 2, 3].map((i) => (<g><rect class="cbox c2" x={48 + i * 98} y="110" width="90" height="22" rx="4" /><text class="t-fld c-on" x={93 + i * 98} y="125">{i * 2 + 1}–{i * 2 + 2}</text></g>))}</g>
-        <g class="cl cl0">{[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<g><rect class="cbox c1" x={48 + i * 48} y="156" width="40" height="22" rx="4" /><text class="t-fld c-on" x={68 + i * 48} y="171">b{i + 1}</text></g>))}</g>
-        <text class="t-cap c-count cc0" x="240" y="196">{L("8 single-block layers pile up…")}</text>
-        <text class="t-cap c-count cc1" x="240" y="196">{L("merge in pairs → 4 layers")}</text>
-        <text class="t-cap c-count cc2" x="240" y="196">{L("merge again → 2 layers")}</text>
-        <text class="t-cap c-count cc3" x="240" y="196">{L("…→ 1 layer. each round halves them, so 128 blocks need only ~7")}</text>
+        <path class="cedge" d="M462 156 V48" marker-end="url(#wb-arrow-accent)" />
+        <text class="c-cnt" x="466" y="164">8</text>
+        <text class="c-cnt" x="466" y="122">4</text>
+        <text class="c-cnt" x="466" y="80">2</text>
+        <text class="c-cnt" x="466" y="38">1</text>
+        <g><rect class="cbox c8" x="90" y="20" width="300" height="24" rx="5" /><text class="t-fld c-on" x="240" y="36">{L("blocks 1-8")}</text></g>
+        {[132, 348].map((cx, i) => (<g><rect class="cbox c4" x={cx - 90} y="64" width="180" height="22" rx="5" /><text class="t-fld c-on" x={cx} y="79">{i === 0 ? "1-4" : "5-8"}</text></g>))}
+        {[78, 186, 294, 402].map((cx, i) => (<g><rect class="cbox c2" x={cx - 44} y="106" width="88" height="24" rx="4" /><text class="t-fld c-on" x={cx} y="121">{i * 2 + 1}-{i * 2 + 2}</text></g>))}
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<g><rect class="cbox c1" x={29 + i * 54} y="148" width="44" height="24" rx="4" /><text class="t-fld c-on" x={51 + i * 54} y="163">b{i + 1}</text></g>))}
+        <text class="t-cap" x="240" y="196">{L("each round halves the layers: 128 blocks need only ~7")}</text>
       </svg>
     )}
 
-    {/* ── flat-db: a layer is a diff of changed keys; a read takes the newest match ── */}
     {name === "dbdiff" && (
       <svg viewBox="0 0 480 224" role="img" aria-label="A layer is a diff of changed keys; a read takes the newest match, else the base">
         <rect class="db-q" x="14" y="18" width="118" height="24" rx="5" /><text class="t-fld" x="24" y="34">{L("read key B")}</text>
+        <path class="dd-seek" d="M158 44 V95 H184" marker-end="url(#wb-arrow-accent)" />
         <circle class="dd-token" cx="158" cy="30" r="9" /><text class="dd-qt" x="158" y="34">B</text>
         <rect class="dd-card" x="186" y="34" width="196" height="34" rx="5" />
         <text class="t-fld dd-tag" x="196" y="55">{L("block N · diff")}</text><text class="t-fld" x="300" y="55">A=9  C=2</text>
         <rect class="dd-card dd-hit" x="186" y="78" width="196" height="34" rx="5" />
-        <text class="t-fld dd-tag" x="196" y="99">{L("block N−1 · diff")}</text><text class="t-fld dd-found" x="300" y="99">B=5  ✓</text>
+        <text class="t-fld dd-tag" x="196" y="99">{L("block N-1 · diff")}</text><text class="t-fld dd-found" x="300" y="99">B=5  ✓</text>
         <rect class="dd-card" x="186" y="122" width="196" height="34" rx="5" />
-        <text class="t-fld dd-tag" x="196" y="143">{L("block N−2 · diff")}</text><text class="t-fld dd-shadow" x="300" y="143">A=7</text><text class="t-fld" x="338" y="143">D=1</text>
-        <text class="dd-shadnote" x="392" y="143">{L("↑ shadowed")}</text>
+        <text class="t-fld dd-tag" x="196" y="143">{L("block N-2 · diff")}</text><text class="t-fld dd-shadow" x="300" y="143">A=7</text><text class="t-fld" x="338" y="143">D=1</text>
+        <text class="dd-shadnote" x="392" y="143">{L("shadowed")}</text>
         <rect class="dd-base" x="186" y="166" width="196" height="28" rx="5" />
         <text class="t-cap" x="284" y="184">{L("base flat DB · the full state")}</text>
-        <text class="t-cap" x="240" y="214">{L("a layer holds only the keys its block changed; reads take the first (newest) match, else fall to the base")}</text>
+        <text class="t-cap" x="240" y="214">{L("each layer holds only the keys its block changed; a read takes the newest match")}</text>
       </svg>
     )}
 
-    {/* ── flat-db: merging two diffs keeps the newest value per key (dedup) ── */}
     {name === "dbmerge" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="Merging two diff layers keeps the newest value of each key, so duplicates collapse">
         <rect class="dd-card" x="18" y="26" width="150" height="44" rx="5" />
         <text class="t-fld dd-tag" x="30" y="44">{L("block 5 · diff")}</text><text class="t-fld" x="30" y="62">A=7   B=5</text>
         <rect class="dd-card" x="18" y="98" width="150" height="44" rx="5" />
         <text class="t-fld dd-tag" x="30" y="116">{L("block 6 · diff")}</text><text class="t-fld" x="30" y="134">A=9   C=2</text>
-        <path class="sarrow dm-arrow" d="M168 84 H236" />
+        <path class="dm-fork" d="M168 48 L204 84" /><path class="dm-fork" d="M168 120 L204 84" />
+        <path class="sarrow dm-arrow" d="M204 84 H236" marker-end="url(#wb-arrow-accent)" />
         <rect class="dd-card dm-merged" x="240" y="52" width="200" height="78" rx="6" />
-        <text class="t-fld dd-tag dm-keep" x="252" y="72">{L("compacted 5–6 · diff")}</text>
+        <text class="t-fld dd-tag dm-keep" x="252" y="72">{L("compacted 5-6 · diff")}</text>
         <text class="t-fld dm-keep" x="252" y="94">A=9   B=5   C=2</text>
-        <text class="t-x dm-drop" x="252" y="116">{L("A=7 dropped — block 5’s value is gone")}</text>
-        <text class="t-cap" x="240" y="178">{L("keep the newest value of each key — duplicates collapse (smaller); intra-range reads are lost")}</text>
+        <text class="t-x dm-drop" x="252" y="116">{L("older A=7 dropped")}</text>
+        <text class="t-cap" x="240" y="172">{L("keep the newest value of each key; duplicates collapse, so it shrinks")}</text>
+        <text class="t-x" x="240" y="188">{L("intra-range reads are lost")}</text>
       </svg>
     )}
 
-    {/* ── flat-db: a read falls through layered snapshots to find a past value ── */}
     {name === "dblayers" && (
       <svg viewBox="0 0 480 224" role="img" aria-label="Layered snapshots let a flat read see recent and past blocks">
         <circle class="dl-token" cx="60" cy="24" r="9" /><text class="dl-qt" x="60" y="28">?</text>
-        <text class="t-cap" x="150" y="20">{L("read 0xA7… as of block N−2")}</text>
+        <text class="t-cap" x="150" y="20">{L("read 0xA7… as of block N-2")}</text>
+        <path class="dl-seek" d="M60 34 L60 103 L118 103" marker-end="url(#wb-arrow-accent)" />
         {[
-          ["block N — 1-block snapshot", "t1"],
-          ["block N−1", "t1"],
-          ["block N−2", "t1 hit"],
-          ["compacted N−4 … N−1", "t2"],
-          ["compacted N−32 … N", "t2"],
+          ["block N · 1-block snapshot", "t1"],
+          ["block N-1", "t1"],
+          ["block N-2", "t1 hit"],
+          ["compacted N-4 … N-1", "t2"],
+          ["compacted N-32 … N", "t2"],
           ["base flat DB", "base"],
         ].map(([label, kind], i) => (
-          <g class={`dl-layer dll${i} ${kind.includes("hit") ? "dl-found" : ""}`}>
+          <g class={`dl-layer ${kind.includes("hit") ? "dl-found" : ""}`}>
             <rect class={`db-layer ${kind.split(" ")[0]}`} x="120" y={36 + i * 28} width="300" height="22" rx="4" />
             <text class="t-fld" x="132" y={51 + i * 28}>{label}</text>
             {kind.includes("hit") && <text class="st-ok" x="404" y={51 + i * 28}>✓</text>}
           </g>
         ))}
-        <text class="t-cap" x="240" y="214">{L("a read falls through ~7 layers — enough for the 128-block reorg depth snap sync needs")}</text>
+        <text class="t-cap" x="240" y="214">{L("a read falls through ~7 layers, enough for a 128-block reorg")}</text>
       </svg>
     )}
+
 
     {/* ── consensus: time is sliced into 12s slots, one proposer each ── */}
     {name === "cl-slots" && (
@@ -3654,154 +3671,110 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes rt-after { 0%,54% { opacity: 0 } 60% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-changed)) } 70% { filter: none } 82% { opacity: 1 } 90%,100% { opacity: 0 } }
 
   /* sync — shared bits */
-  .sedge { fill: none; stroke: var(--color-border); stroke-width: 1.2; }
+  .sedge { fill: none; stroke: var(--color-border-strong); stroke-width: 1.3; }
   .sedge.on { stroke: var(--color-accent); stroke-width: 1.8; }
   .sarrow { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   .st-ok { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
 
-  /* full sync: a marker crawls block by block while state fills, slowly */
-  .sg-marker { fill: none; stroke: var(--color-accent); stroke-width: 2; transform-box: fill-box; animation: sgstep 7s steps(8, jump-none) infinite; }
-  @keyframes sgstep { 0% { transform: translateX(0) } 100% { transform: translateX(392px) } }
+  /* full sync: a marker rests on the block being replayed, state fills partway */
+  .sg-lbl { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; text-anchor: start; }
+  .sg-end { text-anchor: end; }
+  .sg-blk { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .sg-cur { fill: color-mix(in oklab, var(--color-accent) 20%, var(--color-surface)); stroke: var(--color-accent); stroke-width: 2; }
+  .sg-link { stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .sg-tag { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
   .sg-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .sg-fill { fill: color-mix(in oklab, var(--color-accent) 30%, var(--color-surface)); transform-box: fill-box; transform-origin: left; animation: sgfill 7s linear infinite; }
-  @keyframes sgfill { 0% { transform: scaleX(0.02) } 100% { transform: scaleX(1) } }
+  .sg-fill { fill: color-mix(in oklab, var(--color-accent) 34%, var(--color-surface)); }
+  .sg-pctin { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9px; text-anchor: start; }
 
-  /* fast sync: nodes pop in one by one, top-down */
-  .st-n { opacity: 0; }
-  .s0 { animation: stpop 6s ease-out infinite; } .s1 { animation: stpop 6s ease-out 0.5s infinite; }
-  .s2 { animation: stpop 6s ease-out 1s infinite; } .s3 { animation: stpop 6s ease-out 1.5s infinite; }
-  .s4 { animation: stpop 6s ease-out 2.2s infinite; } .s5 { animation: stpop 6s ease-out 2.7s infinite; }
-  .s6 { animation: stpop 6s ease-out 3.2s infinite; } .s7 { animation: stpop 6s ease-out 3.7s infinite; }
-  @keyframes stpop { 0%,3% { opacity: 0; transform: translateY(-4px) } 9%,90% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
+  /* snap sync: big ranges on the left rebuild the trie on the right, one leaf heals */
+  .sn-bar { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); stroke: var(--color-node-extension); }
+  .sn-tag { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
+  .sn-heal-n { stroke: var(--color-changed); fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); animation: sn-pulse 3.6s ease-in-out infinite; }
+  @keyframes sn-pulse { 0%,100% { filter: none } 50% { filter: drop-shadow(0 0 5px var(--color-changed)) } }
 
-  /* snap sync: big ranges fill fast, then the trie assembles and heals */
-  .sn-bar { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .sn-range { opacity: 0; }
-  .r0 { animation: snrange 6s ease-out infinite; } .r1 { animation: snrange 6s ease-out 0.6s infinite; }
-  .r2 { animation: snrange 6s ease-out 1.2s infinite; } .r3 { animation: snrange 6s ease-out 1.8s infinite; }
-  @keyframes snrange { 0%,4% { opacity: 0; transform: translateX(-10px) } 12%,100% { opacity: 1; transform: translateX(0) } }
-  .sn-arrow { stroke-dasharray: 50; stroke-dashoffset: 50; animation: sndraw 6s ease-out infinite; }
-  @keyframes sndraw { 0%,30% { stroke-dashoffset: 50 } 42%,100% { stroke-dashoffset: 0 } }
-  .sn-t0, .sn-t1, .sn-t2 { opacity: 0; animation: snbuild 6s ease-out infinite; }
-  .sn-t1 { animation-delay: 0.3s; } .sn-t2 { animation-delay: 0.5s; }
-  @keyframes snbuild { 0%,45% { opacity: 0 } 55%,100% { opacity: 1 } }
-  .sn-heal { opacity: 0; animation: snheal 6s ease-in-out infinite; }
-  .sn-heal-n { stroke: var(--color-changed); }
-  @keyframes snheal { 0%,72% { opacity: 0 } 80% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-changed)) } 92%,100% { opacity: 0 } }
-
-  /* light client: a query lights a proof path, returns a verified value */
+  /* light client: headers on top, a query lights a proof path to a verified value */
   .lhdr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-border-strong); }
   .lq { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
-  .lp { stroke-dasharray: 140; stroke-dashoffset: 140; animation: ldraw 5s ease-in-out infinite; }
-  @keyframes ldraw { 0%,18% { stroke-dashoffset: 140 } 40%,100% { stroke-dashoffset: 0 } }
-  .lproof { opacity: 0; animation: lreveal 5s ease-in-out infinite; }
-  @keyframes lreveal { 0%,42% { opacity: 0 } 56%,92% { opacity: 1 } 100% { opacity: 0 } }
 
-  /* checkpoint sync: the long crawl dims, a trusted anchor hops to head */
-  .ck-old { animation: ckdim 6s ease-in-out infinite; }
-  @keyframes ckdim { 0%,30% { opacity: 1 } 48%,100% { opacity: 0.32 } }
-  .ck-crawl { fill: none; stroke: var(--color-changed); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-dashoffset: 366; animation: ckcrawl 6s linear infinite; }
-  @keyframes ckcrawl { 0% { stroke-dashoffset: 366 } 40%,100% { stroke-dashoffset: 0 } }
-  .ck-instead, .ck-anchor, .ck-lock, .ck-hop { opacity: 0; animation: ckin 6s ease-out infinite; }
-  .ck-anchor { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  /* checkpoint sync: the long crawl sits dim, a trusted anchor hops to head */
+  .ck-crawl { stroke: var(--color-changed); stroke-width: 1.6; stroke-dasharray: 5 4; opacity: 0.6; }
+  .ck-instead { fill: var(--color-ink-muted); text-anchor: start; }
+  .ck-anchor { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.6; }
   .ck-lock { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }
-  .ck-hop { stroke: var(--color-node-leaf); }
-  @keyframes ckin { 0%,50% { opacity: 0 } 62%,100% { opacity: 1 } }
+  .ck-hop { stroke: var(--color-node-leaf); animation: ck-pulse 3.6s ease-in-out infinite; }
+  @keyframes ck-pulse { 0%,100% { filter: none } 50% { filter: drop-shadow(0 0 4px var(--color-node-leaf)) } }
 
   /* flat-db shared */
   .db-q { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
   .db-node { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .db-val { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); }
+  .db-val { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
 
-  /* dbtrie: scattered reads fire in sequence along crossing arrows */
-  .dr { opacity: 0; }
-  .dr0 { animation: drpop 5s ease-out infinite; } .dr1 { animation: drpop 5s ease-out 0.6s infinite; }
-  .dr2 { animation: drpop 5s ease-out 1.2s infinite; } .dr3 { animation: drpop 5s ease-out 1.8s infinite; }
-  .dr4 { animation: drpop 5s ease-out 2.4s infinite; }
-  @keyframes drpop { 0%,4% { opacity: 0; transform: scale(0.6) } 12%,90% { opacity: 1; transform: scale(1) } 100% { opacity: 1 } }
-  .da { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 260; stroke-dashoffset: 260; }
-  .da1 { animation: dadraw 5s ease-out 0.3s infinite; } .da2 { animation: dadraw 5s ease-out 0.9s infinite; }
-  .da3 { animation: dadraw 5s ease-out 1.5s infinite; } .da4 { animation: dadraw 5s ease-out 2.1s infinite; }
-  @keyframes dadraw { 0%,6% { stroke-dashoffset: 260 } 16%,100% { stroke-dashoffset: 0 } }
+  /* dbtrie: one read snakes through scattered nodes on disk */
+  .da { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; }
+  .da-hit { stroke: var(--color-accent); }
 
   /* dbhalfpath: a disk head seeks wildly when hash-keyed, sweeps when path-keyed */
   .hp-cell { fill: var(--color-surface); stroke: var(--color-border); }
   .hp-node { fill: color-mix(in oklab, var(--color-node-extension) 22%, var(--color-surface)); stroke: var(--color-node-extension); }
   .hp-node-ok { fill: color-mix(in oklab, var(--color-node-leaf) 20%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .hp-bad { fill: var(--color-changed); } .hp-ok { fill: var(--color-node-leaf); }
+  .hp-bad { fill: var(--color-changed); text-anchor: start; } .hp-ok { fill: var(--color-node-leaf); text-anchor: start; }
   .hp-head { fill: var(--color-accent); }
   .hp-head-a { animation: hashseek 5s linear infinite; }
   .hp-head-b { animation: pathsweep 5s ease-in-out infinite; }
   @keyframes hashseek { 0% { transform: translateX(63px) } 20% { transform: translateX(141px) } 40% { transform: translateX(193px) } 60% { transform: translateX(297px) } 80% { transform: translateX(401px) } 100% { transform: translateX(63px) } }
   @keyframes pathsweep { 0% { transform: translateX(193px) } 45%,55% { transform: translateX(297px) } 100% { transform: translateX(193px) } }
 
-  /* dbflat: one quick lookup hits a flat row; the trie waits aside */
-  .df-six { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-decoration: line-through; animation: dfsix 4.5s ease-in-out infinite; }
-  .df-one { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; opacity: 0; animation: dfone 4.5s ease-in-out infinite; }
-  @keyframes dfsix { 0%,40% { opacity: 1 } 55%,100% { opacity: 0 } }
-  @keyframes dfone { 0%,45% { opacity: 0 } 58%,100% { opacity: 1 } }
+  /* dbflat: one lookup hits a flat row; the trie waits aside */
+  .df-six { fill: var(--color-changed); font-family: var(--font-mono); font-size: 10px; text-anchor: start; text-decoration: line-through; }
+  .df-one { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; text-anchor: start; }
   .db-flatrow { fill: var(--color-surface); stroke: var(--color-border); }
-  .df-hit .db-flatrow { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
-  .df-arrow { stroke-dasharray: 50; stroke-dashoffset: 50; animation: dfdraw 4.5s ease-in-out infinite; }
-  @keyframes dfdraw { 0%,10% { stroke-dashoffset: 50 } 30%,100% { stroke-dashoffset: 0 } }
-  .df-hit, .df-ok { animation: dfhit 4.5s ease-in-out infinite; }
-  @keyframes dfhit { 0%,30% { opacity: 0.35 } 42%,100% { opacity: 1 } }
-  .df-trie { animation: dftrie 4.5s ease-in-out infinite; }
-  @keyframes dftrie { 0%,60% { opacity: 0.4 } 74% { opacity: 1; filter: drop-shadow(0 0 6px var(--color-accent-dim)) } 100% { opacity: 0.4 } }
+  .df-hit .db-flatrow { stroke: var(--color-node-leaf); stroke-width: 1.6; fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
+  .df-ok { animation: df-pulse 3.6s ease-in-out infinite; }
+  @keyframes df-pulse { 0%,100% { filter: none } 50% { filter: drop-shadow(0 0 4px var(--color-node-leaf)) } }
+  .df-trie { opacity: 0.72; }
 
-  /* dbcompact: levels appear bottom-up, 8 boxes merging to 4 to 2 to 1 */
+  /* dbcompact: a merge tree, eight one-block layers fold up to one */
   .cbox { stroke-width: 1.2; }
   .c1 { fill: color-mix(in oklab, var(--color-node-extension) 14%, var(--color-surface)); stroke: var(--color-node-extension); }
   .c2 { fill: color-mix(in oklab, var(--color-node-branch) 14%, var(--color-surface)); stroke: var(--color-node-branch); }
   .c4 { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .c8 { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .c-on { fill: var(--color-ink-muted); }
-  .cl { opacity: 0; }
-  .cl0 { animation: clk0 8s ease-in-out infinite; }
-  .cl1 { animation: clk1 8s ease-in-out infinite; }
-  .cl2 { animation: clk2 8s ease-in-out infinite; }
-  .cl3 { animation: clk3 8s ease-in-out infinite; }
-  @keyframes clk0 { 0%,20% { opacity: 1 } 27%,93% { opacity: 0 } 100% { opacity: 1 } }
-  @keyframes clk1 { 0%,22% { opacity: 0 } 29%,44% { opacity: 1 } 51%,100% { opacity: 0 } }
-  @keyframes clk2 { 0%,46% { opacity: 0 } 53%,66% { opacity: 1 } 73%,100% { opacity: 0 } }
-  @keyframes clk3 { 0%,68% { opacity: 0 } 75%,92% { opacity: 1 } 99%,100% { opacity: 0 } }
-  .c-count { opacity: 0; }
-  .cc0 { animation: clk0 8s ease-in-out infinite; } .cc1 { animation: clk1 8s ease-in-out infinite; }
-  .cc2 { animation: clk2 8s ease-in-out infinite; } .cc3 { animation: clk3 8s ease-in-out infinite; }
+  .c-on { fill: var(--color-ink-muted); text-anchor: middle; }
+  .cedge { fill: none; stroke: var(--color-border-strong); stroke-width: 1.2; }
+  .c-cnt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: start; }
 
-  /* dbdiff: a query token falls through diff layers to the first (newest) match */
+  /* dbdiff: a query drops through diff layers to the first (newest) match */
   .dd-card { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .dd-hit { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
+  .dd-hit { stroke: var(--color-node-leaf); stroke-width: 1.6; fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); }
   .dd-base { fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); stroke: var(--color-hash); }
   .dd-tag { fill: var(--color-ink-faint); text-anchor: start; }
   .dd-found { fill: var(--color-node-leaf); }
   .dd-shadow { fill: var(--color-ink-faint); text-decoration: line-through; }
   .dd-shadnote { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: start; }
-  .dd-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); animation: ddfall 5s ease-in-out infinite; }
-  .dd-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: ddfall 5s ease-in-out infinite; }
-  @keyframes ddfall { 0%,16% { transform: translateY(0) } 32% { transform: translateY(21px) } 50%,90% { transform: translateY(63px) } 100% { transform: translateY(0) } }
+  .dd-seek { fill: none; stroke: var(--color-accent); stroke-width: 1.4; stroke-dasharray: 4 3; opacity: 0.65; }
+  .dd-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); }
+  .dd-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
 
-  /* dbmerge: the merged card assembles; the duplicate key drops out */
-  .dm-arrow { stroke-dasharray: 70; stroke-dashoffset: 70; animation: dmdraw 5s ease-in-out infinite; }
-  @keyframes dmdraw { 0%,12% { stroke-dashoffset: 70 } 30%,100% { stroke-dashoffset: 0 } }
-  .dm-merged { stroke: var(--color-node-leaf); }
+  /* dbmerge: two diffs fold into one card; the stale duplicate drops out */
+  .dm-arrow { stroke: var(--color-border-strong); }
+  .dm-fork { fill: none; stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .dm-merged { stroke: var(--color-node-leaf); stroke-width: 1.6; }
   rect.dm-merged { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); }
-  .dm-merged, .dm-keep { opacity: 0; animation: dmrev 5s ease-in-out infinite; }
-  @keyframes dmrev { 0%,30% { opacity: 0 } 44%,100% { opacity: 1 } }
-  .dm-drop { opacity: 0; animation: dmdrop 5s ease-in-out infinite; }
-  @keyframes dmdrop { 0%,46% { opacity: 0 } 58%,100% { opacity: 1 } }
+  .dm-keep { fill: var(--color-ink-muted); }
+  .dm-drop { fill: var(--color-changed); text-anchor: start; }
 
-  /* dblayers: a token falls through snapshot layers, stops where the value lives */
+  /* dblayers: a query drops through snapshot layers, stops where the value lives */
   .db-layer { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .db-layer.t1 { stroke: var(--color-node-extension); }
   .db-layer.t2 { stroke: var(--color-node-branch); }
   .db-layer.base { stroke: var(--color-hash); fill: color-mix(in oklab, var(--color-hash) 7%, var(--color-surface)); }
-  .dl-found .db-layer { stroke: var(--color-node-leaf); fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); }
-  .dl-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); animation: dldrop 5s ease-in infinite; }
-  .dl-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: dldrop 5s ease-in infinite; }
-  @keyframes dldrop { 0%,8% { transform: translateY(0) } 30% { transform: translateY(23px) } 45% { transform: translateY(51px) } 60%,90% { transform: translateY(79px) } 100% { transform: translateY(0) } }
-  .dl-found { animation: dlfound 5s ease-in-out infinite; }
-  @keyframes dlfound { 0%,55% { opacity: 0.55 } 64%,90% { opacity: 1 } 100% { opacity: 0.55 } }
+  .dl-found .db-layer { stroke: var(--color-node-leaf); stroke-width: 1.6; fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); animation: dl-pulse 3.6s ease-in-out infinite; }
+  @keyframes dl-pulse { 0%,100% { filter: none } 50% { filter: drop-shadow(0 0 4px var(--color-node-leaf)) } }
+  .dl-seek { fill: none; stroke: var(--color-accent); stroke-width: 1.4; stroke-dasharray: 4 3; opacity: 0.65; }
+  .dl-token { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); stroke: var(--color-accent); }
+  .dl-qt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
 
   /* consensus — slots: a "now" marker steps across the slot timeline */
   .sl-cell { fill: var(--color-surface); stroke: var(--color-border-strong); }

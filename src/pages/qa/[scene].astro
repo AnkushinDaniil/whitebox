@@ -1,0 +1,34 @@
+---
+import Scene from "@/components/explorable/Scene.astro";
+
+const scenes = [
+  "state","sign","verify","recover","replay","txfields","network","blocks","sybil",
+  "consensus","evm","gas","triepath","root","syncgenesis","synctrie","syncsnap",
+  "synclight","synccheckpoint","dbtrie","dbhalfpath","dbflat","dbcompact","dbdiff",
+  "dbmerge","dblayers","cl-slots","cl-randao","cl-attest","cl-epoch","cl-pbs","cl-life",
+  "fee-auction","fee-elastic","fee-burn","blob-calldata","blob-sidecar","blob-prune","blob-fee",
+];
+
+export function getStaticPaths() {
+  const all = "aa-bundler aa-eoa aa-paymaster aa-userop bh-payoff bh-ring bh-window blob-calldata blob-fee blob-prune blob-sidecar blocks bls-gap bls-precompile bls-use br-blind br-commit br-prove br-stamp cd-cost cd-reduce cd-rollup ci-domain ci-replay ci-split cl-attest cl-epoch cl-life cl-pbs cl-randao cl-slots consensus cr-counterfactual cr-create2 cr-nonce dbcompact dbdiff dbflat dbhalfpath dblayers dbmerge dbtrie dc-call dc-copy dc-delegate dc-proxy dp-fast dp-inblock dp-poll ec-copy ec-hash ec-use ef-nomark ef-reserve ef-unlock evm evm-gas evm-regions evm-stack evm-why fee-auction fee-burn fee-elastic fm-blind fm-opcode fm-use ga-acl ga-coldwarm ga-flat ga-raise gas ic-gap ic-meter ic-result mb-consolidate mb-payoff mb-raise mb-shard mc-loop mc-op mc-result mg-loop mg-parallel mg-pow mg-ttd mpt network p0-hacks p0-opcode p0-savings pr-caveat pr-det pr-randao r155-bind r155-reject r155-replay r155-vencode recover replay rev-catch rev-revert rev-throw rf-cap rf-gastoken rf-reduce root sc-committee sc-handoff sc-heavy sd-danger sd-restrict sd-result se-delegate se-migrate se-powers se-run sh-emul sh-ops sh-result sign ss-naive ss-net ss-sentry state stc-danger stc-static stc-use st-fingerprint st-header st-nodes sybil synccheckpoint syncgenesis synclight syncsnap synctrie triepath ts-opcodes ts-persist ts-revert ts-scratch tw-6364 tw-reprice tw-underpriced tx-disambig tx-family txfields tx-onefmt tx-typebyte verify wd-credit wd-flavors wd-push wd-stuck wr-clonly wr-request wr-trustless zk-cost zk-precompile zk-unlock".split(/\s+/);
+  return all.map((s) => ({ params: { scene: s } }));
+}
+
+const { scene } = Astro.params;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>QA {scene}</title>
+    <style is:global>
+      @import "@/styles/global.css";
+      body { background: #0a0c10; padding: 24px; }
+      .qa-name { color: #4cc9e6; font-family: monospace; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="qa-name">{scene}</div>
+    <Scene name={scene as any} caption={scene} wide />
+  </body>
+</html>

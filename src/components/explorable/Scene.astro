@@ -1271,7 +1271,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 226" role="img" aria-label="The typed transaction family, one byte per format">
         <text class="t-cap" x="240" y="20">{L("a versioned family; each feature claims a byte")}</text>
         <line class="fam-conn" x1="50" y1="43" x2="50" y2="193" />
-        {[["0x00", "legacy (pre-2718)", false], ["0x01", "access lists · EIP-2930", false], ["0x02", "base fee + tip · EIP-1559", false], ["0x03", "blobs · EIP-4844", false], ["0x04", "set EOA code · EIP-7702", false], ["0x05", "the next type slots in", true]].map(([byte, label, next], i) => (
+        {([["0x00", "legacy (pre-2718)", false], ["0x01", "access lists · EIP-2930", false], ["0x02", "base fee + tip · EIP-1559", false], ["0x03", "blobs · EIP-4844", false], ["0x04", "set EOA code · EIP-7702", false], ["0x05", "the next type slots in", true]] as [string, string, boolean][]).map(([byte, label, next], i) => (
           <g>
             <line class="fam-conn" x1="50" y1={43 + i * 30} x2="64" y2={43 + i * 30} />
             <rect class="fam-chip" x="64" y={32 + i * 30} width="58" height="22" rx="6" />
@@ -1851,22 +1851,25 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EVM: a fixed action becomes a program the account runs ── */}
     {name === "evm-why" && (
-      <svg viewBox="0 0 480 188" role="img" aria-label="A transaction's fixed action is replaced by a program stored in the account">
-        <text class="t-cap" x="120" y="26">{L("before — one fixed action")}</text>
-        <rect class="ev-fixed" x="30" y="38" width="180" height="70" rx="8" />
-        <text class="t-fld ev-cc" x="120" y="66">if transfer:</text>
-        <text class="t-fld ev-cc" x="120" y="84">  balance[to] += v</text>
-        <text class="t-x ev-rigid" x="120" y="130">{L("the protocol hard-codes it")}</text>
-        <path class="sarrow ev-morph" d="M214 74 H266" />
-        <text class="t-cap ev-ml" x="240" y="64">{L("put code in")}</text>
-        <text class="t-cap" x="360" y="26">{L("after — arbitrary code")}</text>
-        <rect class="ev-prog" x="270" y="38" width="180" height="70" rx="8" />
-        <text class="t-fld ev-op evo0" x="284" y="58">PUSH 2</text>
-        <text class="t-fld ev-op evo1" x="284" y="74">PUSH 3</text>
-        <text class="t-fld ev-op evo2" x="284" y="90">ADD  MUL …</text>
-        <text class="t-fld ev-cc" x="360" y="102" />
-        <text class="t-ok ev-free" x="360" y="130">{L("the account runs your program")}</text>
-        <text class="t-cap" x="240" y="172">{L("give the account a code field and a machine to run it — that machine is the EVM")}</text>
+      <svg viewBox="0 0 480 190" role="img" aria-label="A transaction's fixed action is replaced by a program stored in the account">
+        <text class="t-cap" x="114" y="24">{L("before: one fixed action")}</text>
+        <rect class="evw-fixed" x="24" y="34" width="180" height="66" rx="8" />
+        <text class="evw-cc" x="38" y="60">if transfer:</text>
+        <text class="evw-cc" x="52" y="80">balance[to] += v</text>
+        <text class="evw-rigid" x="114" y="122">{L("the protocol hard-codes it")}</text>
+
+        <path class="evw-ar" d="M206 67 H270" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-cap" x="238" y="60">{L("add code")}</text>
+
+        <text class="t-cap" x="366" y="24">{L("after: arbitrary code")}</text>
+        <rect class="evw-prog" x="272" y="34" width="184" height="66" rx="8" />
+        <text class="evw-op" x="286" y="54">PUSH 2</text>
+        <text class="evw-op" x="286" y="70">PUSH 3</text>
+        <text class="evw-op" x="286" y="86">ADD  MUL …</text>
+        <text class="evw-free" x="366" y="122">{L("the account runs your program")}</text>
+
+        <text class="t-cap" x="240" y="164">{L("give the account a code field and a machine to run it")}</text>
+        <text class="sg-ok" x="240" y="180">{L("that machine is the EVM")}</text>
       </svg>
     )}
 
@@ -1909,52 +1912,63 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── EVM: gas — pay per step, bound the run ── */}
     {name === "evm-gas" && (
-      <svg viewBox="0 0 480 186" role="img" aria-label="Gas meters each opcode and bounds execution">
-        <text class="t-cap" x="240" y="22">{L("every opcode costs gas — the budget only falls")}</text>
-        <rect class="ev-gtrack" x="40" y="38" width="400" height="22" rx="6" />
-        <rect class="ev-gfill" x="40" y="38" width="400" height="22" rx="6" />
-        <text class="t-fld ev-gremain" x="240" y="53" text-anchor="middle">{L("gas remaining")}</text>
-        {[["PUSH 3", 60], ["PUSH 3", 156], ["ADD 3", 252], ["SSTORE 20000", 330]].map(([lbl, x], i) => (
-          <g class={`ev-tick ev-tk${i}`}>
-            <line x1={x} y1="66" x2={x} y2="78" />
-            <text class="t-fld" x={x} y="92" text-anchor="middle">{lbl}</text>
+      <svg viewBox="0 0 480 186" role="img" aria-label="A gas budget falls as each opcode runs, then halts">
+        <text class="t-cap" x="240" y="20">{L("every opcode costs gas; the budget only falls")}</text>
+        <text class="evg-op" x="176" y="38">{L("spent")}</text>
+        <text class="evg-op" x="392" y="38">{L("remaining")}</text>
+        <rect class="evg-track" x="40" y="42" width="400" height="24" rx="12" />
+        <rect class="evg-spent" x="44" y="46" width="308" height="16" rx="6" />
+        <rect class="evg-fill" x="356" y="46" width="80" height="16" rx="6" />
+        {[["PUSH -3", 92], ["PUSH -3", 176], ["ADD -3", 260], ["SSTORE -20000", 344]].map(([lbl, x]) => (
+          <g>
+            <line class="evg-tick" x1={x} y1="66" x2={x} y2="78" />
+            <text class="evg-op" x={x} y="92">{lbl}</text>
           </g>
         ))}
-        <text class="t-x ev-halt" x="240" y="126" text-anchor="middle">{L("out of gas → revert (all changes undone)")}</text>
-        <text class="t-cap" x="240" y="156">{L("you can't tell if a program halts — so charge per step and cap it")}</text>
-        <text class="t-cap" x="240" y="174">{L("computation is now paid for and always terminates")}</text>
+        <text class="evg-halt" x="240" y="122">{L("out of gas → revert, all changes undone")}</text>
+        <text class="t-cap" x="240" y="150">{L("you can't tell if a program halts, so charge per step and cap it")}</text>
+        <text class="sg-ok" x="240" y="168">{L("computation is paid for and always terminates")}</text>
       </svg>
     )}
 
     {/* ── EVM: three places for data — stack, memory, storage ── */}
     {name === "evm-regions" && (
-      <svg viewBox="0 0 480 214" role="img" aria-label="Watch a call fill stack and memory then end: stack and memory are wiped while storage survives">
-        <text class="t-cap" x="240" y="18">{L("three places to put data — priced by how long they last")}</text>
-        <text class="ev-ph ev-phA" x="240" y="36" text-anchor="middle">{L("① call runs — fill stack & memory, write storage")}</text>
-        <text class="ev-ph ev-phB" x="240" y="36" text-anchor="middle">{L("② call ends — stack & memory wiped")}</text>
-        <text class="ev-ph ev-phC" x="240" y="36" text-anchor="middle">{L("③ next call — only storage survived")}</text>
+      <svg viewBox="0 0 480 214" role="img" aria-label="Three data regions: stack and memory are cheap and wiped after the call; storage is costly and survives">
+        <text class="t-cap" x="240" y="18">{L("three places to put data, priced by how long they last")}</text>
 
-        <rect class="ev-reg ev-rstack" x="16" y="48" width="146" height="120" rx="8" />
-        <text class="t-cap" x="89" y="66">{L("stack")}</text>
-        {[0, 1, 2].map((i) => (<rect class="ev-eph ev-sk" x="52" y={82 + i * 18} width="74" height="14" rx="3" />))}
-        <text class="t-ok ev-cheap" x="89" y="156">{L("+3 gas · wiped")}</text>
+        <rect class="evr-reg" x="16" y="34" width="146" height="126" rx="8" />
+        <text class="t-cap" x="89" y="52">{L("stack")}</text>
+        {[["2", 0], ["3", 1], ["5", 2]].map(([v, i]) => (
+          <g>
+            <rect class="evr-stack-cell" x="52" y={68 + Number(i) * 20} width="74" height="16" rx="3" />
+            <text class="evr-persistval" x="89" y={80 + Number(i) * 20}>{v}</text>
+          </g>
+        ))}
+        <text class="evr-sub" x="89" y="142">{L("LIFO scratch")}</text>
+        <text class="evr-cheap" x="89" y="156">{L("+3 gas · wiped")}</text>
 
-        <rect class="ev-reg ev-rmem" x="170" y="48" width="146" height="120" rx="8" />
-        <text class="t-cap" x="243" y="66">{L("memory")}</text>
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (<rect class="ev-eph ev-byte" x={186 + i * 15} y="86" width="12" height="18" rx="2" />))}
-        <text class="t-cap ev-subm" x="243" y="124">{L("linear scratch")}</text>
-        <text class="t-ok ev-cheap" x="243" y="156">{L("cheap · wiped")}</text>
+        <rect class="evr-reg" x="170" y="34" width="146" height="126" rx="8" />
+        <text class="t-cap" x="243" y="52">{L("memory")}</text>
+        {["2a", "1f", "00", "c4", "07", "9b", "3d", "e1"].map((b, i) => (
+          <g>
+            <rect class="evr-mem-cell" x={186 + i * 15} y="72" width="12" height="20" rx="2" />
+            <text class="evr-membyte" x={192 + i * 15} y="86">{b}</text>
+          </g>
+        ))}
+        <text class="evr-sub" x="243" y="118">{L("linear scratch")}</text>
+        <text class="evr-cheap" x="243" y="156">{L("cheap · wiped")}</text>
 
-        <rect class="ev-reg ev-rstore" x="324" y="48" width="140" height="120" rx="8" />
-        <text class="t-cap" x="394" y="66">{L("storage")}</text>
-        <ellipse class="ev-disk" cx="394" cy="88" rx="34" ry="9" />
-        <rect class="ev-diskbody" x="360" y="88" width="68" height="26" rx="2" />
-        <ellipse class="ev-disk" cx="394" cy="114" rx="34" ry="9" />
-        <rect class="ev-persist" x="366" y="92" width="56" height="16" rx="3" />
-        <text class="ev-persistval" x="394" y="104">42</text>
-        <text class="t-x ev-exp" x="394" y="156">{L("20000 gas · survives")}</text>
+        <rect class="evr-reg" x="324" y="34" width="140" height="126" rx="8" />
+        <text class="t-cap" x="394" y="52">{L("storage")}</text>
+        <ellipse class="evr-disk" cx="394" cy="76" rx="34" ry="9" />
+        <rect class="evr-diskbody" x="360" y="76" width="68" height="30" rx="2" />
+        <ellipse class="evr-disk" cx="394" cy="108" rx="34" ry="9" />
+        <rect class="evr-disk" x="370" y="80" width="48" height="15" rx="3" />
+        <text class="evr-persistval" x="394" y="92">42</text>
+        <text class="evr-sub" x="394" y="142">{L("permanent")}</text>
+        <text class="evr-exp" x="394" y="156">{L("20000 gas · survives")}</text>
 
-        <text class="t-cap" x="240" y="200">{L("ephemeral data is cheap; data that outlives the call costs ~1000× more")}</text>
+        <text class="t-cap" x="240" y="188">{L("ephemeral data is cheap; data that outlives the call costs about 1000x more")}</text>
       </svg>
     )}
 
@@ -3847,6 +3861,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .evr-disk { fill: color-mix(in oklab, var(--color-node-leaf) 22%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
   .evr-diskbody { fill: color-mix(in oklab, var(--color-node-leaf) 14%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.3; }
   .evr-persistval { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+  .evr-membyte { fill: var(--color-node-branch); font-family: var(--font-mono); font-size: 6px; text-anchor: middle; }
   .evr-cheap { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
   .evr-exp { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9.5px; text-anchor: middle; }
   .evr-sub { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; text-anchor: middle; }

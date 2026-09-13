@@ -391,74 +391,77 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── blocks: a full state trie; one balance edit recomputes the path up
          to a new stateRoot, into the header, then breaks every later block ── */}
     {name === "blocks" && (
-      <svg viewBox="0 0 480 326" role="img" aria-label="A full state trie recomputing one path into the block chain">
+      <svg viewBox="0 0 480 328" role="img" aria-label="One balance edit recomputes the trie path into a new stateRoot in the block header">
         {/* the block chain, top */}
         {[0, 1, 2].map((i) => {
           const x = 14 + i * 162;
           const sr = i === 1 ? "71c4" : "0db8";
           const h = i === 0 ? "3a07" : i === 1 ? "88b2" : "f0c5";
           return (
-            <g class="blk-g">
-              <rect class="block" x={x} y="12" width="132" height="86" rx="8" />
+            <g>
+              <rect class="bk-block" x={x} y="12" width="132" height="86" rx="8" />
               <text class="t-cap" x={x + 66} y="27">block #{i + 1}</text>
-              <rect class="fchip" x={x + 8} y="33" width="116" height="17" rx="3" />
-              {i === 0 && <text class="t-fld old oD" x={x + 14} y="45">stateRoot 9f12</text>}
-              {i === 0 && <text class="t-fld new nD" x={x + 14} y="45">stateRoot a2e0</text>}
-              {i !== 0 && <text class="t-fld" x={x + 14} y="45">stateRoot {sr}</text>}
-              <rect class="fchip" x={x + 8} y="53" width="116" height="17" rx="3" />
-              <text class="t-fld" x={x + 14} y="65">txsRoot c1{i}9</text>
+              <rect class="bk-fchip" x={x + 8} y="33" width="116" height="17" rx="3" />
+              {i === 0 && <text class="bk-new" x={x + 14} y="45">stateRoot a2e0</text>}
+              {i !== 0 && <text class="bk-fld" x={x + 14} y="45">stateRoot {sr}</text>}
+              <rect class="bk-fchip" x={x + 8} y="53" width="116" height="17" rx="3" />
+              <text class="bk-fld" x={x + 14} y="65">txsRoot c1{i}9</text>
               <text class="t-cap" x={x + 18} y="90">prev</text>
-              <rect class={`hchip ${i === 0 ? "gE" : i === 1 ? "gF" : "gG"}`} x={x + 48} y="76" width="76" height="17" rx="3" />
-              <text class="t-fld" x={x + 55} y="89">hash {h}</text>
+              <rect class="bk-hchip" x={x + 48} y="76" width="76" height="17" rx="3" />
+              <text class="bk-fld" x={x + 55} y="89">hash {h}</text>
             </g>
           );
         })}
-        <path class="plink gF" d="M146 85 H176" /><path class="plink gG" d="M308 85 H338" />
-        <path class="feed" d="M160 143 H6 V44 H22" />
-        <text class="t-cap feed-lbl" x="350" y="128">root → block.stateRoot</text>
+        <path class="bk-plink" d="M176 85 H150" marker-end="url(#wb-arrow)" />
+        <path class="bk-plink" d="M338 85 H312" marker-end="url(#wb-arrow)" />
+        <path class="bk-feed" d="M160 143 H6 V44 H12" marker-end="url(#wb-arrow-accent)" />
+        <text class="bk-feedlbl" x="30" y="120">{L("new root")}</text>
+        <text class="bk-feedlbl" x="30" y="132">{L("→ block.stateRoot")}</text>
 
         {/* root branch */}
-        <rect class="tnode branch" x="160" y="128" width="100" height="30" rx="6" />
-        <text class="t-fld" x="172" y="141">{L("branch")}</text>
-        <text class="t-h old oC" x="172" y="153">root 91f3</text>
-        <text class="t-h new nC" x="172" y="153">root 2d7a</text>
+        <rect class="bk-node bk-changed" x="160" y="128" width="104" height="30" rx="6" />
+        <text class="bk-fld" x="172" y="141">{L("branch")}</text>
+        <text class="bk-new" x="172" y="153">root 2d7a</text>
 
         {/* edges from root */}
-        <path class="edge edge-on" d="M198 158 L120 190" /><text class="t-nib" x="148" y="178">a</text>
-        <path class="edge" d="M224 158 L312 190" /><text class="t-nib" x="276" y="178">f</text>
+        <path class="bk-edgeon" d="M196 158 L120 190" marker-end="url(#wb-arrow-accent)" />
+        <path class="bk-edge" d="M228 158 L312 190" marker-end="url(#wb-arrow)" />
+        <rect class="bk-nibchip" x="141" y="166" width="16" height="15" rx="3" /><text class="bk-nib" x="149" y="177">a</text>
+        <rect class="bk-nibchip" x="272" y="166" width="16" height="15" rx="3" /><text class="bk-nib" x="280" y="177">f</text>
 
         {/* on-path branch (prefix a) and off-path branch (prefix f) */}
-        <rect class="tnode branch" x="64" y="190" width="92" height="30" rx="6" />
-        <text class="t-fld" x="74" y="203">{L("branch")}</text>
-        <text class="t-h old oB" x="74" y="215">a· 3c08</text>
-        <text class="t-h new nB" x="74" y="215">a· 8a41</text>
-        <rect class="tnode branch" x="274" y="190" width="92" height="30" rx="6" />
-        <text class="t-fld" x="284" y="203">{L("branch")}</text>
-        <text class="t-h" x="284" y="215">f· 77c2</text>
+        <rect class="bk-node bk-changed" x="64" y="190" width="92" height="30" rx="6" />
+        <text class="bk-fld" x="74" y="203">{L("branch")}</text>
+        <text class="bk-new" x="74" y="215">a· 8a41</text>
+        <rect class="bk-node" x="274" y="190" width="92" height="30" rx="6" />
+        <text class="bk-fld" x="284" y="203">{L("branch")}</text>
+        <text class="bk-h" x="284" y="215">f· 77c2</text>
 
         {/* edges to leaves */}
-        <path class="edge edge-on" d="M100 220 L74 264" /><text class="t-nib" x="80" y="246">7</text>
-        <path class="edge" d="M120 220 L162 264" /><text class="t-nib" x="150" y="246">9</text>
-        <path class="edge" d="M312 220 L300 264" /><text class="t-nib" x="300" y="246">2</text>
-        <path class="edge" d="M330 220 L388 264" /><text class="t-nib" x="366" y="246">5</text>
+        <path class="bk-edgeon" d="M98 220 L78 261" marker-end="url(#wb-arrow-accent)" />
+        <path class="bk-edge" d="M122 220 L162 262" marker-end="url(#wb-arrow)" />
+        <path class="bk-edge" d="M312 220 L300 262" marker-end="url(#wb-arrow)" />
+        <path class="bk-edge" d="M330 220 L388 262" marker-end="url(#wb-arrow)" />
+        <rect class="bk-nibchip" x="80" y="232" width="14" height="15" rx="3" /><text class="bk-nib" x="87" y="243">7</text>
+        <rect class="bk-nibchip" x="147" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="154" y="245">9</text>
+        <rect class="bk-nibchip" x="296" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="303" y="245">2</text>
+        <rect class="bk-nibchip" x="360" y="234" width="14" height="15" rx="3" /><text class="bk-nib" x="367" y="245">5</text>
 
         {/* the four accounts — only Alice (a7) changes */}
-        <rect class="tnode leaf changed-leaf" x="24" y="264" width="92" height="50" rx="6" />
-        <text class="t-fld leaf-t" x="34" y="278">a7 · Alice</text>
-        <text class="t-bal old oA" x="34" y="293">{L("bal 14 Ξ")}</text>
-        <text class="t-bal new nA" x="34" y="293">{L("bal 9 Ξ")}</text>
-        <text class="t-h old oA" x="34" y="307">h 3c1a</text>
-        <text class="t-h new nA" x="34" y="307">h 8a47</text>
+        <rect class="bk-leaf bk-changed" x="24" y="264" width="92" height="52" rx="6" />
+        <text class="bk-leaft" x="34" y="278">a7 · Alice</text>
+        <text class="bk-new" x="34" y="294">{L("bal 9 Ξ")}</text>
+        <text class="bk-new" x="34" y="309">h 8a47</text>
         {[
           [120, "a9 · Bob", "bal 6 Ξ", "h 55de"],
           [250, "f2 · Carol", "bal 20 Ξ", "h 9e10"],
           [346, "f5 · Dave", "bal 3 Ξ", "h b204"],
         ].map(([x, who, bal, h]) => (
           <g>
-            <rect class="tnode leaf" x={x} y="264" width="92" height="50" rx="6" />
-            <text class="t-fld leaf-t" x={Number(x) + 10} y="278">{who}</text>
-            <text class="t-bal" x={Number(x) + 10} y="293">{bal}</text>
-            <text class="t-h" x={Number(x) + 10} y="307">{h}</text>
+            <rect class="bk-leaf" x={x} y="264" width="92" height="52" rx="6" />
+            <text class="bk-leaft" x={Number(x) + 10} y="278">{who}</text>
+            <text class="bk-bal" x={Number(x) + 10} y="294">{bal}</text>
+            <text class="bk-h" x={Number(x) + 10} y="309">{h}</text>
           </g>
         ))}
       </svg>
@@ -466,18 +469,37 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── sybil: free identities overwhelm a vote; cost makes them safe ── */}
     {name === "sybil" && (
-      <svg viewBox="0 0 480 200" role="img" aria-label="Sybil attack and costly identity">
-        <circle class="attacker" cx="64" cy="98" r="22" />
-        <text class="t-emoji" x="64" y="105">😈</text>
-        <text class="t-cap" x="64" y="138">{L("one actor")}</text>
-        {[[180, 44], [250, 40], [320, 60], [200, 110], [280, 120], [360, 110]].map(([x, y], i) => (
-          <g class={`clone ${i === 2 ? "clone-keep" : "clone-doom"} sc${i}`}>
-            <circle class="clone-c" cx={x} cy={y} r="13" />
-            <text class="t-vote" x={x} y={y + 4}>+1</text>
+      <svg viewBox="0 0 480 210" role="img" aria-label="Free identities flood a vote; a required stake makes an army unaffordable">
+        <line x1="240" y1="30" x2="240" y2="196" style="stroke:var(--color-border);stroke-width:1;stroke-dasharray:3 3" />
+        {/* left: free identities flood */}
+        <text class="vf-badt" x="118" y="22" style="text-anchor:middle">{L("identities are free")}</text>
+        <rect class="sy-attacker" x="14" y="84" width="56" height="30" rx="7" />
+        <text class="t-cap" x="42" y="103">{L("1 actor")}</text>
+        {[[112, 52], [156, 74], [166, 118], [120, 140], [196, 96]].map(([x, y]) => (
+          <g>
+            <path class="sy-ar" d={`M70 99 L${Number(x) - 12} ${y}`} marker-end="url(#wb-arrow)" />
+            <circle class="sy-clone" cx={x} cy={y} r="13" />
+            <text class="sy-vote" x={x} y={Number(y) + 4}>+1</text>
           </g>
         ))}
-        <text class="t-x sybil-free" x="300" y="166">{L("free identities → outvote everyone")}</text>
-        <text class="t-ok sybil-cost" x="300" y="166">{L("each must stake real money → can’t afford an army")}</text>
+        <text class="t-x" x="118" y="192" style="text-anchor:middle">{L("free → flood the vote")}</text>
+        {/* right: a stake caps the army */}
+        <text class="sy-ok" x="360" y="22" style="text-anchor:middle">{L("identity costs a stake")}</text>
+        <rect class="sy-attacker" x="252" y="84" width="56" height="30" rx="7" />
+        <text class="t-cap" x="280" y="103">{L("1 actor")}</text>
+        <path class="sy-arkeep" d="M308 99 H324" marker-end="url(#wb-arrow)" />
+        <rect class="sy-keep" x="328" y="85" width="78" height="28" rx="6" />
+        <text class="sy-ok" x="367" y="103" style="font-size:9px">stake 32 Ξ</text>
+        <path class="sy-arkeep" d="M406 99 H426" marker-end="url(#wb-arrow)" />
+        <circle class="sy-keep" cx="444" cy="99" r="12" />
+        <text class="sy-votekeep" x="444" y="103">+1</text>
+        {[[356, 150], [420, 150]].map(([x, y]) => (
+          <g>
+            <circle cx={x} cy={y} r="12" style="fill:none;stroke:var(--color-border);stroke-width:1.2;stroke-dasharray:3 3" />
+            <text class="t-x" x={x} y={Number(y) + 4} style="text-anchor:middle">✗</text>
+          </g>
+        ))}
+        <text class="sy-ok" x="360" y="192" style="text-anchor:middle">{L("an army is unaffordable")}</text>
       </svg>
     )}
 
@@ -522,43 +544,52 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── gas: a meter drains as instructions run, then halts ── */}
     {name === "gas" && (
-      <svg viewBox="0 0 480 180" role="img" aria-label="Gas metering">
-        <text class="t-cap" x="60" y="56">{L("gas")}</text>
-        <rect class="gauge" x="60" y="64" width="360" height="22" rx="11" />
-        <rect class="gauge-fill" x="62" y="66" width="356" height="18" rx="9" />
-        <g class="ops">
-          {["PUSH −3", "ADD −3", "SSTORE −20000", "out of gas ✋"].map((op, i) => (<text class={`t-op opx o${i}`} x="240" y="118">{op}</text>))}
-        </g>
-        <text class="t-cap" x="240" y="156">{L("every step costs — no program runs forever")}</text>
+      <svg viewBox="0 0 480 176" role="img" aria-label="A gas budget falls as each opcode runs, then halts">
+        <text class="t-cap" x="240" y="20">{L("every step costs gas; the budget only falls")}</text>
+        <text class="t-cap" x="180" y="38">{L("spent")}</text>
+        <text class="ga-op" x="392" y="38">{L("remaining")}</text>
+        <rect class="ga-track" x="40" y="42" width="400" height="24" rx="12" />
+        <rect class="ga-spent" x="44" y="46" width="302" height="16" rx="6" />
+        <rect class="ga-fill" x="348" y="46" width="88" height="16" rx="6" />
+        {[["PUSH -3", 92], ["ADD -3", 180], ["SSTORE -20000", 320]].map(([op, x]) => (
+          <g>
+            <line class="ga-tick" x1={x} y1="68" x2={x} y2="80" />
+            <text class="ga-op" x={x} y="94">{op}</text>
+          </g>
+        ))}
+        <text class="ga-halt" x="240" y="124">{L("out of gas → revert (all changes undone)")}</text>
+        <text class="t-cap" x="240" y="152">{L("charge per step and cap it, so every program terminates")}</text>
       </svg>
     )}
 
     {/* ── triepath: an address is a path of nibbles down typed nodes ── */}
     {name === "triepath" && (
-      <svg viewBox="0 0 460 250" role="img" aria-label="Walking an address down the trie">
-        <text class="t-cap" x="44" y="22">{L("address")}</text>
+      <svg viewBox="0 0 460 250" role="img" aria-label="An address is a path of nibbles walked down typed trie nodes">
+        <text class="t-cap" x="40" y="22" style="text-anchor:start">{L("address")}</text>
         {["a", "7", "3", "f", "c"].map((n, i) => (
           <g>
-            <rect class={`nib nb${i}`} x={96 + i * 34} y="9" width="28" height="20" rx="4" />
-            <text class={`t-nib nbt${i}`} x={110 + i * 34} y="24">{n}</text>
+            <rect class="tp2-chip-on" x={98 + i * 32} y="9" width="26" height="20" rx="4" />
+            <text class="tp2-nib-on" x={111 + i * 32} y="24">{n}</text>
           </g>
         ))}
-        <rect class="root-chip" x="300" y="8" width="146" height="22" rx="5" />
-        <text class="t-root tp-root" x="373" y="23">stateRoot ⟳</text>
         {[
-          ["branch", "follow slot a"],
-          ["branch", "follow slot 7"],
-          ["extension", "shared “3 f c”"],
-          ["leaf", "value → 9 Ξ"],
+          ["branch", "root node — take slot a"],
+          ["branch", "next node — take slot 7"],
+          ["extension", "shared nibbles 3 f c"],
+          ["leaf", "value = 9 Ξ"],
         ].map(([kind, note], i) => (
-          <g class={`tn tn${i}`}>
-            <rect class={`tnode ${kind}`} x="90" y={52 + i * 46} width="280" height="34" rx="6" />
-            <text class="t-field" x="106" y={73 + i * 46}>{kind}</text>
-            <text class="t-cap tnote" x="356" y={73 + i * 46}>{note}</text>
+          <g>
+            <rect class={`tp2-node tp2-${kind}`} x="70" y={46 + i * 48} width="264" height="32" rx="6" />
+            <text class="tp2-kind" x="86" y={66 + i * 48}>{kind}</text>
+            <text class="tp2-note" x="322" y={66 + i * 48}>{note}</text>
           </g>
         ))}
-        <path class="tarrow ta0" d="M230 86 V98" /><path class="tarrow ta1" d="M230 132 V144" /><path class="tarrow ta2" d="M230 178 V190" />
-        <text class="t-cap tp-rehash" x="230" y="244">{L("edit the leaf → re-hash up the path → new root")}</text>
+        {[0, 1, 2].map((i) => (
+          <path class="tp2-ar" d={`M150 ${78 + i * 48} V${94 + i * 48}`} marker-end="url(#wb-arrow-accent)" />
+        ))}
+        <path class="tp2-ar" d="M334 206 C414 206 414 62 338 62" marker-end="url(#wb-arrow-accent)" />
+        <text class="tp2-kind" x="434" y="134" style="text-anchor:middle;font-size:9.5px">re-hash</text>
+        <text class="t-cap" x="200" y="244">{L("edit the leaf, re-hash up the path, new root")}</text>
       </svg>
     )}
 

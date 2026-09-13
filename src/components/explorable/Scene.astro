@@ -963,16 +963,20 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-1559: the blind first-price auction it replaced ── */}
     {name === "fee-auction" && (
       <svg viewBox="0 0 480 210" role="img" aria-label="A blind first-price gas auction: you overpay or get stuck">
-        <text class="t-cap" x="200" y="22">{L("everyone names a price · the block takes the highest")}</text>
-        <rect class="fa-block" x="142" y="30" width="160" height="78" rx="6" />
+        <text class="t-cap" x="240" y="22">{L("everyone names a price · the block takes the highest")}</text>
+        <rect class="fa-block" x="142" y="30" width="160" height="76" rx="6" />
         {[["100 gwei (you)", "fa-you", 0], ["50 gwei", "fa-in", 1], ["45 gwei", "fa-in", 2], ["30 gwei", "fa-out", 3], ["12 gwei", "fa-out", 4], ["8 gwei", "fa-out", 5]].map(([label, cls, i]) => (
           <g class={`fa-tag ${cls}`}>
             <rect class="fa-rect" x="150" y={34 + Number(i) * 25} width="144" height="20" rx="4" />
             <text class="t-fld" x="160" y={48 + Number(i) * 25}>{label}</text>
           </g>
         ))}
-        <text class="t-fld fa-blbl" x="316" y="62">{L("← top bids fill the block")}</text>
-        <text class="t-fld fa-stall" x="316" y="140">{L("← these just stall")}</text>
+        <path class="fa-ptr" d="M370 68 H304" marker-end="url(#wb-arrow-accent)" />
+        <text class="t-fld fa-blbl" x="374" y="65">{L("top bids fill")}</text>
+        <text class="t-fld fa-blbl" x="374" y="77">{L("the block")}</text>
+        <path class="fa-ptr" d="M370 145 H300" marker-end="url(#wb-arrow)" />
+        <text class="t-fld fa-stall" x="374" y="142">{L("the rest")}</text>
+        <text class="t-fld fa-stall" x="374" y="154">{L("just stall")}</text>
         <text class="t-x" x="240" y="200">{L("you paid 100 gwei to beat 45 — overpaid; no posted price, no discovery")}</text>
       </svg>
     )}
@@ -980,12 +984,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {/* ── EIP-1559: elastic blocks absorb a demand spike ── */}
     {name === "fee-elastic" && (
       <svg viewBox="0 0 480 178" role="img" aria-label="Elastic blocks absorb a spike while the base fee ramps">
-        <rect class="el-block" x="40" y="30" width="120" height="118" rx="8" />
-        <rect class="el-fill" x="42" y="32" width="116" height="114" rx="6" />
-        <line class="el-target" x1="32" y1="89" x2="168" y2="89" />
-        <text class="t-cap" x="206" y="40" text-anchor="start">{L("limit = 2× target")}</text>
-        <text class="t-cap" x="206" y="92" text-anchor="start">{L("target (½ full)")}</text>
-        <text class="t-fld el-fee" x="206" y="126" text-anchor="start">{L("base fee climbing ↑")}</text>
+        <rect class="el-block" x="40" y="28" width="110" height="118" rx="8" />
+        <rect class="el-fill" x="42" y="30" width="106" height="114" rx="6" />
+        <line class="el-limit" x1="48" y1="35" x2="142" y2="35" />
+        <text class="t-cap" x="204" y="39" text-anchor="start">{L("limit = 2× target")}</text>
+        <line class="el-target" x1="48" y1="89" x2="142" y2="89" />
+        <text class="t-cap" x="204" y="93" text-anchor="start">{L("target (½ full)")}</text>
+        <rect class="el-gtrack" x="380" y="28" width="26" height="118" rx="5" />
+        <rect class="el-gfill" x="382" y="30" width="22" height="114" rx="4" />
+        <text class="t-fld el-fee" x="393" y="22" text-anchor="middle">{L("base fee")}</text>
         <text class="t-cap" x="240" y="170">{L("spike bursts to 2× · the base fee then climbs back to target")}</text>
       </svg>
     )}
@@ -996,11 +1003,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="167" y="24">{L("fee per gas = base fee + tip")}</text>
         <rect class="fb-base" x="20" y="34" width="220" height="30" rx="4" /><text class="t-fld" x="130" y="53" text-anchor="middle">{L("base fee (burned)")}</text>
         <rect class="fb-tip" x="244" y="34" width="70" height="30" rx="4" /><text class="t-fld" x="279" y="53" text-anchor="middle">{L("tip")}</text>
-        <path class="fb-a1" d="M130 64 V112" />
-        <text class="fb-fire" x="130" y="134">🔥</text>
-        <text class="t-x fb-burnlbl" x="130" y="156">{L("burned — gone for good")}</text>
-        <path class="fb-a2" d="M279 64 L360 112" />
-        <rect class="fb-prop" x="344" y="110" width="120" height="34" rx="6" /><text class="t-ok fb-proplbl" x="404" y="131">{L("→ proposer")}</text>
+        <path class="fb-a1" d="M130 66 V112" marker-end="url(#wb-arrow)" />
+        <path class="fb-fire" d="M130 120 C122 128 124 138 130 142 C136 138 138 128 130 120 Z" />
+        <text class="t-x fb-burnlbl" x="130" y="160" text-anchor="middle">{L("burned — gone for good")}</text>
+        <path class="fb-a2" d="M282 66 L352 102" marker-end="url(#wb-arrow)" />
+        <rect class="fb-prop" x="344" y="106" width="120" height="34" rx="6" /><text class="fb-proplbl" x="404" y="127" text-anchor="middle">{L("proposer")}</text>
         <text class="t-cap" x="240" y="178">{L("base fee burned → no one to bribe, ETH gets scarcer · the tip buys ordering")}</text>
       </svg>
     )}
@@ -1009,38 +1016,41 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "blob-calldata" && (
       <svg viewBox="0 0 480 188" role="img" aria-label="Rollup data stuffed into permanent calldata">
         <rect class="bc-batch" x="14" y="62" width="92" height="52" rx="6" /><text class="t-cap" x="60" y="84">{L("rollup batch")}</text><text class="t-cap" x="60" y="100">~128 KB</text>
-        <path class="sarrow bc-a" d="M106 88 H150" />
+        <path class="sarrow bc-a" d="M108 88 H148" marker-end="url(#wb-arrow)" />
         <rect class="bc-tx" x="152" y="66" width="84" height="44" rx="6" /><text class="t-cap" x="194" y="84">tx</text><text class="t-cap" x="194" y="99">calldata</text>
-        <path class="sarrow bc-a" d="M236 88 H280" />
-        {[0, 1, 2, 3].map((i) => (<g class={`bc-store s${i}`}><rect class="block" x={288 + i * 46} y="62" width="40" height="52" rx="5" /><rect class="bc-copy" x={294 + i * 46} y="80" width="28" height="16" rx="2" /></g>))}
-        <text class="t-cap" x="356" y="52">{L("every node, forever")}</text>
-        <text class="t-x" x="240" y="166">{L("16 gas/byte · stored by every node forever · competes with execution gas")}</text>
+        <path class="sarrow bc-a" d="M238 88 H278" marker-end="url(#wb-arrow)" />
+        <text class="t-cap" x="368" y="50">{L("every node, forever")}</text>
+        {[0, 1, 2, 3].map((i) => (<g class={`bc-store bc-s${i}`}><rect class="block" x={288 + i * 46} y="62" width="40" height="52" rx="5" /><rect class="bc-copy" x={294 + i * 46} y="72" width="28" height="30" rx="2" /><text class="t-fld bc-nlbl" x={308 + i * 46} y="128" text-anchor="middle">{`node ${i + 1}`}</text></g>))}
+        <text class="t-x" x="240" y="168">{L("16 gas/byte · stored by every node forever · competes with execution gas")}</text>
       </svg>
     )}
 
     {/* ── EIP-4844: a blob rides in a sidecar, bound by a KZG commitment ── */}
     {name === "blob-sidecar" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="A blob in a separate sidecar, committed by KZG">
-        <rect class="bs-tx" x="20" y="36" width="150" height="40" rx="6" /><text class="t-cap" x="95" y="60">{L("tx · type 0x03")}</text>
-        <rect class="bs-blob" x="20" y="96" width="190" height="48" rx="6" /><text class="t-cap" x="115" y="116">{L("blob sidecar · ~128 KB")}</text><text class="t-cap" x="115" y="132">{L("EVM can’t read it")}</text>
-        <rect class="bs-evm" x="20" y="158" width="60" height="22" rx="4" /><text class="t-cap" x="50" y="173">EVM</text>
-        <path class="bs-evmlink" d="M80 169 H300 V140" />
-        <path class="sarrow bs-a" d="M210 120 H300" />
-        <rect class="bs-kzg" x="300" y="104" width="160" height="34" rx="6" /><text class="t-cap" x="380" y="125">{L("KZG commitment · 48 B")}</text>
-        <text class="t-cap" x="380" y="92">{L("→ block header")}</text>
-        <text class="t-cap" x="240" y="190">{L("the blob rides alongside but outside the EVM; a 48-byte KZG commitment binds it")}</text>
+        <rect class="bs-tx" x="24" y="34" width="190" height="32" rx="6" /><text class="t-cap" x="119" y="54">{L("tx · type 0x03")}</text>
+        <rect class="bs-blob" x="24" y="74" width="190" height="50" rx="6" /><text class="t-cap" x="119" y="95">{L("blob sidecar · ~128 KB")}</text><text class="t-cap" x="119" y="111">{L("EVM can’t read it")}</text>
+        <rect class="bs-evm" x="24" y="132" width="190" height="28" rx="6" /><text class="t-cap" x="119" y="150">{L("EVM reads the tx, not the blob")}</text>
+        <path class="sarrow bs-a" d="M214 99 H284" marker-end="url(#wb-arrow)" />
+        <rect class="bs-kzg" x="286" y="80" width="178" height="36" rx="6" /><text class="t-cap" x="375" y="102">{L("KZG commitment · 48 B")}</text>
+        <path class="bs-hdra" d="M375 80 V66" marker-end="url(#wb-arrow-accent)" />
+        <rect class="bs-hdr" x="286" y="30" width="178" height="34" rx="6" /><text class="t-cap" x="375" y="51">{L("block header")}</text>
+        <text class="t-cap" x="240" y="184">{L("the blob rides alongside but outside the EVM; a 48-byte KZG commitment binds it")}</text>
       </svg>
     )}
 
     {/* ── EIP-4844: blobs are pruned after ~18 days; the commitment stays ── */}
     {name === "blob-prune" && (
       <svg viewBox="0 0 480 180" role="img" aria-label="Blobs are kept ~18 days then pruned; the commitment stays">
-        <line class="bp-line" x1="30" y1="120" x2="450" y2="120" />
-        <line class="bp-mark" x1="250" y1="108" x2="250" y2="132" /><text class="t-cap" x="250" y="148">~18 days</text>
-        <rect class="bp-blob" x="60" y="44" width="150" height="50" rx="6" /><text class="t-cap" x="135" y="66">{L("blob data")}</text><text class="t-cap" x="135" y="82">{L("downloadable")}</text>
-        <text class="bp-trash" x="300" y="76">🗑</text><text class="t-x bp-pruned" x="350" y="72">{L("pruned")}</text>
-        <rect class="bp-commit" x="300" y="100" width="120" height="22" rx="4" /><text class="t-cap" x="360" y="115">{L("commitment stays")}</text>
-        <text class="t-cap" x="240" y="172">{L("kept ~18 days, then pruned — only the commitment stays")}</text>
+        <rect class="bp-blob" x="40" y="42" width="196" height="46" rx="6" /><text class="t-cap" x="138" y="63">{L("blob data")}</text><text class="t-cap" x="138" y="79">{L("downloadable")}</text>
+        <path class="sarrow bp-a" d="M240 65 H288" marker-end="url(#wb-arrow)" />
+        <rect class="bp-gone" x="292" y="42" width="150" height="46" rx="6" />
+        <path class="bp-x" d="M302 52 L322 78 M322 52 L302 78" />
+        <text class="t-x bp-pruned" x="388" y="69" text-anchor="middle">{L("pruned")}</text>
+        <line class="bp-line" x1="40" y1="104" x2="448" y2="104" marker-end="url(#wb-arrow)" />
+        <line class="bp-mark" x1="245" y1="96" x2="245" y2="112" /><text class="t-cap" x="245" y="126">~18 days</text>
+        <rect class="bp-commit" x="40" y="132" width="402" height="24" rx="5" /><text class="t-cap" x="241" y="148">{L("commitment stays")}</text>
+        <text class="t-cap" x="240" y="174">{L("kept ~18 days, then pruned — only the commitment stays")}</text>
       </svg>
     )}
 
@@ -1048,15 +1058,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "blob-fee" && (
       <svg viewBox="0 0 480 190" role="img" aria-label="When blobs exceed the target, the blob base fee rises a beat later; when they fall back, it drops">
         <text class="t-cap" x="118" y="22">{L("blobs per block")}</text>
-        {[0, 1, 2].map((i) => (<rect class="bf-slot bf-base" x={28 + i * 36} y="34" width="28" height="42" rx="4" />))}
-        {[3, 4, 5].map((i) => (<rect class={`bf-slot bf-surge bf-surge${i - 3}`} x={28 + i * 36} y="34" width="28" height="42" rx="4" />))}
-        <line class="bf-target" x1="132" y1="28" x2="132" y2="82" />
-        <text class="t-cap bf-tlbl" x="80" y="96">{L("target 3")}</text>
-        <text class="t-x bf-spike" x="240" y="96">{L("demand spikes over target")}</text>
-        <rect class="bf-track" x="28" y="116" width="408" height="18" rx="6" />
-        <rect class="bf-fill" x="30" y="118" width="404" height="14" rx="5" />
-        <text class="t-fld bf-fee" x="240" y="129" text-anchor="middle">{L("blob base fee follows demand")}</text>
-        <text class="t-cap" x="240" y="172" text-anchor="middle">{L("over target → the fee rises; back to target → it falls")}</text>
+        {[0, 1, 2].map((i) => (<g><rect class="bf-slot bf-base" x={28 + i * 36} y="34" width="28" height="42" rx="4" /><text class="bf-num" x={42 + i * 36} y="60">{i + 1}</text></g>))}
+        {[3, 4, 5].map((i) => (<g><rect class={`bf-slot bf-surge bf-surge${i - 3}`} x={28 + i * 36} y="34" width="28" height="42" rx="4" /><text class="bf-num bf-numover" x={42 + i * 36} y="60">{i + 1}</text></g>))}
+        <line class="bf-target" x1="132" y1="26" x2="132" y2="84" />
+        <text class="t-cap bf-tlbl" x="82" y="98">{L("target 3")}</text>
+        <text class="t-x bf-spike" x="298" y="98">{L("demand spikes over target")}</text>
+        <text class="t-fld bf-fee" x="28" y="118" text-anchor="start">{L("blob base fee follows demand")}</text>
+        <rect class="bf-track" x="28" y="124" width="408" height="18" rx="6" />
+        <rect class="bf-fill" x="30" y="126" width="404" height="14" rx="5" />
+        <text class="t-cap" x="240" y="176" text-anchor="middle">{L("over target → the fee rises; back to target → it falls")}</text>
       </svg>
     )}
 
@@ -1913,10 +1923,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
             <text class={`t-fld st-av${i === 1 ? " st-avt" : ""}`} x="150" y={55 + Number(i) * 32} text-anchor="end">{val}</text>
           </g>
         ))}
-        <path class="sarrow st-a1" d="M164 96 H214" />
+        <path class="sarrow st-a1" d="M166 96 H212" marker-end="url(#wb-arrow)" />
         <rect class="st-hash" x="214" y="78" width="86" height="36" rx="7" />
         <text class="t-cap" x="257" y="100">keccak</text>
-        <path class="sarrow st-a2" d="M300 96 H350" />
+        <path class="sarrow st-a2" d="M302 96 H348" marker-end="url(#wb-arrow-accent)" />
         <rect class="st-root" x="350" y="74" width="108" height="44" rx="8" />
         <text class="t-cap" x="404" y="92">{L("state root")}</text>
         <text class="st-roothex st-rootorig" x="404" y="108">0x9f2e…</text>
@@ -1931,15 +1941,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 210" role="img" aria-label="Walking the key a7c1 down the three node types, then the hash bubbling up">
         <text class="t-cap" x="240" y="18">{L("walk the key a7c1 — each node consumes part of it")}</text>
         <g>
-          <rect class="st-nib st-nib0" x="196" y="26" width="30" height="17" rx="4" /><text class="st-nibt" x="211" y="38">a7</text>
-          <rect class="st-nib st-nib1" x="230" y="26" width="22" height="17" rx="4" /><text class="st-nibt" x="241" y="38">c</text>
-          <rect class="st-nib st-nib2" x="256" y="26" width="22" height="17" rx="4" /><text class="st-nibt" x="267" y="38">1</text>
+          <rect class="st-nib st-nib0" x="68" y="28" width="32" height="17" rx="4" /><text class="st-nibt" x="84" y="40">a7</text>
+          <rect class="st-nib st-nib1" x="258" y="28" width="24" height="17" rx="4" /><text class="st-nibt" x="270" y="40">c</text>
+          <rect class="st-nib st-nib2" x="420" y="28" width="24" height="17" rx="4" /><text class="st-nibt" x="432" y="40">1</text>
         </g>
 
         <rect class="st-ext st-gl-ext" x="20" y="52" width="128" height="52" rx="7" />
         <text class="t-cap" x="84" y="72">{L("extension")}</text>
         <text class="t-fld st-nn" x="84" y="90">eats a7</text>
-        <path class="sarrow st-e1" d="M148 78 H194" />
+        <path class="sarrow st-e1" d="M150 78 H192" marker-end="url(#wb-arrow)" />
 
         <rect class="st-branch st-gl-branch" x="194" y="48" width="152" height="82" rx="7" />
         <text class="t-cap" x="270" y="65">{L("branch · 16 ways")}</text>
@@ -1950,13 +1960,13 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <rect class={`st-slot${i === 12 ? " st-hot" : ""}`} x={204 + (i - 8) * 17} y="92" width="13" height="13" rx="2" />
         ))}
         <text class="t-fld st-nn" x="270" y="122">{L("nibble c → its slot")}</text>
-        <path class="sarrow st-e2" d="M346 90 H392" />
+        <path class="sarrow st-e2" d="M348 90 H390" marker-end="url(#wb-arrow)" />
 
         <rect class="st-leaf st-gl-leaf" x="392" y="64" width="80" height="52" rx="7" />
         <text class="t-cap" x="432" y="84">{L("leaf")}</text>
         <text class="t-fld st-nn" x="432" y="102">1 → value</text>
 
-        <text class="t-ok st-up" x="240" y="152" text-anchor="middle">{L("↑ each node hashes its children — the hash bubbles up")}</text>
+        <text class="st-up" x="240" y="152" text-anchor="middle">{L("↑ each node hashes its children — the hash bubbles up")}</text>
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("so change any leaf and the root hash changes with it")}</text>
         <text class="t-cap st-sub2" x="240" y="200" text-anchor="middle">{L("extension collapses a prefix · branch splits 16 ways · leaf ends the path")}</text>
       </svg>
@@ -1970,10 +1980,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-fld st-hf st-hfhot" x="164" y="50">stateRoot   0x9f2e…</text>
         <text class="t-fld st-hf" x="164" y="68">txRoot      0x4c11…</text>
         <text class="t-fld st-hf" x="164" y="86">receiptsRoot 0x77a…</text>
-        <path class="sarrow st-ha" d="M330 63 H372" />
+        <path class="sarrow st-ha" d="M332 63 H370" marker-end="url(#wb-arrow-accent)" />
         <rect class="st-bh" x="372" y="46" width="92" height="34" rx="7" />
         <text class="t-cap" x="418" y="60">blockHash</text>
-        <text class="st-roothex" x="418" y="74">0xb3…</text>
+        <text class="st-roothex st-bhhex" x="418" y="74">0xb3…</text>
 
         <text class="t-x st-tamplbl" x="240" y="118" text-anchor="middle">{L("↓ tamper one past state root ↓")}</text>
         {[0, 1, 2].map((i) => (
@@ -1982,7 +1992,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
             <text class="t-cap" x={89 + i * 152} y="148">{`block n${i ? "+" + i : ""}`}</text>
             <text class={`t-fld st-sr st-sr${i}`} x={89 + i * 152} y="165" text-anchor="middle">{i === 0 ? "stateRoot ✎" : "hash ✗"}</text>
             <text class="t-fld st-nn" x={89 + i * 152} y="179" text-anchor="middle">parentHash</text>
-            {i < 2 && <path class={`sarrow st-clink st-cl${i}`} d={`M${152 + i * 152} 157 H${178 + i * 152}`} />}
+            {i < 2 && <path class={`sarrow st-clink st-cl${i}`} d={`M${152 + i * 152} 157 H${178 + i * 152}`} marker-end="url(#wb-arrow)" />}
             {i < 2 && <text class={`st-break st-brk${i}`} x={165 + i * 152} y="150" text-anchor="middle">✗</text>}
           </g>
         ))}
@@ -3886,6 +3896,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .fa-block { fill: color-mix(in oklab, var(--color-accent) 6%, transparent); stroke: var(--color-accent-dim); }
   .fa-blbl { fill: var(--color-accent); }
   .fa-stall { fill: var(--color-ink-faint); }
+  .fa-ptr { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; }
   .fa-in .fa-rect { animation: fa-in 5s ease-in-out infinite; }
   .fa-out .fa-rect { animation: fa-out 5s ease-in-out infinite; }
   .fa-out { animation: fa-dim 5s ease-in-out infinite; }
@@ -3900,61 +3911,62 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .el-fill { fill: color-mix(in oklab, var(--color-accent) 22%, var(--color-surface)); transform-box: fill-box; transform-origin: bottom; animation: el-fill 6s ease-in-out infinite; }
   @keyframes el-fill { 0%,12% { transform: scaleY(0.5) } 32% { transform: scaleY(0.95) } 80%,100% { transform: scaleY(0.5) } }
   .el-target { stroke: var(--color-node-leaf); stroke-width: 1.4; stroke-dasharray: 5 3; }
-  .el-fee { fill: var(--color-hash); opacity: 0; animation: el-fee 6s ease-in-out infinite; }
-  @keyframes el-fee { 0%,30% { opacity: 0 } 42%,72% { opacity: 1 } 86%,100% { opacity: 0 } }
+  .el-limit { stroke: var(--color-accent-dim); stroke-width: 1.4; stroke-dasharray: 5 3; }
+  .el-gtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .el-gfill { fill: var(--color-accent); transform-box: fill-box; transform-origin: bottom; animation: el-gfill 6s ease-in-out infinite; }
+  @keyframes el-gfill { 0%,30% { transform: scaleY(0.35); fill: color-mix(in oklab, var(--color-accent) 55%, var(--color-surface)) } 48%,70% { transform: scaleY(0.92); fill: var(--color-hash) } 88%,100% { transform: scaleY(0.35); fill: color-mix(in oklab, var(--color-accent) 55%, var(--color-surface)) } }
+  .el-fee { fill: var(--color-accent-strong); animation: el-fee 6s ease-in-out infinite; }
+  @keyframes el-fee { 0%,30% { fill: var(--color-ink-faint) } 42%,72% { fill: var(--color-accent-strong) } 86%,100% { fill: var(--color-ink-faint) } }
 
   /* EIP-1559 — fee-burn: base flies to the fire, tip flies to the proposer */
   .fb-base { fill: color-mix(in oklab, var(--color-hash) 12%, var(--color-surface)); stroke: var(--color-hash); }
   .fb-tip { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .fb-a1, .fb-a2 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; stroke-dasharray: 60; stroke-dashoffset: 60; }
-  .fb-a1 { animation: fb-draw 5s ease-in-out infinite; }
-  .fb-a2 { animation: fb-draw 5s ease-in-out 0.4s infinite; }
-  @keyframes fb-draw { 0%,14% { stroke-dashoffset: 60 } 34%,100% { stroke-dashoffset: 0 } }
-  .fb-fire { font-size: 16px; text-anchor: middle; opacity: 0; transform-box: fill-box; transform-origin: center; animation: fb-fire 5s ease-in-out infinite; }
-  @keyframes fb-fire { 0%,34% { opacity: 0; transform: scale(0.5) } 46% { opacity: 1; transform: scale(1.15) } 58%,90% { opacity: 1; transform: scale(1) } 100% { opacity: 0 } }
-  .fb-burnlbl { animation: fb-late 5s ease-in-out infinite; }
+  .fb-a1, .fb-a2 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
+  .fb-fire { fill: var(--color-changed); stroke: var(--color-hash); stroke-width: 1; transform-box: fill-box; transform-origin: center; animation: fb-fire 5s ease-in-out infinite; }
+  @keyframes fb-fire { 0%,34% { transform: scale(0.85) } 46% { transform: scale(1.2) } 58%,100% { transform: scale(1) } }
+  .fb-proplbl { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; }
   .fb-prop { fill: var(--color-surface); stroke: var(--color-border-strong); animation: fb-prop 5s ease-in-out infinite; }
-  .fb-proplbl { animation: fb-late 5s ease-in-out 0.4s infinite; }
   @keyframes fb-prop { 0%,38% { stroke: var(--color-border-strong) } 50%,100% { stroke: var(--color-node-leaf) } }
-  @keyframes fb-late { 0%,40% { opacity: 0.2 } 54%,100% { opacity: 1 } }
 
   /* EIP-4844 — blob-calldata: copies pile into every block and stay */
   .bc-batch, .bc-tx { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .bc-copy { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); opacity: 0; }
-  .s0 .bc-copy { animation: bc-fade 5s ease-out infinite; }
-  .s1 .bc-copy { animation: bc-fade 5s ease-out 0.5s infinite; }
-  .s2 .bc-copy { animation: bc-fade 5s ease-out 1s infinite; }
-  .s3 .bc-copy { animation: bc-fade 5s ease-out 1.5s infinite; }
-  @keyframes bc-fade { 0%,4% { opacity: 0 } 14%,100% { opacity: 1 } }
+  .bc-copy { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .bc-nlbl { fill: var(--color-ink-faint); text-anchor: middle; }
+  .bc-s0 .bc-copy { animation: bc-fade 5s ease-out infinite; }
+  .bc-s1 .bc-copy { animation: bc-fade 5s ease-out 0.5s infinite; }
+  .bc-s2 .bc-copy { animation: bc-fade 5s ease-out 1s infinite; }
+  .bc-s3 .bc-copy { animation: bc-fade 5s ease-out 1.5s infinite; }
+  @keyframes bc-fade { 0%,4% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)) } 40% { fill: color-mix(in oklab, var(--color-changed) 34%, var(--color-surface)); stroke: var(--color-changed) } 100% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)) } }
 
   /* EIP-4844 — blob-sidecar: the blob is bound by a KZG commitment */
   .bs-tx { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .bs-blob { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); }
   .bs-evm { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .bs-evmlink { fill: none; stroke: var(--color-accent-dim); stroke-width: 1.3; stroke-dasharray: 3 3; }
-  .bs-a { stroke-dasharray: 100; stroke-dashoffset: 100; animation: bs-draw 5s ease-in-out infinite; }
-  @keyframes bs-draw { 0%,18% { stroke-dashoffset: 100 } 42%,100% { stroke-dashoffset: 0 } }
+  .bs-hdr { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); }
+  .bs-hdra { fill: none; stroke: var(--color-accent); stroke-width: 1.7; }
+  .bs-a { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   .bs-kzg { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); animation: bs-kzg 5s ease-in-out infinite; }
   @keyframes bs-kzg { 0%,44% { filter: none } 58% { filter: drop-shadow(0 0 7px var(--color-hash)) } 100% { filter: none } }
 
   /* EIP-4844 — blob-prune: the blob fades after the window; the commitment stays */
-  .bp-line, .bp-mark { stroke: var(--color-border-strong); stroke-width: 1.4; }
-  .bp-blob { fill: color-mix(in oklab, var(--color-node-branch) 10%, var(--color-surface)); stroke: var(--color-node-branch); animation: bp-blob 6s ease-in-out infinite; }
-  @keyframes bp-blob { 0%,42% { opacity: 1 } 58%,100% { opacity: 0.14 } }
-  .bp-trash { font-size: 15px; text-anchor: middle; opacity: 0; animation: bp-appear 6s ease-in-out infinite; }
-  .bp-pruned { fill: var(--color-changed); opacity: 0; animation: bp-appear 6s ease-in-out infinite; }
-  @keyframes bp-appear { 0%,46% { opacity: 0 } 60%,100% { opacity: 1 } }
-  .bp-commit { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .bp-line, .bp-mark { fill: none; stroke: var(--color-border-strong); stroke-width: 1.4; }
+  .bp-blob { fill: color-mix(in oklab, var(--color-node-branch) 12%, var(--color-surface)); stroke: var(--color-node-branch); }
+  .bp-gone { fill: var(--color-surface); stroke: var(--color-changed); stroke-dasharray: 4 3; }
+  .bp-x { fill: none; stroke: var(--color-changed); stroke-width: 2; stroke-linecap: round; }
+  .bp-pruned { fill: var(--color-changed); }
+  .bp-commit { fill: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface)); stroke: var(--color-accent); }
 
   /* EIP-4844 — blob-fee: over-target blobs appear, then the fee rises a beat later (6s) */
   .bf-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .bf-base { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .bf-surge { fill: color-mix(in oklab, var(--color-changed) 24%, var(--color-surface)); stroke: var(--color-changed); opacity: 0; }
+  .bf-surge { fill: color-mix(in oklab, var(--color-changed) 24%, var(--color-surface)); stroke: var(--color-changed); }
   .bf-surge0 { animation: bf-surge 6s ease-in-out infinite; }
   .bf-surge1 { animation: bf-surge 6s ease-in-out 0.15s infinite; }
   .bf-surge2 { animation: bf-surge 6s ease-in-out 0.3s infinite; }
-  @keyframes bf-surge { 0%,42% { opacity: 0 } 48%,72% { opacity: 1 } 78%,100% { opacity: 0 } }
-  .bf-spike { opacity: 0; animation: bf-surge 6s ease-in-out infinite; }
+  @keyframes bf-surge { 0%,42% { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke-width: 1.4 } 48%,72% { fill: color-mix(in oklab, var(--color-changed) 40%, var(--color-surface)); stroke-width: 2.2 } 78%,100% { fill: color-mix(in oklab, var(--color-changed) 14%, var(--color-surface)); stroke-width: 1.4 } }
+  .bf-num { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .bf-numover { fill: var(--color-changed); }
+  .bf-spike { fill: var(--color-changed); text-anchor: middle; }
   .bf-target { stroke: var(--color-hash); stroke-width: 1.4; stroke-dasharray: 4 3; }
   .bf-tlbl { fill: var(--color-hash); }
   .bf-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
@@ -4592,9 +4604,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .st-avt { animation: st-tampv 6s ease-in-out infinite; }
   @keyframes st-tamp { 0%,54% { stroke: var(--color-border-strong) } 64%,88% { stroke: var(--color-changed) } 100% { stroke: var(--color-border-strong) } }
   @keyframes st-tampv { 0%,54% { fill: var(--color-ink-faint) } 64%,88% { fill: var(--color-changed) } 100% { fill: var(--color-ink-faint) } }
-  .st-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out infinite; }
-  .st-a2 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 6s ease-in-out 0.3s infinite; }
-  @keyframes st-draw { 0%,10% { stroke-dashoffset: 52 } 30%,100% { stroke-dashoffset: 0 } }
+  .st-a1, .st-a2 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   .st-hash { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
   .st-root { fill: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface)); stroke: var(--color-accent); }
   .st-roothex { font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
@@ -4615,8 +4625,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .st-slot { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .st-hot { fill: color-mix(in oklab, var(--color-node-branch) 45%, var(--color-surface)); stroke: var(--color-node-branch); animation: st-hot 4s ease-in-out infinite; }
   @keyframes st-hot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
-  .st-e1 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out infinite; }
-  .st-e2 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .st-e1, .st-e2 { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   /* nibble chips light as the walk consumes them (9s loop) */
   .st-nib { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .st-nibt { fill: var(--color-accent-strong); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
@@ -4633,16 +4642,17 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes st-gl-ext { 0%,2% { filter: none } 8% { filter: drop-shadow(0 0 7px var(--color-node-extension)) } 14%,64% { filter: none } 70% { filter: drop-shadow(0 0 7px var(--color-node-extension)) } 76%,100% { filter: none } }
   @keyframes st-gl-branch { 0%,14% { filter: none } 20% { filter: drop-shadow(0 0 7px var(--color-node-branch)) } 26%,54% { filter: none } 60% { filter: drop-shadow(0 0 7px var(--color-node-branch)) } 66%,100% { filter: none } }
   @keyframes st-gl-leaf { 0%,26% { filter: none } 32% { filter: drop-shadow(0 0 7px var(--color-node-leaf)) } 38%,44% { filter: none } 50% { filter: drop-shadow(0 0 7px var(--color-node-leaf)) } 56%,100% { filter: none } }
-  .st-up { opacity: 0; animation: st-up 9s ease-in-out infinite; }
-  @keyframes st-up { 0%,42% { opacity: 0 } 50%,76% { opacity: 1 } 84%,100% { opacity: 0 } }
+  .st-up { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; animation: st-up 9s ease-in-out infinite; }
+  @keyframes st-up { 0%,42% { fill: var(--color-ink-faint) } 50%,76% { fill: var(--color-node-leaf) } 84%,100% { fill: var(--color-ink-faint) } }
 
   /* ── State — st-header: roots → header → chained blocks ── */
   .st-hdr { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .st-hf { fill: var(--color-ink-muted); text-anchor: start; font-size: 8.5px; }
   .st-hfhot { fill: var(--color-accent-strong); animation: st-hfhot 5s ease-in-out infinite; }
   @keyframes st-hfhot { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
-  .st-ha { stroke-dasharray: 44; stroke-dashoffset: 44; animation: st-draw 5s ease-in-out infinite; }
+  .st-ha { fill: none; stroke: var(--color-border-strong); stroke-width: 1.6; }
   .st-bh { fill: color-mix(in oklab, var(--color-hash) 10%, var(--color-surface)); stroke: var(--color-hash); }
+  .st-bhhex { fill: var(--color-hash); }
   /* tamper cascade: a past root goes red, then each later block's hash breaks in sequence (8s loop) */
   .st-tamplbl { opacity: 0; animation: st-tamplbl 8s ease-in-out infinite; }
   @keyframes st-tamplbl { 0%,18% { opacity: 0 } 24%,72% { opacity: 1 } 84%,100% { opacity: 0 } }

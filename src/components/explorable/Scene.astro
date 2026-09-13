@@ -1488,8 +1488,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="wd-acct" x="300" y="48" width="160" height="64" rx="8" />
         <text class="t-cap" x="380" y="66">{L("recipient account")}</text>
         <rect class="wd-balcell" x="322" y="76" width="116" height="24" rx="4" />
-        <text class="wd-balbefore" x="380" y="93">10.0 ETH</text>
-        <text class="wd-balafter" x="380" y="93">12.0 ETH</text>
+        <text class="wd-balnow" x="380" y="93">10.0 → 12.0</text>
+        
         <text class="t-x wd-nocall" x="240" y="142">{L("no EVM call · no gas · no code runs")}</text>
         <text class="t-cap" x="240" y="176">{L("an unconditional credit — not a transfer that could run contract code")}</text>
       </svg>
@@ -1500,15 +1500,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
       <svg viewBox="0 0 480 210" role="img" aria-label="A sweep cursor skims the excess off over-32 validators and empties an exited one">
         <text class="t-cap" x="240" y="18">{L("the CL sweeps the validator set automatically — no withdraw button")}</text>
         <line class="wf-32line" x1="44" y1="118" x2="430" y2="118" />
-        <text class="wf-32lbl" x="44" y="112">32 ETH</text>
+        <text class="wf-32lbl" x="44" y="112">32</text>
         {[[80, "skim", 0], [180, "skim", 1], [280, "exit", 2], [380, "skim", 3]].map(([x, kind, i]) => (
           <g>
             <rect class={`wf-base${kind === "exit" ? " wf-exitbar" : ""}`} x={Number(x) - 18} y="118" width="36" height="34" rx="2" />
             {kind === "skim" && <rect class={`wf-excess wf-ex${i}`} x={Number(x) - 18} y="98" width="36" height="18" rx="2" />}
+            {kind === "skim" && <text class="wf-exlbl" x={x} y="94">excess</text>}
             <text class="wf-vlbl" x={x} y="166">{kind === "exit" ? L("exited") : "32+"}</text>
           </g>
         ))}
-        <rect class="wf-cursor" x="42" y="90" width="3" height="84" rx="1.5" />
         <text class="t-cap" x="240" y="188" text-anchor="middle">{L("excess above 32 is skimmed off; an exited validator's whole stake returns")}</text>
         <text class="t-ok" x="240" y="204" text-anchor="middle">{L("both just arrive on the rolling sweep — you never press a button")}</text>
       </svg>
@@ -1545,7 +1545,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <line class="mg-link" x1={x + 64} y1="58" x2={x + 80} y2="58" />
         ))}
         {[150, 230, 310, 390].map((x, i) => (
-          <rect class={i === 3 ? "mg-bb mgb3" : "mg-bb"} x={x} y="44" width="64" height="28" rx="5" />
+          <g>
+            <rect class={i === 3 ? "mg-bb mgb3" : "mg-bb"} x={x} y="44" width="64" height="28" rx="5" />
+            <text class="t-cap" x={x + 32} y="63">{`slot ${i + 1}`}</text>
+          </g>
         ))}
         <text class="t-cap" x="74" y="136">{L("execution chain")}</text>
         <text class="t-cap" x="74" y="150">{L("PoW")}</text>
@@ -1553,7 +1556,10 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
           <line class="mg-link" x1={x + 64} y1="142" x2={x + 80} y2="142" />
         ))}
         {[150, 230, 310, 390].map((x, i) => (
-          <rect class={i === 3 ? "mg-pb mgp3" : "mg-pb"} x={x} y="128" width="64" height="28" rx="5" />
+          <g>
+            <rect class={i === 3 ? "mg-pb mgp3" : "mg-pb"} x={x} y="128" width="64" height="28" rx="5" />
+            <text class="t-cap" x={x + 32} y="147">{`blk ${i + 1}`}</text>
+          </g>
         ))}
         <text class="t-cap" x="240" y="192">{L("the beacon chain (Dec 2020) ran PoS in parallel, accruing validators & finality")}</text>
       </svg>
@@ -1881,7 +1887,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="240" y="24">{L("raise the cap — the earning balance grows 32 → 2048 ETH")}</text>
         <rect class="mb-track" x="40" y="70" width="400" height="44" rx="6" />
         <rect class="mb-grow" x="40" y="70" width="400" height="44" rx="6" />
-        <line class="mb-32mark" x1="88" y1="64" x2="88" y2="120" />
+        <text class="t-cap" x="264" y="96">{L("earning balance")}</text>
+        <line class="mb-32mark" x1="88" y1="66" x2="88" y2="118" />
         <text class="t-fld mb-32lbl" x="88" y="60" text-anchor="middle">32</text>
         <text class="t-ok mb-2048lbl" x="388" y="60">2048 ETH</text>
         <text class="t-cap" x="240" y="160">{L("one validator can now hold up to 2048 ETH of earning balance — up to 64-in-1")}</text>
@@ -2932,7 +2939,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="285" y="64">{L("withdrawal-request")}</text>
         <text class="t-fld wr-c" x="285" y="82">{L("predeploy contract")}</text>
         <path class="sarrow wr-a2" d="M285 94 V122" />
-        <rect class="wr-cl" x="150" y="124" width="270" height="30" rx="6" />
+        <rect class="wr-cl" x="120" y="124" width="330" height="30" rx="6" />
         <text class="t-ok wr-clt" x="285" y="143">{L("the CL reads it each block → processes the exit")}</text>
         <text class="t-cap" x="240" y="178" text-anchor="middle">{L("same 'EL request → system contract → CL acts' pattern as withdrawals")}</text>
       </svg>
@@ -2962,7 +2969,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="pr-evm" x="30" y="42" width="180" height="52" rx="8" />
         <text class="t-cap" x="120" y="64">{L("no random opcode")}</text>
         <text class="t-fld pr-c" x="120" y="82">{L("same input → same output")}</text>
-        <path class="sarrow pr-a1" d="M210 68 H262" /><text class="t-cap pr-al" x="236" y="60">{L("want randomness?")}</text>
+        <path class="sarrow pr-a1" d="M210 68 H262" />
         <rect class="pr-diff" x="262" y="42" width="194" height="52" rx="8" />
         <text class="t-x pr-difft" x="359" y="64">DIFFICULTY (0x44)</text>
         <text class="t-fld pr-c2" x="359" y="82">{L("abused — weak & miner-biased")}</text>
@@ -3072,7 +3079,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="dp-dc" x="24" y="44" width="150" height="52" rx="8" />
         <text class="t-cap" x="99" y="64">{L("deposit contract")}</text>
         <text class="t-fld dp-c" x="99" y="82">{L("on the execution layer")}</text>
-        <path class="sarrow dp-poll1" d="M174 70 H240" /><text class="t-cap dp-pl" x="207" y="62">{L("poll + vote")}</text>
+        <path class="sarrow dp-poll1" d="M174 70 H236" /><text class="dp-pl" x="205" y="62">{L("poll+vote")}</text>
         <rect class="dp-cl" x="240" y="44" width="216" height="52" rx="8" />
         <text class="t-cap" x="348" y="64">{L("consensus layer")}</text>
         <text class="t-fld dp-c2" x="348" y="82">{L("eth1 voting · follow distance")}</text>
@@ -3093,7 +3100,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="dp-deps" x="134" y="84" width="212" height="16" rx="3" />
         <text class="t-fld dp-bt dp-depsl" x="240" y="96">deposit requests</text>
         <path class="sarrow dp-a2" d="M240 108 V134" />
-        <rect class="dp-clbox" x="150" y="136" width="180" height="30" rx="6" />
+        <rect class="dp-clbox" x="140" y="136" width="200" height="30" rx="6" />
         <text class="t-ok dp-clt" x="240" y="155">{L("CL reads them from the block")}</text>
         <text class="t-cap" x="240" y="180" text-anchor="middle">{L("no polling, no eth1 voting — same 'EL request → CL processes' pattern")}</text>
       </svg>
@@ -3106,11 +3113,11 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-fld dp-wl" x="24" y="58" text-anchor="start">{L("before")}</text>
         <rect class="dp-track" x="90" y="46" width="360" height="20" rx="4" />
         <rect class="dp-wbefore" x="90" y="46" width="360" height="20" rx="4" />
-        <text class="t-x dp-bl" x="446" y="61" text-anchor="end">~12+ hours</text>
+        <text class="dp-bl" x="270" y="61">~12+ hours</text>
         <text class="t-fld dp-wl" x="24" y="98" text-anchor="start">{L("after")}</text>
         <rect class="dp-track" x="90" y="86" width="360" height="20" rx="4" />
         <rect class="dp-wafter" x="90" y="86" width="360" height="20" rx="4" />
-        <text class="t-ok dp-al" x="118" y="101" text-anchor="start">minutes</text>
+        <text class="t-ok dp-al" x="270" y="101" text-anchor="middle">minutes</text>
         <text class="t-ok dp-simpl" x="240" y="142" text-anchor="middle">{L("faster activation · the fragile eth1-voting mechanism retired")}</text>
         <text class="t-cap" x="240" y="166" text-anchor="middle">{L("deposits, withdrawals, and consolidations now all flow the same way")}</text>
       </svg>
@@ -4444,15 +4451,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wd-el { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .wd-bal { animation: wd-pulse 6s ease-in-out infinite; }
   @keyframes wd-pulse { 0%,30% { opacity: 0.6 } 48%,100% { opacity: 1 } }
-  .wd-back { stroke-dasharray: 40; stroke-dashoffset: 40; animation: wd-bdraw 6s ease-in-out infinite; }
+  .wd-back { marker-end: url(#wb-arrow); }
   @keyframes wd-bdraw { 0%,18% { stroke-dashoffset: 40 } 40%,100% { stroke-dashoffset: 0 } }
-  .wd-noback { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+  .wd-noback { }
   @keyframes wd-nb { 0%,44% { opacity: 0 } 58%,100% { opacity: 1 } }
-  .wd-bar { stroke: var(--color-changed); stroke-width: 2.4; opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+  .wd-bar { stroke: var(--color-changed); stroke-width: 2.4; }
 
   /* EIP-4895 — wd-push: the CL pushes a withdrawals list into the block */
   .wd-clbox { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .wd-pa { stroke-dasharray: 56; stroke-dashoffset: 56; animation: wd-padraw 6s ease-in-out infinite; }
+  .wd-pa { marker-end: url(#wb-arrow); }
   @keyframes wd-padraw { 0%,16% { stroke-dashoffset: 56 } 36%,100% { stroke-dashoffset: 0 } }
   .wd-palbl { fill: var(--color-ink-faint); }
   .wd-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
@@ -4460,38 +4467,39 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wd-hdrt { fill: var(--color-ink-muted); }
   .wd-txs { fill: var(--color-surface); stroke: var(--color-border); }
   .wd-sub { fill: var(--color-ink-faint); }
-  .wd-wds { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: wd-wdin 6s ease-in-out infinite; }
+  .wd-wds { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   @keyframes wd-wdin { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
 
   /* EIP-4895 — wd-credit: just credit the recipient's balance */
   .wd-obj { fill: color-mix(in oklab, var(--color-node-leaf) 7%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .wd-objc { text-anchor: middle; }
-  .wd-ca { stroke-dasharray: 56; stroke-dashoffset: 56; animation: wd-cadraw 6s ease-in-out infinite; }
+  .wd-ca { marker-end: url(#wb-arrow); }
   @keyframes wd-cadraw { 0%,24% { stroke-dashoffset: 56 } 44%,100% { stroke-dashoffset: 0 } }
   .wd-acct { fill: var(--color-surface); stroke: var(--color-border-strong); }
   /* the balance number actually changes: 10.0 → 12.0 when the credit lands (6s) */
   .wd-balcell { fill: var(--color-surface); stroke: var(--color-border); animation: wd-balcell 6s ease-in-out infinite; }
   @keyframes wd-balcell { 0%,44% { stroke: var(--color-border) } 52% { stroke: var(--color-node-leaf) } 66%,100% { stroke: var(--color-border) } }
   .wd-balbefore, .wd-balafter { font-family: var(--font-mono); font-size: 12px; text-anchor: middle; font-weight: 600; }
-  .wd-balbefore { fill: var(--color-ink-muted); animation: wd-balbefore 6s ease-in-out infinite; }
+  .wd-balnow { font-family: var(--font-mono); font-size: 12px; text-anchor: middle; font-weight: 600; fill: var(--color-node-leaf); }
   @keyframes wd-balbefore { 0%,44% { opacity: 1 } 50%,100% { opacity: 0 } }
   .wd-balafter { fill: var(--color-node-leaf); opacity: 0; animation: wd-balafter 6s ease-in-out infinite; }
   @keyframes wd-balafter { 0%,46% { opacity: 0 } 54% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-node-leaf)) } 66% { filter: none } 100% { opacity: 1 } }
-  .wd-nocall { opacity: 0; animation: wd-nb 6s ease-in-out infinite; }
+  .wd-nocall { }
 
   /* EIP-4895 — wd-flavors: a sweep cursor skims excess / empties an exit (8s loop) */
   .wf-32line { stroke: var(--color-border-strong); stroke-width: 1; stroke-dasharray: 4 3; }
   .wf-32lbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 9px; }
   .wf-base { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); stroke: var(--color-node-leaf); }
-  .wf-exitbar { fill: color-mix(in oklab, var(--color-node-extension) 26%, var(--color-surface)); stroke: var(--color-node-extension); animation: wf-exit 8s ease-in-out infinite; }
+  .wf-exitbar { fill: color-mix(in oklab, var(--color-node-extension) 26%, var(--color-surface)); stroke: var(--color-node-extension); }
   @keyframes wf-exit { 0%,56% { opacity: 1; transform: translateY(0) } 64% { opacity: 0.5; transform: translateY(-18px) } 72%,96% { opacity: 0; transform: translateY(-28px) } 100% { opacity: 1; transform: translateY(0) } }
   .wf-excess { fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)); stroke: var(--color-accent); }
-  .wf-ex0 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 0s; }
-  .wf-ex1 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 2s; }
-  .wf-ex3 { animation: wf-skim 8s ease-in-out infinite; animation-delay: 6s; }
+  .wf-ex0 { }
+  .wf-ex1 { }
+  .wf-ex3 { }
   @keyframes wf-skim { 0%,4% { opacity: 1; transform: translateY(0) } 10% { opacity: 0.6; transform: translateY(-16px) } 18%,92% { opacity: 0; transform: translateY(-24px) } 100% { opacity: 1; transform: translateY(0) } }
   .wf-vlbl { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 8.5px; text-anchor: middle; }
-  .wf-cursor { fill: var(--color-accent-strong); animation: wf-cursor 8s linear infinite; }
+  .wf-exlbl { fill: var(--color-accent); font-family: var(--font-mono); font-size: 8px; text-anchor: middle; }
+  .wf-cursor { fill: var(--color-accent-strong); }
   @keyframes wf-cursor { 0% { transform: translateX(0); opacity: 0.9 } 96% { transform: translateX(338px); opacity: 0.9 } 100% { transform: translateX(338px); opacity: 0 } }
 
   /* EIP-3675 — mg-pow: miners race for a nonce, burning energy */
@@ -4511,24 +4519,24 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* energy meter climbs and never returns (sawtooth = each new batch of spend) */
   .mg-elbl { fill: var(--color-ink-faint); font-size: 9px; }
   .mg-etrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .mg-efill { fill: color-mix(in oklab, var(--color-changed) 42%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mg-efill 3s linear infinite; }
+  .mg-efill { fill: color-mix(in oklab, var(--color-changed) 42%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; transform: scaleX(0.85); }
   @keyframes mg-efill { 0% { transform: scaleX(0.06) } 92% { transform: scaleX(1) } 100% { transform: scaleX(0.06) } }
   .mg-eclimb { animation: mg-en 3s ease-in-out infinite; }
   @keyframes mg-en { 0%,100% { opacity: 0.6 } 50% { opacity: 1 } }
-  .mg-win { opacity: 0; animation: mg-winin 5s ease-in-out infinite; }
+  .mg-win { }
   @keyframes mg-winin { 0%,62% { opacity: 0 } 76%,100% { opacity: 1 } }
 
   /* EIP-3675 — mg-parallel: PoS beacon chain alongside the PoW chain */
   .mg-bb { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .mg-pb { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .mg-link { stroke: var(--color-border-strong); stroke-width: 1.4; fill: none; }
-  .mgb3, .mgp3 { opacity: 0; animation: mg-grow 5s ease-in-out infinite; }
+  .mg-link { stroke: var(--color-border-strong); stroke-width: 1.4; fill: none; marker-end: url(#wb-arrow); }
+  .mgb3, .mgp3 { }
   @keyframes mg-grow { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
 
   /* EIP-3675 — mg-ttd: total difficulty climbs, crosses TTD, triggers handoff (8s) */
   .mg-tdlbl { fill: var(--color-ink-faint); font-size: 9px; }
   .mg-tdtrack { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .mg-tdfill { fill: color-mix(in oklab, var(--color-node-extension) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mg-tdfill 8s ease-in-out infinite; }
+  .mg-tdfill { fill: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; transform: scaleX(0.82); }
   @keyframes mg-tdfill {
     0%,6% { transform: scaleX(0.06) }
     9% { transform: scaleX(0.20) } 18% { transform: scaleX(0.20) }
@@ -4540,30 +4548,30 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   }
   .mg-ttdline { stroke: var(--color-changed); stroke-width: 1.6; stroke-dasharray: 3 2; }
   .mg-ttdlbl { fill: var(--color-changed); font-family: var(--font-mono); font-size: 9px; }
-  .mg-crossed { opacity: 0; animation: mg-crossed 8s ease-in-out infinite; }
+  .mg-crossed { }
   @keyframes mg-crossed { 0%,53% { opacity: 0 } 60%,92% { opacity: 1 } 100% { opacity: 0 } }
-  .mg-handoff { opacity: 0; animation: mg-handoff 8s ease-in-out infinite; }
+  .mg-handoff { }
   @keyframes mg-handoff { 0%,56% { opacity: 0 } 64%,100% { opacity: 1 } }
   .mg-last { fill: color-mix(in oklab, var(--color-node-extension) 9%, var(--color-surface)); stroke: var(--color-node-extension); }
   .mg-first { fill: color-mix(in oklab, var(--color-node-leaf) 9%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .mg-sub { fill: var(--color-ink-faint); }
-  .mg-ha2 { stroke-dasharray: 44; stroke-dashoffset: 44; animation: mg-ha2 8s ease-in-out infinite; }
+  .mg-ha2 { marker-end: url(#wb-arrow); }
   @keyframes mg-ha2 { 0%,60% { stroke-dashoffset: 44 } 72%,100% { stroke-dashoffset: 0 } }
   .mg-fld { text-anchor: middle; }
-  .mg-f0 { opacity: 0; animation: mg-fin 8s ease-in-out infinite; }
+  .mg-f0 { }
   @keyframes mg-fin { 0%,64% { opacity: 0 } 74%,100% { opacity: 1 } }
 
   /* EIP-3675 — mg-loop: the CL drives the EL over the Engine API */
   .mg-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .mg-el { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
-  .mg-a1 { stroke-dasharray: 64; stroke-dashoffset: 64; animation: mg-a1draw 5s ease-in-out infinite; }
-  .mg-a2 { stroke-dasharray: 64; stroke-dashoffset: 64; animation: mg-a2draw 5s ease-in-out infinite; }
+  .mg-a1 { marker-end: url(#wb-arrow); }
+  .mg-a2 { marker-end: url(#wb-arrow); }
   @keyframes mg-a1draw { 0%,10% { stroke-dashoffset: 64 } 28%,100% { stroke-dashoffset: 0 } }
   @keyframes mg-a2draw { 0%,40% { stroke-dashoffset: 64 } 58%,100% { stroke-dashoffset: 0 } }
   .mg-leg { text-anchor: middle; }
-  .mg-l1 { opacity: 0; animation: mg-legin 5s ease-out infinite; }
-  .mg-l2 { opacity: 0; animation: mg-legin 5s ease-out 0.3s infinite; }
-  .mg-l3 { opacity: 0; animation: mg-legin 5s ease-out 0.6s infinite; }
+  .mg-l1 { }
+  .mg-l2 { }
+  .mg-l3 { }
   @keyframes mg-legin { 0%,30% { opacity: 0 } 46%,100% { opacity: 1 } }
 
   /* EIP-1153 — ts-persist: a lock on persistent storage is costly */
@@ -4719,9 +4727,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   /* EIP-7251 — mb-shard: the 32 ETH cap forces many validators */
   .mb-staker { fill: color-mix(in oklab, var(--color-accent) 7%, var(--color-surface)); stroke: var(--color-accent-dim); }
   .mb-c { text-anchor: middle; fill: var(--color-ink-muted); }
-  .mb-sa { stroke-dasharray: 36; stroke-dashoffset: 36; animation: mb-sadraw 4s ease-in-out infinite; }
+  .mb-sa { marker-end: url(#wb-arrow); }
   @keyframes mb-sadraw { 0%,30% { stroke-dashoffset: 36 } 56%,100% { stroke-dashoffset: 0 } }
-  .mb-vcell { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); animation: mb-vc 3.5s ease-in-out infinite; }
+  .mb-vcell { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
   @keyframes mb-vc { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
   .mb-vt { text-anchor: middle; fill: var(--color-ink-faint); }
   .mb-load { animation: mb-en 4s ease-in-out infinite; }
@@ -4729,26 +4737,26 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
   /* EIP-7251 — mb-raise: the earning bar grows 32 → 2048 in one motion (5s) */
   .mb-track { fill: var(--color-surface); stroke: var(--color-border-strong); }
-  .mb-grow { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); transform-box: fill-box; transform-origin: left center; animation: mb-grow 5s ease-in-out infinite; }
+  .mb-grow { fill: color-mix(in oklab, var(--color-node-leaf) 30%, var(--color-surface)); }
   @keyframes mb-grow { 0%,15% { transform: scaleX(0.12) } 60%,100% { transform: scaleX(1) } }
   .mb-32mark { stroke: var(--color-node-extension); stroke-width: 1.4; stroke-dasharray: 3 2; }
   .mb-32lbl { fill: var(--color-node-extension); }
-  .mb-2048lbl { opacity: 0; animation: mb-2048in 5s ease-in-out infinite; }
+  .mb-2048lbl { }
   @keyframes mb-2048in { 0%,55% { opacity: 0 } 68%,100% { opacity: 1 } }
 
   /* EIP-7251 — mb-consolidate: merge small validators into one */
   .mb-small { fill: color-mix(in oklab, var(--color-node-extension) 8%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .mb-ca { stroke-dasharray: 200; stroke-dashoffset: 200; animation: mb-cadraw 5s ease-in-out infinite; }
+  .mb-ca { marker-end: url(#wb-arrow); }
   @keyframes mb-cadraw { 0%,24% { stroke-dashoffset: 200 } 46%,100% { stroke-dashoffset: 0 } }
   .mb-req { fill: var(--color-ink-faint); }
-  .mb-big { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: mb-bigin 5s ease-in-out infinite; }
+  .mb-big { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
   @keyframes mb-bigin { 0%,40% { opacity: 0 } 56%,100% { opacity: 1 } }
 
   /* EIP-7251 — mb-payoff: fewer validators, compounding, opt-in floor */
-  .mb-ben { fill: color-mix(in oklab, var(--color-accent) 6%, var(--color-surface)); stroke: var(--color-accent-dim); opacity: 0; }
-  .mbb0 { animation: mb-benin 5s ease-out infinite; }
-  .mbb1 { animation: mb-benin 5s ease-out 0.3s infinite; }
-  .mbb2 { animation: mb-benin 5s ease-out 0.6s infinite; }
+  .mb-ben { fill: color-mix(in oklab, var(--color-accent) 6%, var(--color-surface)); stroke: var(--color-accent-dim); }
+  .mbb0 { }
+  .mbb1 { }
+  .mbb2 { }
   @keyframes mb-benin { 0%,10% { opacity: 0; transform: translateY(-4px) } 26%,94% { opacity: 1; transform: translateY(0) } 100% { opacity: 1 } }
 
   /* ── EVM — evm-why: a fixed action becomes a program ── */
@@ -5366,43 +5374,43 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .wr-wall { stroke: var(--color-changed); stroke-width: 2.4; stroke-dasharray: 4 4; }
   .wr-blocked { animation: rv-pulse 5s ease-in-out infinite; }
   .wr-val { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
-  .wr-trap { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .wr-trap { }
 
   /* ── EIP-7002 — wr-request: an EL request the CL processes ── */
-  .wr-a1 { stroke-dasharray: 56; stroke-dashoffset: 56; animation: st-draw 5s ease-in-out infinite; }
-  .wr-a2 { stroke-dasharray: 28; stroke-dashoffset: 28; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .wr-a1 { marker-end: url(#wb-arrow); }
+  .wr-a2 { marker-end: url(#wb-arrow); }
   .wr-pre { fill: color-mix(in oklab, var(--color-hash) 9%, var(--color-surface)); stroke: var(--color-hash); }
-  .wr-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
-  .wr-clt { text-anchor: middle; opacity: 0; animation: cr-detin 5s ease-in-out infinite; }
+  .wr-cl { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); }
+  .wr-clt { text-anchor: middle; }
 
   /* ── EIP-7002 — wr-trustless: trustless pools & smart-account stakers ── */
-  .wr-use { fill: var(--color-surface); stroke: var(--color-border-strong); opacity: 0; }
-  .wr-use0 { animation: tw-rowin 5s ease-out infinite; }
-  .wr-use1 { animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .wr-use { fill: var(--color-surface); stroke: var(--color-border-strong); }
+  .wr-use0 { }
+  .wr-use1 { }
   .wr-uc { text-anchor: middle; fill: var(--color-ink-faint); }
-  .wr-pectra { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .wr-pectra { }
 
   /* ── EIP-4399 — pr-det: no randomness; DIFFICULTY abused, then gone ── */
   .pr-evm { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .pr-c { text-anchor: middle; fill: var(--color-ink-muted); }
   .pr-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
-  .pr-a1 { stroke-dasharray: 52; stroke-dashoffset: 52; animation: st-draw 5s ease-in-out infinite; }
+  .pr-a1 { marker-end: url(#wb-arrow); }
   .pr-al { fill: var(--color-ink-faint); }
   .pr-diff { fill: color-mix(in oklab, var(--color-changed) 7%, var(--color-surface)); stroke: var(--color-changed); }
   .pr-difft { text-anchor: middle; }
-  .pr-gone { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .pr-gone { }
 
   /* ── EIP-4399 — pr-randao: RANDAO → PREVRANDAO ── */
   .pr-vslot { fill: color-mix(in oklab, var(--color-node-extension) 12%, var(--color-surface)); stroke: var(--color-node-extension); }
   .pr-vt { text-anchor: middle; fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 10px; }
   .pr-mix { animation: sc-vdot 3s ease-in-out infinite; }
   .pr-xor { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 12px; }
-  .pr-a2 { stroke-dasharray: 48; stroke-dashoffset: 48; animation: st-draw 5s ease-in-out infinite; }
+  .pr-a2 { marker-end: url(#wb-arrow); }
   .pr-randbox { fill: color-mix(in oklab, var(--color-node-leaf) 10%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .pr-randt { text-anchor: middle; }
-  .pr-a3 { stroke-dasharray: 26; stroke-dashoffset: 26; animation: st-draw 5s ease-in-out 0.4s infinite; }
+  .pr-a3 { marker-end: url(#wb-arrow); }
   .pr-op { fill: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface)); stroke: var(--color-accent); animation: tt-pulse 5s ease-in-out infinite; }
-  .pr-now { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .pr-now { }
 
   /* ── EIP-4399 — pr-caveat: weak randomness ── */
   .pr-warn { fill: color-mix(in oklab, var(--color-changed) 6%, var(--color-surface)); stroke: var(--color-changed); }
@@ -5468,30 +5476,30 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .dp-cl { fill: color-mix(in oklab, var(--color-node-extension) 7%, var(--color-surface)); stroke: var(--color-node-extension); }
   .dp-c { text-anchor: middle; fill: var(--color-ink-faint); }
   .dp-c2 { text-anchor: middle; fill: var(--color-ink-faint); }
-  .dp-poll1 { stroke-dasharray: 6 6; animation: dp-trudge 5s linear infinite; }
+  .dp-poll1 { stroke-dasharray: 6 6; marker-end: url(#wb-arrow); animation: dp-trudge 5s linear infinite; }
   @keyframes dp-trudge { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
-  .dp-pl { text-anchor: middle; fill: var(--color-changed); }
-  .dp-slow { opacity: 0; animation: dc-late 5s ease-in-out infinite; }
+  .dp-pl { text-anchor: middle; fill: var(--color-changed); font-family: var(--font-mono); font-size: 8px; }
+  .dp-slow { }
 
   /* ── EIP-6110 — dp-inblock: deposits ride inside the block ── */
   .dp-block { fill: var(--color-surface); stroke: var(--color-border-strong); }
   .dp-txs { fill: color-mix(in oklab, var(--color-ink-faint) 12%, var(--color-surface)); stroke: var(--color-border-strong); }
-  .dp-deps { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: tw-rowin 5s ease-out 0.3s infinite; }
+  .dp-deps { fill: color-mix(in oklab, var(--color-node-leaf) 12%, var(--color-surface)); stroke: var(--color-node-leaf); }
   .dp-bt { text-anchor: middle; fill: var(--color-ink-muted); }
   .dp-depsl { fill: var(--color-node-leaf); }
-  .dp-a2 { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
-  .dp-clbox { fill: color-mix(in oklab, var(--color-node-leaf) 8%, var(--color-surface)); stroke: var(--color-node-leaf); opacity: 0; animation: dc-late 5s ease-in-out 0.9s infinite; }
+  .dp-a2 { marker-end: url(#wb-arrow); }
+  .dp-clbox { fill: var(--color-surface); stroke: var(--color-node-leaf); }
   .dp-clt { text-anchor: middle; }
 
   /* ── EIP-6110 — dp-fast: activation time collapses ── */
   .dp-wl { fill: var(--color-ink-faint); }
   .dp-track { fill: color-mix(in oklab, var(--color-ink-faint) 8%, var(--color-surface)); stroke: var(--color-border-strong); }
-  .dp-wbefore { fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)); stroke: var(--color-changed); transform-box: fill-box; transform-origin: left center; animation: dp-fill 5s ease-out infinite; }
+  .dp-wbefore { fill: color-mix(in oklab, var(--color-changed) 45%, var(--color-surface)); stroke: var(--color-changed); transform-box: fill-box; transform-origin: left center; transform: scaleX(1); }
   @keyframes dp-fill { 0% { transform: scaleX(0); } 60%, 100% { transform: scaleX(1); } }
-  .dp-bl { fill: var(--color-changed); }
-  .dp-wafter { fill: color-mix(in oklab, var(--color-node-leaf) 55%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; transform: scaleX(0.03); }
+  .dp-bl { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+  .dp-wafter { fill: color-mix(in oklab, var(--color-node-leaf) 55%, var(--color-surface)); stroke: var(--color-node-leaf); transform-box: fill-box; transform-origin: left center; transform: scaleX(0.06); }
   .dp-al { fill: var(--color-node-leaf); }
-  .dp-simpl { opacity: 0; animation: dc-late 5s ease-in-out 0.5s infinite; }
+  .dp-simpl { }
 
   /* ── EIP-2200 — ss-naive: per-write pricing overcharges ── */
   .ss-slot { fill: color-mix(in oklab, var(--color-node-branch) 8%, var(--color-surface)); stroke: var(--color-node-branch); }

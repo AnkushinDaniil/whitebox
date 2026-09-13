@@ -585,58 +585,66 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
 
     {/* ── mpt: a real trie — edit a leaf, watch each node re-hash up to the root ── */}
     {name === "mpt" && (
-      <svg viewBox="0 0 480 300" role="img" aria-label="Editing one account re-hashes every node up the trie path to a new state root">
+      <svg viewBox="0 0 480 340" role="img" aria-label="Editing one account re-hashes every node up the trie path — leaf, branch, extension, root">
         <text class="mpt-rootlbl" x="240" y="14" text-anchor="middle">{L("state root")}</text>
 
-        <path class="mpt-edge" d="M226 54 L88 116" />
-        <path class="mpt-edge mpt-e-top" d="M240 60 L240 116" />
-        <path class="mpt-edge" d="M254 54 L392 116" />
-        <path class="mpt-edge" d="M230 156 L118 208" />
-        <path class="mpt-edge" d="M240 158 L240 208" />
-        <path class="mpt-edge mpt-e-bot" d="M252 156 L366 208" />
+        <path class="mpt-edge" d="M224 54 L118 96" />
+        <path class="mpt-edge mpt-e-top" d="M240 66 L240 95" />
+        <path class="mpt-edge" d="M256 54 L362 96" />
+        <path class="mpt-edge mpt-e-mid" d="M240 127 L240 158" />
+        <path class="mpt-edge" d="M224 192 L120 246" />
+        <path class="mpt-edge mpt-e-bot" d="M240 204 L240 242" />
+        <path class="mpt-edge" d="M256 192 L362 246" />
 
         <g class="mpt-node">
-          <polygon class="mpt-branch mpt-root-hot" points="240,18 270,44 240,70 210,44" />
-          <text class="mpt-kind" x="240" y="48" text-anchor="middle">B</text>
+          <polygon class="mpt-branch mpt-root-hot" points="240,20 272,44 240,68 208,44" />
         </g>
-        <text class="mpt-hash mpt-h-before" x="278" y="41" text-anchor="start">#9f2e</text>
-        <text class="mpt-hash mpt-h-after" x="278" y="41" text-anchor="start">#a2e0</text>
+        <text class="mpt-typ" x="202" y="47" text-anchor="end">{L("branch")}</text>
+        <text class="mpt-hash mpt-h-before" x="280" y="47" text-anchor="start">#9f2e</text>
+        <text class="mpt-hash mpt-h-after" x="280" y="47" text-anchor="start">#a2e0</text>
 
         <g class="mpt-node">
-          <rect class="mpt-leaf" x="48" y="118" width="80" height="34" rx="7" />
-          <text class="mpt-kind-l" x="88" y="134" text-anchor="middle">leaf</text>
-          <text class="mpt-lval" x="88" y="146" text-anchor="middle">0xD4 · 5 Ξ</text>
+          <rect class="mpt-leaf" x="56" y="96" width="80" height="32" rx="7" />
+          <text class="mpt-kind-l" x="96" y="111" text-anchor="middle">{L("leaf")}</text>
+          <text class="mpt-lval" x="96" y="123" text-anchor="middle">0xD4 · 5 Ξ</text>
         </g>
         <g class="mpt-node">
-          <polygon class="mpt-branch mpt-branch-hot" points="240,116 266,140 240,164 214,140" />
-          <text class="mpt-kind" x="240" y="144" text-anchor="middle">B</text>
+          <rect class="mpt-ext mpt-ext-hot" x="196" y="97" width="88" height="30" rx="7" />
+          <text class="mpt-kind-e" x="240" y="116" text-anchor="middle">{L("extension")}</text>
         </g>
-        <text class="mpt-hash mpt-hb-before" x="274" y="138" text-anchor="start">#7a1c</text>
-        <text class="mpt-hash mpt-hb-after" x="274" y="138" text-anchor="start">#b904</text>
+        <text class="mpt-hash mpt-he-before" x="290" y="116" text-anchor="start">#3d5a</text>
+        <text class="mpt-hash mpt-he-after" x="290" y="116" text-anchor="start">#c1f2</text>
         <g class="mpt-node">
-          <rect class="mpt-leaf" x="352" y="118" width="80" height="34" rx="7" />
-          <text class="mpt-kind-l" x="392" y="134" text-anchor="middle">leaf</text>
-          <text class="mpt-lval" x="392" y="146" text-anchor="middle">0xE7 · 3 Ξ</text>
+          <rect class="mpt-leaf" x="344" y="96" width="80" height="32" rx="7" />
+          <text class="mpt-kind-l" x="384" y="111" text-anchor="middle">{L("leaf")}</text>
+          <text class="mpt-lval" x="384" y="123" text-anchor="middle">0xE7 · 3 Ξ</text>
         </g>
 
         <g class="mpt-node">
-          <rect class="mpt-leaf" x="76" y="208" width="84" height="34" rx="7" />
-          <text class="mpt-kind-l" x="118" y="224" text-anchor="middle">leaf</text>
-          <text class="mpt-lval" x="118" y="237" text-anchor="middle">0xB2 · 6 Ξ</text>
+          <polygon class="mpt-branch mpt-branch-hot" points="240,160 268,182 240,204 212,182" />
+        </g>
+        <text class="mpt-typ" x="206" y="185" text-anchor="end">{L("branch")}</text>
+        <text class="mpt-hash mpt-hb-before" x="278" y="185" text-anchor="start">#7a1c</text>
+        <text class="mpt-hash mpt-hb-after" x="278" y="185" text-anchor="start">#b904</text>
+
+        <g class="mpt-node">
+          <rect class="mpt-leaf" x="56" y="246" width="82" height="34" rx="7" />
+          <text class="mpt-kind-l" x="97" y="262" text-anchor="middle">{L("leaf")}</text>
+          <text class="mpt-lval" x="97" y="275" text-anchor="middle">0xB2 · 6 Ξ</text>
         </g>
         <g class="mpt-node">
-          <rect class="mpt-leaf" x="198" y="208" width="84" height="34" rx="7" />
-          <text class="mpt-kind-l" x="240" y="224" text-anchor="middle">leaf</text>
-          <text class="mpt-lval" x="240" y="237" text-anchor="middle">0xC3 · 2 Ξ</text>
+          <rect class="mpt-leaf mpt-leaf-hot" x="194" y="244" width="92" height="38" rx="7" />
+          <text class="mpt-kind-l mpt-leaflbl-hot" x="240" y="260" text-anchor="middle">{L("leaf")} ✎</text>
+          <text class="mpt-lval mpt-lv-before" x="240" y="274" text-anchor="middle">0xA1 · 9 Ξ</text>
+          <text class="mpt-lval mpt-lv-after" x="240" y="274" text-anchor="middle">0xA1 · 14 Ξ</text>
         </g>
         <g class="mpt-node">
-          <rect class="mpt-leaf mpt-leaf-hot" x="320" y="208" width="92" height="34" rx="7" />
-          <text class="mpt-kind-l mpt-leaflbl-hot" x="366" y="224" text-anchor="middle">leaf ✎</text>
-          <text class="mpt-lval mpt-lv-before" x="366" y="237" text-anchor="middle">0xA1 · 9 Ξ</text>
-          <text class="mpt-lval mpt-lv-after" x="366" y="237" text-anchor="middle">0xA1 · 14 Ξ</text>
+          <rect class="mpt-leaf" x="342" y="246" width="82" height="34" rx="7" />
+          <text class="mpt-kind-l" x="383" y="262" text-anchor="middle">{L("leaf")}</text>
+          <text class="mpt-lval" x="383" y="275" text-anchor="middle">0xC3 · 2 Ξ</text>
         </g>
 
-        <text class="t-cap" x="240" y="284" text-anchor="middle">{L("edit one leaf → each node on its path re-hashes → a new state root")}</text>
+        <text class="t-cap" x="240" y="322" text-anchor="middle">{L("edit one leaf → each node on its path re-hashes: leaf → branch → extension → root")}</text>
       </svg>
     )}
 
@@ -3353,6 +3361,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .mpt-leaf { fill: color-mix(in oklab, var(--color-node-leaf) 16%, var(--color-surface)); stroke: var(--color-node-leaf); stroke-width: 1.6; }
   .mpt-kind { fill: var(--color-ink); font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
   .mpt-kind-l { fill: var(--color-node-leaf); font-family: var(--font-mono); font-size: 10px; }
+  .mpt-kind-e { fill: var(--color-node-extension); font-family: var(--font-mono); font-size: 9.5px; }
+  .mpt-typ { fill: var(--color-node-branch); font-family: var(--font-mono); font-size: 10px; }
   .mpt-hash { fill: var(--color-ink-faint); font-family: var(--font-mono); font-size: 10px; }
   .mpt-lval { fill: var(--color-ink-muted); font-family: var(--font-mono); font-size: 9.5px; }
 
@@ -3372,32 +3382,46 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   @keyframes mpt-lvafter { 0%,12% { fill: transparent } 16%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
 
   .mpt-e-bot { animation: mpt-ebot 7s ease-in-out infinite; }
-  @keyframes mpt-ebot { 0%,18% { stroke: var(--color-border-strong); stroke-width: 1.6 } 25%,90% { stroke: var(--color-changed); stroke-width: 2.6 } 96%,100% { stroke: var(--color-border-strong); stroke-width: 1.6 } }
+  @keyframes mpt-ebot { 0%,14% { stroke: var(--color-ink-faint); stroke-width: 1.7 } 18%,92% { stroke: var(--color-changed); stroke-width: 2.6 } 96%,100% { stroke: var(--color-ink-faint); stroke-width: 1.7 } }
 
   .mpt-branch-hot { animation: mpt-branchhot 7s ease-in-out infinite; }
   @keyframes mpt-branchhot {
-    0%,30% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
-    38%,90% { fill: color-mix(in oklab, var(--color-changed) 26%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2.4; }
+    0%,22% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
+    28%,90% { fill: color-mix(in oklab, var(--color-changed) 26%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2.4; }
     96%,100% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
   }
   .mpt-hb-before { animation: mpt-hbbefore 7s ease-in-out infinite; }
-  @keyframes mpt-hbbefore { 0%,34% { fill: var(--color-ink-faint) } 39%,93% { fill: transparent } 97%,100% { fill: var(--color-ink-faint) } }
+  @keyframes mpt-hbbefore { 0%,24% { fill: var(--color-ink-faint) } 28%,93% { fill: transparent } 97%,100% { fill: var(--color-ink-faint) } }
   .mpt-hb-after { fill: transparent; animation: mpt-hbafter 7s ease-in-out infinite; }
-  @keyframes mpt-hbafter { 0%,34% { fill: transparent } 39%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
+  @keyframes mpt-hbafter { 0%,24% { fill: transparent } 28%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
+
+  .mpt-e-mid { animation: mpt-emid 7s ease-in-out infinite; }
+  @keyframes mpt-emid { 0%,32% { stroke: var(--color-ink-faint); stroke-width: 1.7 } 36%,92% { stroke: var(--color-changed); stroke-width: 2.6 } 96%,100% { stroke: var(--color-ink-faint); stroke-width: 1.7 } }
+
+  .mpt-ext-hot { animation: mpt-exthot 7s ease-in-out infinite; }
+  @keyframes mpt-exthot {
+    0%,38% { fill: color-mix(in oklab, var(--color-node-extension) 16%, var(--color-surface)); stroke: var(--color-node-extension); stroke-width: 1.6; }
+    44%,90% { fill: color-mix(in oklab, var(--color-changed) 26%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2.4; }
+    96%,100% { fill: color-mix(in oklab, var(--color-node-extension) 16%, var(--color-surface)); stroke: var(--color-node-extension); stroke-width: 1.6; }
+  }
+  .mpt-he-before { animation: mpt-hebefore 7s ease-in-out infinite; }
+  @keyframes mpt-hebefore { 0%,40% { fill: var(--color-ink-faint) } 44%,93% { fill: transparent } 97%,100% { fill: var(--color-ink-faint) } }
+  .mpt-he-after { fill: transparent; animation: mpt-heafter 7s ease-in-out infinite; }
+  @keyframes mpt-heafter { 0%,40% { fill: transparent } 44%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
 
   .mpt-e-top { animation: mpt-etop 7s ease-in-out infinite; }
-  @keyframes mpt-etop { 0%,44% { stroke: var(--color-border-strong); stroke-width: 1.6 } 51%,90% { stroke: var(--color-changed); stroke-width: 2.6 } 96%,100% { stroke: var(--color-border-strong); stroke-width: 1.6 } }
+  @keyframes mpt-etop { 0%,50% { stroke: var(--color-ink-faint); stroke-width: 1.7 } 54%,92% { stroke: var(--color-changed); stroke-width: 2.6 } 96%,100% { stroke: var(--color-ink-faint); stroke-width: 1.7 } }
 
   .mpt-root-hot { animation: mpt-roothot 7s ease-in-out infinite; }
   @keyframes mpt-roothot {
-    0%,54% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
+    0%,56% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
     62%,90% { fill: color-mix(in oklab, var(--color-changed) 30%, var(--color-surface)); stroke: var(--color-changed); stroke-width: 2.6; }
     96%,100% { fill: color-mix(in oklab, var(--color-node-branch) 20%, var(--color-surface)); stroke: var(--color-node-branch); stroke-width: 1.6; }
   }
   .mpt-h-before { animation: mpt-hbefore 7s ease-in-out infinite; }
-  @keyframes mpt-hbefore { 0%,57% { fill: var(--color-ink-faint) } 61%,93% { fill: transparent } 97%,100% { fill: var(--color-ink-faint) } }
+  @keyframes mpt-hbefore { 0%,58% { fill: var(--color-ink-faint) } 62%,93% { fill: transparent } 97%,100% { fill: var(--color-ink-faint) } }
   .mpt-h-after { fill: transparent; animation: mpt-hafter 7s ease-in-out infinite; }
-  @keyframes mpt-hafter { 0%,57% { fill: transparent } 61%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
+  @keyframes mpt-hafter { 0%,58% { fill: transparent } 62%,93% { fill: var(--color-changed) } 97%,100% { fill: transparent } }
 
   /* state: an edit pulses a row and floats a +5 up */
   .rowhl { fill: color-mix(in oklab, var(--color-accent) 12%, transparent); stroke: none; opacity: 0; animation: hl 4s ease-in-out infinite; }

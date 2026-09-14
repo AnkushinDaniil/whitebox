@@ -42,12 +42,10 @@ pnpm typecheck  # astro check
 ```
 src/
   lib/mpt/                 Real Merkle-Patricia Trie engine (+ tests)
-  lib/email/adapter.ts     Pluggable email-capture adapter (local stub by default)
   components/
     explorable/            Reusable framework: DepthLayer, WidgetFrame,
                            SpecExcerpt, Callout, KeyTerm, GoDeeper
     trie/                  The flagship widget (visualizer + Verkle/Binary contrast)
-    EmailCapture.tsx       Conversion component, on every explorable
   content/
     explorables/*.mdx      The evergreen spine
     notes/*.mdx            Low-frequency "what changed this hardfork" notes
@@ -67,7 +65,4 @@ src/
 - **State-tree contrast** covers MPT → **Verkle** → **Binary (EIP-7864)**,
   telling the real roadmap-pivot story. The contrast widget's diagrams/bars are
   explicitly _illustrative_, not a live cryptographic benchmark.
-- **Email capture** ships a local no-op adapter (`src/lib/email/adapter.ts`);
-  wire a real provider by implementing `EmailAdapter` and swapping
-  `activeAdapter`.
 - **Hosting:** static build, host-agnostic for now.

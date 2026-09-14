@@ -1,7 +1,6 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import EmailCapture from "@/components/EmailCapture.tsx";
 import { SITE } from "@/consts";
 import {
   useTranslations,
@@ -116,9 +115,6 @@ const href = (e: (typeof explorables)[number]) =>
     </ol>
   </section>
 
-  <section class="home-capture">
-    <EmailCapture client:visible source="home" lang={lang} />
-  </section>
 </BaseLayout>
 
 <style>
@@ -362,8 +358,5 @@ const href = (e: (typeof explorables)[number]) =>
   }
   .spine-list .upcoming .n {
     color: var(--color-ink-faint);
-  }
-  .home-capture {
-    margin-top: 3rem;
   }
 </style>

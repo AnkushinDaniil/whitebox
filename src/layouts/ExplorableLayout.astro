@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
-import EmailCapture from "@/components/EmailCapture.tsx";
 import BookNav from "@/components/explorable/BookNav.astro";
 import { chapterNav } from "@/data/book";
 import { useTranslations, localizePath, dateLocale, type Lang } from "@/i18n/utils";
@@ -87,9 +86,6 @@ const bookNav = chapterNav(slug);
 
     <BookNav slug={slug} lang={lang} />
 
-    <div class="exp-capture">
-      <EmailCapture client:visible source={`explorable:${slug}`} lang={lang} />
-    </div>
   </article>
 </BaseLayout>
 
@@ -116,10 +112,6 @@ const bookNav = chapterNav(slug);
   .exp-body > :global(figure.widget-frame),
   .exp-body > :global(.bleed) {
     grid-column: 1 / -1;
-  }
-  .exp-capture {
-    max-width: 46rem;
-    margin: 0 auto;
   }
   .exp-topic {
     display: inline-block;

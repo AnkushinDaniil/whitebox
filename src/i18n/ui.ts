@@ -78,7 +78,6 @@ export const ui = {
       eyebrow: "Notes",
       h1: "What changed, explained simply.",
       lede: "The evergreen explorables teach the mechanisms. These are the thin layer on top: when the protocol changes, a short, plain-English note on what moved and why — written for engineers who don't want a 40-tweet thread. Low frequency. High signal.",
-      captureHeading: "Get the next note",
     },
     exp: {
       updated: "Updated",
@@ -112,17 +111,6 @@ export const ui = {
             "Every consequential change to Ethereum, in the order it shipped — each one a problem the network hit, derived to its fix.",
         },
       },
-    },
-    email: {
-      eyebrow: "Whitebox · Notes",
-      heading: "Get the next explorable",
-      blurb:
-        "One practitioner's note when something new ships — a new explorable, or a plain-English read on what changed in the protocol. No noise.",
-      placeholder: "you@node.eth",
-      subscribe: "Subscribe",
-      emailLabel: "Email address",
-      invalid: "That doesn't look like a valid email.",
-      success: "You're in. I'll send the next note when it ships.",
     },
     go: { spec: "SPEC", code: "CODE", eip: "EIP", post: "READ", tool: "TOOL" },
     spec: { fromSpec: "From the spec", clientCode: "Client code", formula: "Formula" },
@@ -208,7 +196,6 @@ export const ui = {
       eyebrow: "Заметки",
       h1: "Что изменилось — простыми словами.",
       lede: "Вечнозелёные разборы учат механизмам. А это тонкий слой поверх: когда протокол меняется, короткая заметка простым языком о том, что сдвинулось и почему — для инженеров, которым не нужна ветка из 40 твитов. Редко. По делу.",
-      captureHeading: "Получить следующую заметку",
     },
     exp: {
       updated: "Обновлено",
@@ -242,17 +229,6 @@ export const ui = {
             "Каждое значимое изменение Ethereum в порядке его выхода — каждое как проблема, с которой столкнулась сеть, выведенная до своего решения.",
         },
       },
-    },
-    email: {
-      eyebrow: "Whitebox · Заметки",
-      heading: "Получать новые разборы",
-      blurb:
-        "Одно письмо от практика, когда выходит что-то новое — новый разбор или понятный текст о том, что изменилось в протоколе. Без шума.",
-      placeholder: "you@node.eth",
-      subscribe: "Подписаться",
-      emailLabel: "Электронная почта",
-      invalid: "Похоже, это не корректный адрес почты.",
-      success: "Готово. Пришлю следующую заметку, когда она выйдет.",
     },
     go: { spec: "СПЕК", code: "КОД", eip: "EIP", post: "ЧИТАТЬ", tool: "ИНСТР" },
     spec: { fromSpec: "Из спецификации", clientCode: "Код клиента", formula: "Формула" },

@@ -2,7 +2,6 @@
 import { render } from "astro:content";
 import type { CollectionEntry } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import EmailCapture from "@/components/EmailCapture.tsx";
 import { useTranslations, localizePath, dateLocale, type Lang } from "@/i18n/utils";
 
 interface Props {
@@ -41,14 +40,6 @@ const dateLabel = entry.data.date.toLocaleDateString(dateLocale[lang], {
       <Content />
     </div>
 
-    <div class="n-capture not-prose">
-      <EmailCapture
-        client:visible
-        source={`note:${entry.id}`}
-        heading={t.notes.captureHeading}
-        lang={lang}
-      />
-    </div>
   </article>
 </BaseLayout>
 
@@ -99,8 +90,5 @@ const dateLabel = entry.data.date.toLocaleDateString(dateLocale[lang], {
     color: var(--color-ink-muted);
     margin: 0 0 1.5rem;
     line-height: 1.5;
-  }
-  .n-capture {
-    margin-top: 2.5rem;
   }
 </style>

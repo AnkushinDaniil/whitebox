@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import EmailCapture from "@/components/EmailCapture.tsx";
 import { useTranslations, localizePath, type Lang } from "@/i18n/utils";
 
 interface Props {
@@ -18,13 +17,11 @@ const meta = {
     title: "About",
     description:
       "Why Whitebox exists: turning Ethereum's execution layer from a black box into a white box, one explorable at a time.",
-    captureHeading: "Follow along",
   },
   ru: {
     title: "О проекте",
     description:
       "Зачем существует Whitebox: как превратить исполнительный слой Ethereum из чёрного ящика в белый — по одному разбору за раз.",
-    captureHeading: "Следить за обновлениями",
   },
 }[lang];
 ---
@@ -136,16 +133,12 @@ const meta = {
             <a href={hubHref}>The Execution Layer, explained</a> — written once and
             meant to last. And a thin, low-frequency <a href={notesHref}>notes</a>
             layer: short, plain-English reads on what changed in the protocol when a
-            hardfork ships. If you want to be told when either grows, leave your
-            email below. That's the only thing I'll use it for.
+            hardfork ships.
           </p>
         </>
       )
     }
 
-    <div class="about-capture not-prose">
-      <EmailCapture client:visible source="about" heading={meta.captureHeading} lang={lang} />
-    </div>
   </div>
 </BaseLayout>
 
@@ -165,8 +158,5 @@ const meta = {
   }
   .wrap h2 {
     margin-top: 2.2rem;
-  }
-  .about-capture {
-    margin-top: 2rem;
   }
 </style>

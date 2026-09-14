@@ -24,8 +24,7 @@ const explorables = defineCollection({
 
 /**
  * Notes — the thin, low-frequency "what changed in the protocol / this
- * hardfork, explained simply" layer. The funnel that converts search visitors
- * into a returning, email-captured audience.
+ * hardfork, explained simply" layer.
  */
 const notes = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/notes" }),

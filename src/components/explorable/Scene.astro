@@ -317,8 +317,8 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="msg" x="24" y="30" width="150" height="40" rx="8" />
         <text class="t-s" x="99" y="48">{L("send 5 Ξ → Bob")}</text>
         <text class="t-fld rp-noN" x="99" y="63">(no nonce)</text>
-        <g class="rp-dup"><rect class="msg ghost" x="24" y="30" width="150" height="40" rx="8" /><text class="t-x" x="99" y="55">{L("✗ copy, again…")}</text></g>
         <path class="arrow rp-d1" d="M174 50 H344" marker-end="url(#wb-arrow-ctx)" />
+        <text class="t-x rp-again" x="259" y="42" text-anchor="middle">{L("✗ replays again")}</text>
         <rect class="node" x="344" y="30" width="112" height="40" rx="8" />
         <text class="rp-balbad" x="400" y="55">9 → 4 → -1 Ξ</text>
         <text class="t-x rp-leak" x="240" y="88" text-anchor="middle">{L("the same signed edit applies again and again — the balance leaks")}</text>
@@ -2076,7 +2076,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="404" y="92">{L("state root")}</text>
         <text class="st-roothex st-rootorig" x="404" y="108">0x9f2e…</text>
         <text class="st-roothex st-roottamp" x="404" y="108">0x2b8c…</text>
-        <text class="t-x st-flip" x="240" y="150" text-anchor="middle">{L("flip one wei → the whole root flips")}</text>
+        <text class="t-x st-flip" x="240" y="168" text-anchor="middle">{L("flip one wei → the whole root flips")}</text>
         <text class="t-cap" x="240" y="182">{L("one 32-byte fingerprint commits to every account — tamper anywhere and it shows")}</text>
       </svg>
     )}
@@ -2487,15 +2487,15 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "rf-gastoken" && (
       <svg viewBox="0 0 480 196" role="img" aria-label="Storage refunds were gamed: fill slots when gas is cheap, clear them for a refund when gas is dear">
         <text class="t-cap" x="240" y="20">{L("refunds were gamed: buy gas cheap, spend it dear")}</text>
-        <rect class="rf-cheap" x="24" y="38" width="196" height="72" rx="8" />
+        <rect class="rf-cheap" x="24" y="38" width="196" height="86" rx="8" />
         <text class="t-cap" x="122" y="58">{L("gas cheap → mint")}</text>
         {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-fill" x={44 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
-        <text class="t-fld rf-ct" x="122" y="104">SSTORE many slots</text>
+        <text class="t-fld rf-ct" x="122" y="108">{L("SSTORE many slots")}</text>
         <path class="sarrow rf-ga" d="M222 74 H256" marker-end="url(#wb-arrow-accent)" />
-        <rect class="rf-dear" x="260" y="38" width="196" height="72" rx="8" />
+        <rect class="rf-dear" x="260" y="38" width="196" height="86" rx="8" />
         <text class="t-cap" x="358" y="58">{L("gas dear → harvest")}</text>
         {[0, 1, 2, 3, 4].map((i) => (<rect class="rf-slot rf-clear" x={280 + i * 30} y="70" width="22" height="22" rx="3" style={`animation-delay:${(i * 0.1).toFixed(2)}s`} />))}
-        <text class="t-ok rf-refund" x="358" y="104">clear → big refund</text>
+        <text class="t-ok rf-refund" x="358" y="108">{L("clear → big refund")}</text>
         <text class="t-x rf-2x" x="240" y="146" text-anchor="middle">{L("worse: refunds let a block do up to 2× the gas limit of real work")}</text>
         <text class="t-cap" x="240" y="176" text-anchor="middle">{L("a 'gas token' — value stored in useless state, gaming the gas price")}</text>
       </svg>
@@ -3050,7 +3050,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         {[["G1/G2", "add · mul"], ["pairing", "the check"], ["map-to-curve", "hash-to-point"]].map(([a, n], i) => (
           <g class={`bls-op bls-op${i}`}><rect x={40 + i * 140} y="106" width="120" height="34" rx="6" /><text class="t-fld bls-opt" x={100 + i * 140} y="122">{a}</text><text class="t-fld bls-opn" x={100 + i * 140} y="134">{n}</text></g>
         ))}
-        <circle class="bls-tok" cx="30" cy="123" r="5" />
+
         <text class="t-ok bls-verified" x="454" y="128" text-anchor="end">✓</text>
         <text class="t-cap" x="240" y="164" text-anchor="middle">{L("the exact curve the consensus layer uses — now verifiable on-chain")}</text>
         <text class="t-ok bls-cheap" x="240" y="180" text-anchor="middle">{L("a contract verifies a BLS signature in one cheap call")}</text>
@@ -3065,7 +3065,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <text class="t-cap" x="130" y="64">{L("trust-minimized bridges")}</text>
         <text class="t-fld bls-uc" x="130" y="84">{L("verify a sync committee")}</text>
         <text class="t-fld bls-uc" x="130" y="102">{L("BLS signature on L1/L2")}</text>
-        <circle class="bls-brtok" cx="8" cy="80" r="5" />
+
         <text class="t-ok bls-brok" x="214" y="86" text-anchor="middle">✓</text>
         <rect class="bls-usebox bls-usebox1" x="250" y="42" width="200" height="76" rx="8" />
         <text class="t-cap" x="350" y="66">{L("aggregate signatures")}</text>
@@ -3427,8 +3427,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
     {name === "sh-result" && (
       <svg viewBox="0 0 480 168" role="img" aria-label="Native shifts make bit manipulation cheaper and smaller">
         <text class="t-cap" x="240" y="26">{L("every shift gets cheaper and smaller")}</text>
-        <text class="sh-codeold" x="240" y="80" text-anchor="middle">PUSH1 0x10  MUL</text>
-        <text class="sh-codenew" x="240" y="80" text-anchor="middle">SHL</text>
+        <text class="sh-codeold" x="150" y="80" text-anchor="middle">PUSH1 0x10  MUL</text>
+        <path class="sarrow" d="M250 76 H336" marker-end="url(#wb-arrow-accent)" />
+        <text class="sh-codenew" x="366" y="80" text-anchor="middle">SHL</text>
         <text class="t-ok sh-use" x="240" y="122" text-anchor="middle">{L("packing structs, bitmaps, fixed-point, cryptography — all leaner")}</text>
         <text class="t-cap" x="240" y="150" text-anchor="middle">{L("compilers emit them; the same 'add the missing primitive' story")}</text>
       </svg>
@@ -3441,7 +3442,7 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
         <rect class="fm-proto" x="24" y="36" width="200" height="64" rx="8" />
         <text class="t-cap fm-pt" x="124" y="58">{L("EIP-1559 base fee")}</text>
         <text class="t-fld fm-pt2" x="124" y="78">{L("EIP-4844 blob base fee")}</text>
-        <text class="t-fld fm-pt3" x="124" y="94">{L("computed, burned, on-chain")}</text>
+        <text class="t-fld fm-pt3" x="124" y="88">{L("computed, burned, on-chain")}</text>
         <path class="sarrow fm-wall" d="M224 68 H300" /><text class="t-x fm-walll" x="262" y="60">{L("no way in")}</text>
         <rect class="fm-evm" x="300" y="36" width="156" height="64" rx="8" />
         <text class="t-cap fm-et" x="378" y="60">{L("a contract")}</text>
@@ -5724,9 +5725,9 @@ const L = (s: string): string => (lang === "ru" ? (sceneRu[s] ?? s) : s);
   .sh-3 { opacity: 0; animation: dc-late 5s ease-in-out 0.8s infinite; }
 
   /* ── EIP-145 — sh-result: the bytecode collapses PUSH1 0x10 MUL → SHL ── */
-  .sh-codeold { fill: var(--color-ink-muted); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; animation: sh-oldout 5s ease-in-out infinite; }
+  .sh-codeold { fill: var(--color-ink-muted); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; }
   @keyframes sh-oldout { 0%, 40% { opacity: 1; } 58%, 100% { opacity: 0.12; } }
-  .sh-codenew { fill: var(--color-node-leaf); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; font-weight: 700; opacity: 0; animation: sh-newin 5s ease-in-out infinite; }
+  .sh-codenew { fill: var(--color-node-leaf); font-family: ui-monospace, "SF Mono", monospace; font-size: 17px; font-weight: 700; }
   @keyframes sh-newin { 0%, 46% { opacity: 0; } 62%, 100% { opacity: 1; } }
   .sh-use { opacity: 0; animation: dc-late 5s ease-in-out 0.6s infinite; }
 
